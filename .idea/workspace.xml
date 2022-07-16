@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="b4dadd7b-92fe-43c4-9993-02cd33fd6f14" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/vis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/baseline.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/baseline.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/cbfs.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/cbfs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/control_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/control_params.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/dynamics_rdrive.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/dynamics.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/initial_conditions_intersection.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/initial_conditions_intersection.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/initial_conditions_lane_changing.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/initial_conditions_lane_changing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/parameters_unknown_Cd.md" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/parameters_unknown_Cd.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/physical_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/physical_params.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/state_derivatives.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/state_derivatives.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/bicycle_settings/timing_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/timing_params.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/cbf_qp_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/cbf_qp_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/CBF_filter_avoid_collision.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/CBF_filter_lane_change_back.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/TEST.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/animation.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/cbf_filter_accelerate.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/cbf_filter_accelerate.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/cbf_filter_avoid_collision.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/cbf_filter_decelerate.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/cbf_filter_lane_change_accelerate.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/cbf_filter_lane_change_avoid_collision.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/cbf_filter_lane_change_front.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/cbf_filter_side_by_side.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/ngsim_highway_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/ngsim_highway_data_T5.npy" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/op.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/highway/smallfile.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/TEST.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/animation.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/cvar_cbf.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/cvar_cbf.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/expectation_cbf.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/expectation_cbf.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/expected_value_cbf.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/jerk/cbf_filter_test.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/jerk/nominal_cbf_intersection.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/jerk/nominal_cbf_intersection.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/jerk/predictive_cbf_intersection.mp4" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/datastore/intersection/jerk/predictive_cbf_intersection.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/ffcbf_qp_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/ffcbf_qp_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/neural_network.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/ngsim/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/ngsim/fit_ngsim_101.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/ngsim/fit_ngsim_101_merging.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/ngsim/get_NN_grad.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/ngsim/helpers.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/ngsim/ngsim_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/ngsim/train_nn.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/nominal_controllers.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/nominal_controllers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/prb_cbf_controller.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/risk_bounded_cbf_controller.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/cbfs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/control_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/dynamics_rdrive.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/initial_conditions_intersection.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/initial_conditions_lane_changing.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/parameters_unknown_Cd.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/physical_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/state_derivatives.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/state_derivatives.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_accel_control/timing_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/timing_params.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/agents_list.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/cbfs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/control_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/dynamics_deterministic.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/dynamics_stochastic.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/initial_conditions.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/physical_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/state_derivatives.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_highway_merging/timing_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/cbfs.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/cbfs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/control_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/control_params.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/dynamics_rdrive.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/dynamics_rdrive.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/initial_conditions_intersection.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/initial_conditions_intersection.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/initial_conditions_lane_changing.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/physical_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/jerk_control/physical_params.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/state_derivatives.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/settings_jerk_control/timing_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/stochastic_cbf_controller.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/symbolic.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/vis.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/settings/intersection/accel_control/vis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/d2hdx2.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dhdx.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/nominal_controllers.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/settings/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/settings/cbfs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/settings/control_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/settings/dynamics.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/settings/initial_conditions.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/settings/physical_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/settings/timing_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/stochastic_cbf_controller.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/vis.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/single_integrator/vis_mc.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/viz/bicycle_vis_intersection_jerk.py" beforeDir="false" afterPath="$PROJECT_DIR$/viz/bicycle_vis_intersection_jerk.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="29G1CHoXB6WOihJ9I1sJ9NQa178" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "/Users/mblack/Documents/git/intersection/bicycle/settings/jerk_control",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  },
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "Python"
+    ]
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/bicycle/settings/jerk_control" />
+      <recent name="$PROJECT_DIR$/bicycle/settings/accel_control" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/bicycle/settings_highway_merging" />
+      <recent name="$PROJECT_DIR$/bicycle" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/bicycle/settings/intersection" />
+      <recent name="$PROJECT_DIR$/bicycle/settings" />
+      <recent name="$PROJECT_DIR$/bicycle/settings/" />
+      <recent name="$PROJECT_DIR$/bicycle" />
+      <recent name="$PROJECT_DIR$/bicycle/ngsim" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.simulate">
+    <configuration name="data" type="PythonConfigurationType" factoryName="Python">
+      <module name="baseline" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$PROJECT_DIR$/envs/base/bin/python3" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/bicycle/datastore/ngsim/fit_ngsim_101_merging.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="monte_carlo" type="PythonConfigurationType" factoryName="Python">
+      <module name="baseline" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$PROJECT_DIR$/envs/base/bin/python3" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/simulate_monte_carlo.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="ngsim_data" type="PythonConfigurationType" factoryName="Python">
+      <module name="baseline" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$PROJECT_DIR$/envs/base/bin/python3" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/bicycle/ngsim/ngsim_data.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="scratch" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="baseline" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$APPLICATION_CONFIG_DIR$/scratches" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="simulate" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="baseline" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/simulate.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="train_nn" type="PythonConfigurationType" factoryName="Python">
+      <module name="baseline" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$PROJECT_DIR$/envs/base/bin/python3" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/bicycle/ngsim/train_nn.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="visualize" type="PythonConfigurationType" factoryName="Python">
+      <module name="baseline" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/visualize.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.train_nn" />
+      <item itemvalue="Python.visualize" />
+      <item itemvalue="Python.ngsim_data" />
+      <item itemvalue="Python.data" />
+      <item itemvalue="Python.monte_carlo" />
+      <item itemvalue="Python.scratch" />
+      <item itemvalue="Python.simulate" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.simulate" />
+        <item itemvalue="Python.scratch" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b4dadd7b-92fe-43c4-9993-02cd33fd6f14" name="Changes" comment="" />
+      <created>1652724478927</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1652724478927</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/quadrotor/settings/control_params.py</url>
+          <line>2</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/viz/bicycle_vis_intersection.py</url>
+          <line>208</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/viz/bicycle_vis_highway.py</url>
+          <line>219</line>
+          <option name="timeStamp" value="40" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bicycle/cbf_qp_controller.py</url>
+          <line>194</line>
+          <option name="timeStamp" value="67" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bicycle/ngsim/get_NN_grad.py</url>
+          <line>22</line>
+          <option name="timeStamp" value="78" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/single_integrator/vis.py</url>
+          <line>168</line>
+          <option name="timeStamp" value="151" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/single_integrator/vis_mc.py</url>
+          <line>101</line>
+          <option name="timeStamp" value="165" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bicycle/settings_highway_merging/cbfs.py</url>
+          <line>85</line>
+          <option name="timeStamp" value="204" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bicycle/settings_highway_merging/cbfs.py</url>
+          <line>82</line>
+          <option name="timeStamp" value="205" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/cbf_wrappers.py</url>
+          <line>16</line>
+          <option name="timeStamp" value="207" />
+        </line-breakpoint>
+      </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
