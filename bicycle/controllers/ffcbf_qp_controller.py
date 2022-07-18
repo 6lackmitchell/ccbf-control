@@ -3,7 +3,7 @@ from typing import Callable
 from nptyping import NDArray
 from scipy.linalg import block_diag
 from solve_cvxopt import solve_qp_cvxopt
-from .cbfs import cbfs_individual, cbfs_pairwise
+from .cbfs import cbfs_individual, cbfs_pairwise, H0, cbf0 as cbf_vals
 from .cost_functions import objective_accel_only, objective_accel_and_steering
 from ..dynamics import f, g, sigma
 
@@ -58,7 +58,7 @@ def compute_control(t: float,
 
     # Compute nominal control input for ego only -- assume others are zero
     u_nom = np.zeros((len(z), 2))
-    omega, ar = nominal_controller(t, ze, ego)
+    (omega, ar), code, status = nominal_controller(t, ze, ego)
     u_nom[ego, :] = np.array([omega, ar])
 
     # Get matrices and vectors for QP controller
@@ -89,7 +89,7 @@ def compute_control(t: float,
     u_act = np.clip(u_act, [-np.pi / 4, -9.81], [np.pi / 4, 9.81])
     u_0 = u_nom[ego, :]
 
-    return u_act, u_0, sol['code'], sol['status']
+    return u_act, u_0, cbf_vals, sol['code'], sol['status'], None
 
 
 ############################# Safe Control Inputs #############################
@@ -139,7 +139,7 @@ def get_constraints_accel_only(t: float,
     Au = block_diag(*na*[au]).T
     bu = np.array(2*na*[9.81])
 
-    # Initialize inequality constraints
+    # Initialize CBF constraints
     Ai = np.zeros((len(zr), na))
     bi = np.zeros((len(zr),))
 
@@ -158,6 +158,9 @@ def get_constraints_accel_only(t: float,
         Lgh[ego] = dhdx @ g(ze)[:, 1]
 
         Ai[cc, :], bi[cc] = cbf.generate_cbf_condition(h, Lfh, Lgh)
+        cbf_vals[cc] = h
+
+    lci = len(cbfs_individual)
 
     # Iterate over pairwise CBF constraints
     for cc, cbf in enumerate(cbfs_pairwise):
@@ -167,6 +170,7 @@ def get_constraints_accel_only(t: float,
             idx = ii + (ii >= ego)
             omega_o = u_nom[idx, 0]
 
+            h0 = H0(ze, zo)
             h = cbf.h(ze, zo)
             dhdx = cbf.dhdx(ze, zo)
             d2hdx2 = cbf.d2hdx2(ze, zo)
@@ -179,13 +183,14 @@ def get_constraints_accel_only(t: float,
             Lfh = dhdx[:ns] @ (f(ze) + g(ze)[:, 0] * omega_e) + dhdx[ns:] @ (f(zo) + g(zo)[:, 0] * omega_o)
             Lfh = Lfh + stoch
             Lgh = np.zeros((na,))
-            Lgh[ego] = dhdx @ g(ze)[:, 1]
+            Lgh[ego] = dhdx[:ns] @ g(ze)[:, 1]
+            Lgh[idx] = dhdx[ns:] @ g(zo)[:, 1]
 
             Ai[cc, :], bi[cc] = cbf.generate_cbf_condition(h, Lfh, Lgh)
+            cbf_vals[lci + cc] = h
 
-
-        if h0 < 0:
-            print("SAFETY VIOLATION: {:.2f}".format(-h0))
+            if h0 < 0:
+                print("SAFETY VIOLATION: {:.2f}".format(-h0))
 
     A = np.vstack([Au, Ai])
     b = np.hstack([bu, bi])

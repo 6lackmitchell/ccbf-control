@@ -170,7 +170,7 @@ def intersection_controller_lqr(t: float,
         omega = 0.0
         ar = np.linalg.norm(mu)
 
-    return omega, ar
+    return (omega, ar), 1, "success"
 
 
 def jerk_intersection_controller_lqr(t: float,

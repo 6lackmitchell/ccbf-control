@@ -35,16 +35,3 @@ z4 = np.array([xi[3],     # x position
 
 z0 = np.array([z1, z2, z3, z4])
 nAgents, nStates = z0.shape
-
-# Get Filepath
-delimiter = '/'  # linux or darwin or linux2
-if platform == "win32":
-    # Windows
-    delimiter = '\\'
-
-folder_ending = delimiter + '..' + \
-                delimiter + 'datastore' + \
-                delimiter + 'intersection' + \
-                delimiter + 'accel_control' + \
-                delimiter
-save_path = os.path.dirname(os.path.abspath(__file__)) + folder_ending

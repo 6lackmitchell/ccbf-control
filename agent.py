@@ -73,7 +73,8 @@ class Agent:
         misc = None
         self.timestep = int(self.t / self.dt)
         if self.nominal_controller is None:
-            self.u, self.u_nom, code, status = self.controller(self.t, self.x, self.id)
+            self.u, code, status = self.controller(self.t, self.x, self.id)
+            self.u_nom = self.u
         else:
             # extras = {'ignore': 4}
             self.u, self.u_nom, self.cbf, code, status, misc = \
@@ -99,7 +100,7 @@ class Agent:
         OUTPUTS
         -------
         x_updated: new state vector
-
+        x_updated: new state vector
         """
         x_updated = self.dynamics(self.t, self.x, self.u)
         self.update(x_updated)

@@ -58,8 +58,6 @@ dhdtau_predictive_ca_symbolic = sp.Matrix([h_predictive_ca_symbolic], real=True)
 d2hdx2_predictive_ca_symbolic = dhdx_predictive_ca_symbolic.jacobian(np.concatenate([ss, sso]))
 d2hdtau2_predictive_ca_symbolic = dhdtau_predictive_ca_symbolic.jacobian(np.array([tau_sym]))
 d2hdtaudx_predictive_ca_symbolic = dhdtau_predictive_ca_symbolic.jacobian(np.concatenate([ss, sso]))
-
-
 h_predictive_ca = symbolic_cbf_wrapper_multiagent(h_predictive_ca_symbolic, ss, sso)
 dhdx_predictive_ca = symbolic_cbf_wrapper_multiagent(dhdx_predictive_ca_symbolic, ss, sso)
 dhdtau_predictive_ca = symbolic_cbf_wrapper_multiagent(dhdtau_predictive_ca_symbolic, ss, sso)

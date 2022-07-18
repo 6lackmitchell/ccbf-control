@@ -30,6 +30,7 @@ __status__ = "Development"
 # Output file
 filepath = save_path
 filename = filepath + 'test.pkl'
+print(filename)
 
 # Logging variables
 z = np.zeros((nTimesteps, nAgents, nStates))
@@ -44,7 +45,7 @@ z[0, :, :] = z0
 try:
     for ii, tt in enumerate(np.linspace(ts, tf, nTimesteps - 1)):
         if round(tt, 4) % 0.1 < dt:
-            print("Time: {:.0f} sec".format(tt))
+            print("Time: {:.1f} sec".format(tt))
 
         # Iterate over all agents in the system
         for aa, agent in enumerate(agents):
