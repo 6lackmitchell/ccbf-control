@@ -18,7 +18,7 @@ g_symbolic = sp.Matrix([[0.0, 0.0],
                         [0.0, 0.0],
                         [0.0, 1.0],
                         [1.0, 0.0]])
-s_symbolic = sp.Matrix(np.eye(5)) * 3 * dt
+s_symbolic = sp.Matrix(np.eye(5)) * 0
 
 f = dyn_wrapper(f_symbolic, sym_state)
 g = dyn_wrapper(g_symbolic, sym_state)

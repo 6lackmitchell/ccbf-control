@@ -147,10 +147,13 @@ def get_constraints_accel_only(t: float,
     for cc, cbf in enumerate(cbfs_individual):
         h = cbf.h(ze)
         dhdx = cbf.dhdx(ze)
-        d2hdx2 = cbf.d2hdx2(ze)
 
         # Stochastic Term -- 0 for deterministic systems
-        stoch = 0.5 * np.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
+        if np.trace(sigma(ze).T @ sigma(ze)) > 0:
+            d2hdx2 = cbf.d2hdx2(ze)
+            stoch = 0.5 * np.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
+        else:
+            stoch = 0.0
 
         # Get CBF Lie Derivatives
         Lfh = dhdx @ (f(ze) + g(ze)[:, 0] * omega_e) + stoch
@@ -173,11 +176,14 @@ def get_constraints_accel_only(t: float,
             h0 = H0(ze, zo)
             h = cbf.h(ze, zo)
             dhdx = cbf.dhdx(ze, zo)
-            d2hdx2 = cbf.d2hdx2(ze, zo)
 
             # Stochastic Term -- 0 for deterministic systems
-            stoch = 0.5 * (np.trace(sigma(ze).T @ d2hdx2[:ns, :ns] @ sigma(ze)) +
-                           np.trace(sigma(zo).T @ d2hdx2[ns:, ns:] @ sigma(zo)))
+            if np.trace(sigma(ze).T @ sigma(ze)) > 0:
+                d2hdx2 = cbf.d2hdx2(ze, zo)
+                stoch = 0.5 * (np.trace(sigma(ze).T @ d2hdx2[:ns, :ns] @ sigma(ze)) +
+                               np.trace(sigma(zo).T @ d2hdx2[ns:, ns:] @ sigma(zo)))
+            else:
+                stoch = 0.0
 
             # Get CBF Lie Derivatives
             Lfh = dhdx[:ns] @ (f(ze) + g(ze)[:, 0] * omega_e) + dhdx[ns:] @ (f(zo) + g(zo)[:, 0] * omega_o)

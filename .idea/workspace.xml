@@ -3,14 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="e1e023c8-895d-464a-90dd-354e30380a22" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/controllers/cbfs/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/controllers/cbfs/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/controllers/cbfs/interagent_cbfs.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/controllers/cbfs/interagent_cbfs.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bicycle/controllers/ffcbf_qp_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/controllers/ffcbf_qp_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/controllers/nominal_controllers.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/controllers/nominal_controllers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/dynamics/second_order_deterministic/initial_conditions.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamics/second_order_deterministic/initial_conditions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/intersection_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/intersection_config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulate.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulate.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/dynamics/second_order_deterministic/dynamics.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamics/second_order_deterministic/dynamics.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,16 +94,5 @@
         </entry>
       </map>
     </option>
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/agent.py</url>
-          <line>75</line>
-          <option name="timeStamp" value="38" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>
