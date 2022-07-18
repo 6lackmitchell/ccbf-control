@@ -1,12 +1,11 @@
 import os
-from random import random, randint
+from random import random
 import numpy as np
-from .timing_params import tf
 from .physical_params import LW
 from agent import Agent
-from .dynamics_rdrive import step_dynamics
-from bicycle.ffcbf_qp_controller import compute_control as ff_cbf_controller
-from bicycle.ffcbf_qp_controller import highway_controller_lqr
+from bicycle.dynamics.third_order_deterministic import step_dynamics
+from bicycle.controllers.ffcbf_qp_controller import compute_control as ff_cbf_controller
+from bicycle.controllers.ffcbf_qp_controller import highway_controller_lqr
 
 
 def v_rand() -> float:

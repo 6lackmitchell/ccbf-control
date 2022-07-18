@@ -1,6 +1,6 @@
 import numpy as np
 from .quadrotor_dynamics import R_body_to_inertial
-from .physical_params import G, M, Jx, Jy, Jz
+from bicycle.dynamics.second_order_deterministic.physical_params import G, M, Jx, Jy, Jz
 
 s   = np.sin
 c   = np.cos

@@ -4,7 +4,7 @@ from nptyping import NDArray
 
 
 # These all need to be wrappers as well, so that the function call is just the evaluation/substitution
-def symbolic_cbf_wrapper_singleagent(cbf_symbolic, ss):
+def symbolic_cbf_wrapper_singleagent(cbf_symbolic, *args):
     """Wrapper for symbolic CBFs and derivatives. """
 
     def cbf(z: NDArray,
@@ -14,17 +14,21 @@ def symbolic_cbf_wrapper_singleagent(cbf_symbolic, ss):
             return cbf_symbolic
 
         else:
+            ss = np.concatenate(args)
             ret = cbf_symbolic.subs([(sym, zz) for sym, zz in zip(ss, z)])
 
             if type(ret) is sp.Float:
                 return ret
             else:
-                return np.squeeze(np.array(ret).astype(np.float64))
+                try:
+                    return np.squeeze(np.array(ret).astype(np.float64))
+                except TypeError:
+                    return ret
 
     return cbf
 
 
-def symbolic_cbf_wrapper_multiagent(cbf_symbolic, sse, sso):
+def symbolic_cbf_wrapper_multiagent(cbf_symbolic, *args):
     """Wrapper for symbolic CBFs and derivatives. """
 
     def cbf(ze: NDArray,
@@ -35,13 +39,16 @@ def symbolic_cbf_wrapper_multiagent(cbf_symbolic, sse, sso):
             return cbf_symbolic
 
         else:
-            ss = np.concatenate([sse, sso])
+            ss = np.concatenate(args)
             zz = np.concatenate([ze, zo])
             ret = cbf_symbolic.subs([(s, z) for s, z in zip(ss, zz)])
 
             if type(ret) is sp.Float:
                 return ret
             else:
-                return np.squeeze(np.array(ret).astype(np.float64))
+                try:
+                    return np.squeeze(np.array(ret).astype(np.float64))
+                except TypeError:
+                    return ret
 
     return cbf

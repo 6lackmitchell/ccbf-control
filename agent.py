@@ -1,74 +1,93 @@
 import numpy as np
 from typing import Callable
 from nptyping import NDArray
-
-
-###############################################################################
-#################################### Class ####################################
-###############################################################################
+from pathlib import Path
+from pickle import dump, load
 
 
 class Agent:
 
+    @property
+    def timestep(self):
+        assert(type(self._timestep) == int)
+        return self._timestep
+
+    @timestep.setter
+    def timestep(self, val):
+        if type(val) != int:
+            raise ValueError("Timestep must be an integer.")
+        self._timestep = val
+
     def __init__(self,
+                 identifier: int,
                  x0: NDArray,
+                 u0: NDArray,
+                 cbf0: NDArray,
+                 timing: NDArray,
                  dynamics: Callable,
-                 controller: Callable):
-        self.t = 0.0
+                 controller: Callable,
+                 nominal_controller: Callable = None):
+        """ Class initializer. """
+        self.id = identifier
         self.x = x0
-        self.u = None
-        self.u_nom = None
+        self.u = u0
+        self.u_nom = u0
+        self.cbf = cbf0
         self.dynamics = dynamics
         self.controller = controller
+        self.nominal_controller = nominal_controller
+
+        # Extract timing data
+        self.t = 0.0
+        self.dt = timing[0]
+        self.tf = timing[1]
+        self.timestep = 0
+        self.nTimesteps = int((self.tf - self.t) / self.dt) + 1
+
+        # Construct object for saving data
+        self.x_trajectory = np.zeros((self.nTimesteps, x0.shape[0]))
+        self.u_trajectory = np.zeros((self.nTimesteps, u0.shape[0]))
+        self.u0_trajectory = np.zeros((self.nTimesteps, u0.shape[0]))
+        self.cbf_trajectory = np.zeros((self.nTimesteps, cbf0.shape[0]))
+
+        # Save data object -- auto-updating since defined by reference
+        self.data = {'x': self.x_trajectory,
+                     'u': self.u_trajectory,
+                     'u0': self.u0_trajectory,
+                     'cbf': self.cbf_trajectory}
 
     def compute_control(self,
-                        t: float,
-                        x: NDArray,
-                        extras: dict) -> (NDArray, NDArray, int, str):
+                        full_state: NDArray) -> (int, str):
         """ Computes the control input for the Agent.
 
         INPUTS
         ------
-        t: time (in sec)
-        x: state vector
-        extras: any extra parameters the specified controller needs
+        full_state: full state vector for all agents
 
         OUTPUTS
         -------
-        u_actual: the control input implemented in the system dynamics
-        u_nominal: the control input computed by the nominal (potentially unsafe) controller
+        code: success / error flag
+        status: more informative success / error information
 
         """
-        self.t = t
-        code = None
-        status = None
-        mas = None
-        eta = None
+        misc = None
+        self.timestep = int(self.t / self.dt)
+        if self.nominal_controller is None:
+            self.u, self.u_nom, code, status = self.controller(self.t, self.x, self.id)
+        else:
+            # extras = {'ignore': 4}
+            self.u, self.u_nom, self.cbf, code, status, misc = \
+                self.controller(self.t, full_state, self.nominal_controller, self.id)
 
-        # Compute control inputs
-        outputs = self.controller(t, x, extras)
-        if len(outputs) == 2:
-            self.u = np.array(outputs)
-            self.u_nom = self.u
-            code = 1
-            status = 'optimal'
+        # Update Control and CBF Trajectories
+        self.u_trajectory[self.timestep, :] = self.u
+        self.u0_trajectory[self.timestep, :] = self.u_nom
+        self.cbf_trajectory[self.timestep, :] = self.cbf
 
-        elif len(outputs) == 5:
-            self.u = outputs[0]
-            self.u_nom = outputs[1]
-            code = outputs[2]
-            status = outputs[3]
-            mas = outputs[4]
+        if misc is not None:
+            print(misc)
 
-        elif len(outputs) == 6:
-            self.u = outputs[0]
-            self.u_nom = outputs[1]
-            code = outputs[2]
-            status = outputs[3]
-            mas = outputs[4]
-            eta = outputs[5]
-
-        return self.u, self.u_nom, code, status, mas
+        return code, status
 
     def step_dynamics(self) -> NDArray:
         """ Advances the Agent's dynamics forward in time using the current state and control input.
@@ -101,3 +120,34 @@ class Agent:
 
         """
         self.x = x_new
+        self.x_trajectory[self.timestep, :] = self.x
+
+    def save_data(self,
+                  identity: int,
+                  filename: str) -> None:
+        """Saves the agent's individual simulation data out to a .pkl file.
+
+        INPUTS
+        ------
+        identity: agent identifier
+        filename: name of file to which data is saved
+
+        OUTPUTS
+        -------
+        None
+
+        """
+        file = Path(filename)
+        if file.is_file():
+            # Load data, then add to it
+            with open(filename, 'rb') as f:
+                data = load(f)
+
+            data[identity] = self.data
+
+        else:
+            data = {identity: self.data}
+
+        # Write data to file
+        with open(filename, 'wb') as f:
+            dump(data, f)
