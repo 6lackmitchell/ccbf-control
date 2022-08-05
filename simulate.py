@@ -1,52 +1,47 @@
 """ simulate.py: simulation entry-point for testing controllers for specific dynamical models. """
 
-### Import Statements ###
-# General imports
 import numpy as np
-from sys import argv
-from pickle import dump
+import builtins
+from copy import deepcopy
 from traceback import print_exc
 
-# Determine which problem we are solving and import accordingly
-args = argv
-if len(args) > 1:
-    config = str(args[1])
-else:
-    config = 'bicycle'
+def simulate(tf: float,
+             dt: float,
+             vehicle: str,
+             level: str,
+             situation: str) -> None:
+    """Simulates the system specified by config.py for tf seconds at a frequency of dt.
 
-# Problem specific imports
-if config == 'bicycle':
-    from bicycle import *
-    # from bicycle.settings import *
+    ARGUMENTS
+        tf: final time (in sec)
+        dt: timestep length (in sec)
+        vehicle: the vehicle to be simulated
+        level: the control level (i.e. kinematic, dynamic, etc.)
+        situation: i.e. intersection_old, intersection, etc.
 
-# Authorship information
-__author__ = "Mitchell Black"
-__copyright__ = "Open Education - Creative Commons"
-__version__ = "0.0.1"
-__maintainer__ = "Mitchell Black"
-__email__ = "mblackjr@umich.edu"
-__status__ = "Development"
+    RETURNS
+        None
 
-# Output file
-filepath = save_path
-filename = filepath + 'test.pkl'
-print(filename)
+    """
+    # Program-wide specifications
+    builtins.PROBLEM_CONFIG = {'vehicle': vehicle,
+                               'control_level': level,
+                               'situation': situation,
+                               'system_model': 'deterministic'}
 
-# Logging variables
-z = np.zeros((nTimesteps, nAgents, nStates))
-# u = np.zeros((nTimesteps, nAgents, nControls))
-# qp_sol = np.zeros((nTimesteps, nAgents, nSols))
-# nominal_sol = np.zeros((nTimesteps, nAgents, nSols))
-# cbfs = np.zeros((nTimesteps, nAgents, nCBFs))
+    if vehicle == 'bicycle':
+        from bicycle import nTimesteps, nAgents, nStates, z0, agents_list
 
-# Set initial parameters
-z[0, :, :] = z0
+    # Simulation setup
+    z = np.zeros((nTimesteps, nAgents, nStates))
+    z[0, :, :] = z0
+    agents = deepcopy(agents_list)
 
-try:
-    for ii, tt in enumerate(np.linspace(ts, tf, nTimesteps - 1)):
-        if round(tt, 4) % 0.1 < dt:
+    # Simulate program
+    for ii, tt in enumerate(np.linspace(0, tf, nTimesteps - 1)):
+        if round(tt, 4) % 1 < dt:
             print("Time: {:.1f} sec".format(tt))
-
+        
         # Iterate over all agents in the system
         for aa, agent in enumerate(agents):
             code, status = agent.compute_control(z[ii])
@@ -54,17 +49,8 @@ try:
             # Step dynamics forward
             z[ii + 1, aa, :] = agent.step_dynamics()
 
-except Exception as e:
-    print_exc()
-
-else:
-    pass
-
-finally:
-    print("SIMULATION TERMINATED AT T = {:.4f} sec".format(tt))
-    print("State: {}".format(z[ii]))
-
+    # Save data
     for aa, agent in enumerate(agents):
-        agent.save_data(aa, filename)
+        agent.save_data(aa)
 
-print('\a')
+    return

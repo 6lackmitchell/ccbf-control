@@ -1,6 +1,8 @@
 # Data files
 datastore
 datastore/
+.idea/
+*.DS_Store
 
 # Test files
 tests/
