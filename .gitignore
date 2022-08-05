@@ -136,3 +136,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.idea/workspace.xml
+.idea/misc.xml
+.idea/intersection.iml
+.DS_Store
