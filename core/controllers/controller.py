@@ -18,7 +18,7 @@ class Controller:
     def compute_control(self,
                         t: float,
                         z: NDArray,
-                        cascade: bool = True) -> (NDArray, NDArray, int, str):
+                        cascade: bool = True) -> (int, str):
         """Computes the control input for the vehicle in question.
 
         INPUTS

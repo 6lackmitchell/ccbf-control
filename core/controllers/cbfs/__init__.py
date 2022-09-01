@@ -18,9 +18,10 @@ k_road = 5.0
 k_collision = 1.0
 
 # Define cbf lists
-cbfs_individual = [
-    Cbf(h_road, dhdx_road, d2hdx2_road, linear_class_k(k_road), h0_road),  # Highway Safety (hs)
-]
+# cbfs_individual = [
+#     Cbf(h_road, dhdx_road, d2hdx2_road, linear_class_k(k_road), h0_road),  # Highway Safety (hs)
+# ]
+cbfs_individual = []
 cbfs_pairwise = [
     Cbf(h_rpca, dhdx_rpca, d2hdx2_rpca, linear_class_k(k_collision), h_ca),  # Collision Avoidance (ca)
 ]  # RV-CBF

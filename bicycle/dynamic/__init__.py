@@ -3,6 +3,8 @@ from importlib import import_module
 from core.agent import Agent
 from core.controllers.cbfs import cbfs_individual, cbfs_pairwise, cbf0
 from core.controllers.cbf_qp_controller import CbfQpController
+from core.controllers.consolidated_cbf_controller import ConsolidatedCbfController
+from core.controllers.centralized_controller import CentralizedController
 from .timing_params import *
 from .physical_params import u_max
 from .models import f, g, nControls
@@ -36,7 +38,7 @@ else:
 # Configure parameters
 nAgents = len(z0)
 time = [dt, tf]
-save_path = '/Users/mblack/Documents/datastore/intersection_old/test.pkl'
+save_path = '/Users/mblack/Documents/datastore/intersection/test.pkl'
 
 
 # Define controllers
@@ -51,13 +53,28 @@ def deterministic_cbf_controller(idx: int) -> CbfQpController:
     )
 
 
+def consolidated_cbf_controller(idx: int) -> ConsolidatedCbfController:
+    return ConsolidatedCbfController(
+        u_max,
+        nAgents,
+        objective_accel_and_steering,
+        LqrController(idx).compute_control,
+        cbfs_individual,
+        cbfs_pairwise
+    )
+
+
 # Define CBF Controlled Agents
 cbf_controlled_agents = [
-    Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, deterministic_cbf_controller(i), save_path) for i in range(4)
-]
-l_cbf_ag = len(cbf_controlled_agents)
+    Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, consolidated_cbf_controller(i), save_path) for i in range(3)
+] + [Agent(3, z0[3, :], u0, cbf0, time, step_dynamics, deterministic_cbf_controller(3), save_path)]
+# l_cbf_ag = len(cbf_controlled_agents)
 
-other_agents = []
+# centralized_agents = CentralizedController(
+#     [age for age in cbf_controlled_agents[:3]],
+#     u_max
+# )
 
-# Combine agents into one list
-agents_list = cbf_controlled_agents + other_agents
+
+centralized_agents = None
+decentralized_agents = cbf_controlled_agents

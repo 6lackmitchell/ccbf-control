@@ -1,4 +1,4 @@
-from numpy import pi
+from numpy import pi, array
 
 # Acceleration due to gravity
 G = 9.81  # meters / sec^2
@@ -9,9 +9,9 @@ Lf = 1.0  # Front wheelbase (in m)
 Lr = 1.0  # Rear wheelbase (in m)
 
 # Control input constraints
-ar_max = 2 * G
+ar_max = 0.3 * G
 w_max = pi / 4 / 4
-u_max = [w_max, ar_max]
+u_max = array([w_max, ar_max])
 
 # Road Parameters
 LW = 3.0  # Lane width (in m)

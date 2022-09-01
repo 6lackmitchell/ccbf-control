@@ -5,6 +5,7 @@ import builtins
 from copy import deepcopy
 from traceback import print_exc
 
+
 def simulate(tf: float,
              dt: float,
              vehicle: str,
@@ -30,27 +31,32 @@ def simulate(tf: float,
                                'system_model': 'deterministic'}
 
     if vehicle == 'bicycle':
-        from bicycle import nTimesteps, nAgents, nStates, z0, agents_list
+        from bicycle import nTimesteps, nAgents, nStates, z0, centralized_agents, decentralized_agents
 
     # Simulation setup
     z = np.zeros((nTimesteps, nAgents, nStates))
     z[0, :, :] = z0
-    agents = deepcopy(agents_list)
+    # centralized_agents = deepcopy(centralized_agents_list)
+    # decentralized_agents = deepcopy(decentralized_agents_list)
 
     # Simulate program
     for ii, tt in enumerate(np.linspace(0, tf, nTimesteps - 1)):
         if round(tt, 4) % 1 < dt:
             print("Time: {:.1f} sec".format(tt))
+
+        # Compute inputs for centralized agents
+        if centralized_agents is not None:
+            centralized_agents.compute_control(tt, z[ii])
         
         # Iterate over all agents in the system
-        for aa, agent in enumerate(agents):
+        for aa, agent in enumerate(decentralized_agents):
             code, status = agent.compute_control(z[ii])
 
             # Step dynamics forward
             z[ii + 1, aa, :] = agent.step_dynamics()
 
     # Save data
-    for aa, agent in enumerate(agents):
+    for aa, agent in enumerate(decentralized_agents):
         agent.save_data(aa)
 
     return

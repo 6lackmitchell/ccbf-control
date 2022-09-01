@@ -21,7 +21,7 @@ except ModuleNotFoundError as e:
     raise e
 
 # Defining Physical Params
-R = 1.0
+R = 0.5
 
 # Define new symbols -- necessary for pairwise interactions case
 sso = se.symbols(['{}o'.format(n) for n in ss], real=True)
@@ -107,23 +107,54 @@ def d2hdx2_ca(ego, other):
 
 
 def h_pca(ego, other):
-    return h_predictive_ca(ego, other).subs({tau_sym: tau([tau_star(ego, other)])})
+    func = h_predictive_ca(ego, other)
+
+    try:
+        ret = func.subs({tau_sym: tau([tau_star(ego, other)])})
+    except AttributeError:
+        ret = func
+
+    return ret
 
 
 def dhdx_pca(ego, other):
-    ret = dhdx_predictive_ca(ego, other).subs({tau_sym: tau([tau_star(ego, other)])}) + \
-          dhdtau_predictive_ca(ego, other).subs({tau_sym: tau([tau_star(ego, other)])}) * \
-          dtaudtaustar([tau_star(ego, other)]) * dtaustardx(ego, other)
+    func1 = dhdx_predictive_ca(ego, other)
+    func2 = dhdtau_predictive_ca(ego, other)
+
+    try:
+        ret1 = func1.subs({tau_sym: tau([tau_star(ego, other)])})
+    except AttributeError:
+        ret1 = func1
+
+    try:
+        ret2 = func2.subs({tau_sym: tau([tau_star(ego, other)])})
+    except AttributeError:
+        ret2 = func2
+
+    ret = ret1 + ret2 * dtaudtaustar([tau_star(ego, other)]) * dtaustardx(ego, other)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
 # Necessary for stochastic systems
 def d2hdx2_pca(ego, other):
-    d2hdx2_eval = d2hdx2_predictive_ca(ego, other).subs({tau_sym: tau([tau_star(ego, other)])})
+    func1 = d2hdx2_predictive_ca(ego, other)
+    func2 = dhdtau_predictive_ca(ego, other)
+
+    try:
+        ret1 = func1.subs({tau_sym: tau([tau_star(ego, other)])})
+    except AttributeError:
+        ret1 = func1
+
+    try:
+        ret2 = func2.subs({tau_sym: tau([tau_star(ego, other)])})
+    except AttributeError:
+        ret2 = func2
+
+    d2hdx2_eval = ret1
     dtaustardx_eval = dtaustardx(ego, other)
     dtaudtaustar_eval = dtaudtaustar([tau_star(ego, other)])
-    dhdtau_eval = dhdtau_predictive_ca(ego, other).subs({tau_sym: tau([tau_star(ego, other)])})
+    dhdtau_eval = ret2
     d2hdtau2_eval = d2hdtau2_predictive_ca(ego, other)
     d2taudtaustar2_eval = d2taudtaustar2([tau_star(ego, other)])
     d2taustardx2_eval = d2taustardx2(ego, other)

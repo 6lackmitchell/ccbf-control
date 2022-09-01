@@ -130,6 +130,7 @@ class CbfQpController(Controller):
             status = 'Divide by Zero'
             self.u = np.zeros((self.nu,))
 
+        print(self.u)
         return self.u, code, status
 
     def formulate_qp(self,
@@ -226,7 +227,6 @@ class CbfQpController(Controller):
                 update_idx = lci + cc * zr.shape[0] + ii
                 Ai[update_idx, :], bi[update_idx] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, update_idx, adaptive=True)
                 self.cbf_vals[update_idx] = h
-
 
         A = np.vstack([Au, Ai])
         b = np.hstack([bu, bi])

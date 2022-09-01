@@ -19,7 +19,7 @@ def symbolic_cbf_wrapper_singleagent(cbf_symbolic, *args):
             ret = cbf_symbolic.subs({s:zz for s, zz in zip(ss, z)})
 
             if type(ret) is not se.Add and type(ret) is not se.MutableDenseMatrix:
-                if type(ret) is se.RealDouble:
+                if type(ret) is se.RealDouble or type(ret) is se.Mul:
                     return float(ret)
                 elif len(ret) == 1:
                     return float(ret)
