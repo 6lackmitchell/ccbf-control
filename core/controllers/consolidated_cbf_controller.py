@@ -4,12 +4,10 @@ from typing import Callable, List, overload
 from importlib import import_module
 from nptyping import NDArray
 from control import lqr
-from scipy.special import erf, erfinv
 from scipy.linalg import block_diag, null_space
 from .cbfs.cbf import Cbf
 from .cbf_qp_controller import CbfQpController
 from core.solve_cvxopt import solve_qp_cvxopt
-from ..mathematics.analytical_functions import ramp, dramp
 
 vehicle = builtins.PROBLEM_CONFIG['vehicle']
 control_level = builtins.PROBLEM_CONFIG['control_level']

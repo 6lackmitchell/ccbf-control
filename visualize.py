@@ -1,14 +1,17 @@
 # Determine which problem is to be simulated
 import builtins
 import importlib
-from simdycosys.config import *
+
+vehicle = 'bicycle'
+level = 'dynamic'
+situation = 'intersection'
 
 # Make problem config available to other modules
 builtins.PROBLEM_CONFIG = {'vehicle': vehicle,
-                           'control_level': control_level,
+                           'control_level': level,
                            'situation': situation,
-                           'system_model': system_model}
-mod = 'simdycosys.{}.{}.{}.vis'.format(vehicle, control_level, situation)
+                           'system_model': 'deterministic'}
+mod = '{}.{}.{}.vis'.format(vehicle, level, situation)
 
 # Problem-specific import
 try:

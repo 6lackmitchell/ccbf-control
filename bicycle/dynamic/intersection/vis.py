@@ -9,11 +9,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.patches import Rectangle
-from simdycosys.bicycle.dynamic import nAgents
-from simdycosys.bicycle.dynamic.physical_params import LW
-from simdycosys.bicycle.dynamic.timing_params import dt, tf
-from simdycosys.bicycle.dynamic.merging import *
-from simdycosys.visualizing.helpers import get_circle, get_ex
+from bicycle.dynamic import nAgents
+from bicycle.dynamic.physical_params import LW
+from bicycle.dynamic.timing_params import dt, tf
+from bicycle.dynamic.intersection import *
+from visualizing.helpers import get_circle, get_ex
 
 matplotlib.rcParams.update({'figure.autolayout': True})
 
@@ -24,7 +24,7 @@ colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 colors[0] = colors[1]
 colors.reverse()
 
-filepath = '/home/mblack/Documents/datastore/bicycle/dynamic/intersection/'
+filepath = '/home/dasc/Documents/MB/datastore/swarm/'
 
 
 # ### Define Recording Variables ###
@@ -39,7 +39,7 @@ else:
     files.sort(key=os.path.getmtime)
     filename = files[-1]
 
-with open(filename,'rb') as f:
+with open(filename, 'rb') as f:
     try:
         data = pickle.load(f)
 
@@ -147,32 +147,32 @@ plt.tight_layout(pad=2.0)
 
 ############################################
 ### State Trajectories ###
-plt.style.use(['dark_background'])
-fig_map = plt.figure(figsize=(13, 2.5))
+# plt.style.use(['dark_background'])
+fig_map = plt.figure(figsize=(10, 10))
 ax_pos = fig_map.add_subplot(111)
 set_edges_black(ax_pos)
 
-# Set Up Road
-d_points = 20
-start_p = -100.0
-end_p = 1000.0
-s_th = np.sin(15 * np.pi / 180)
-ax_pos.plot(np.linspace(start_p, end_p, d_points), -(LW / 2) * np.ones((d_points,)), linewidth=lwidth+1, color='w')
-ax_pos.plot(np.linspace(start_p, end_p, d_points), LW + LW / 2 * np.ones((d_points,)), linewidth=lwidth+1, color='w')
-ax_pos.plot(np.linspace(start_p, 0, d_points), np.linspace(start_p, 0, d_points) * s_th - LW / 2, linewidth=lwidth+1, color='w')
-ax_pos.plot(np.linspace(start_p, -LW / (s_th), d_points), np.linspace(start_p, -LW / (s_th), d_points) * s_th + LW / 2, linewidth=lwidth+1, color='w')
+# # Set Up Road
+d_points = 30
+# start_p = -100.0
+# end_p = 1000.0
+# s_th = np.sin(15 * np.pi / 180)
+# ax_pos.plot(np.linspace(start_p, end_p, d_points), -(LW / 2) * np.ones((d_points,)), linewidth=lwidth+1, color='w')
+# ax_pos.plot(np.linspace(start_p, end_p, d_points), LW + LW / 2 * np.ones((d_points,)), linewidth=lwidth+1, color='w')
+# ax_pos.plot(np.linspace(start_p, 0, d_points), np.linspace(start_p, 0, d_points) * s_th - LW / 2, linewidth=lwidth+1, color='w')
+# ax_pos.plot(np.linspace(start_p, -LW / (s_th), d_points), np.linspace(start_p, -LW / (s_th), d_points) * s_th + LW / 2, linewidth=lwidth+1, color='w')
 
-px = np.tile(np.arange(start_p, end_p, 10), 2)
-# py = np.repeat(np.array([-LW / 2, LW / 2]), int(len(px)) / 2)
-py = np.repeat(np.array([LW / 2]), int(len(px)) / 2)
-
-# Add rectangles
-width = 3
-height = 0.25
-for ppx, ppy in zip(px, py):
-    ax_pos.add_patch(Rectangle(
-        xy=(ppx - width / 2, ppy - height / 2), width=width, height=height,
-        linewidth=1, color='white', fill=True))
+# px = np.tile(np.arange(start_p, end_p, 10), 2)
+# # py = np.repeat(np.array([-LW / 2, LW / 2]), int(len(px)) / 2)
+# py = np.repeat(np.array([LW / 2]), int(len(px)) / 2)
+#
+# # Add rectangles
+# width = 3
+# height = 0.25
+# for ppx, ppy in zip(px, py):
+#     ax_pos.add_patch(Rectangle(
+#         xy=(ppx - width / 2, ppy - height / 2), width=width, height=height,
+#         linewidth=1, color='white', fill=True))
 
 # plt.show()
 
@@ -187,10 +187,8 @@ for aa in range(2 * nAgents):
 # Add text annotation and create variable reference
 txt = ax_pos.text(40.0, 6.2, '', ha='right', va='top', fontsize=24)
 
-ax_pos.set(ylim=[-5.0, 6.0],
-           xlim=[-2.0, 50.0])
-ax_pos.set(ylim=[-50.0, 6.0],
-           xlim=[-125.0, 50.0])
+ax_pos.set(ylim=[-10.0, 10.0],
+           xlim=[-10.0, 10.0])
 
 # Plot Settings
 for item in ([ax_pos.title, ax_pos.xaxis.label, ax_pos.yaxis.label] +
@@ -233,8 +231,10 @@ def animate(jj):
             map_vid[aa].set_color('r')
             map_vid[aa + 1].set_color('r')
 
-    ax_pos.set_xlim([zero_point, end_point])
-    ax_pos.set_ylim([zero_point_y - 1.0, 6.0])
+    # ax_pos.set_xlim([zero_point, end_point])
+    # ax_pos.set_ylim([zero_point_y - 1.0, 6.0])
+    ax_pos.set(ylim=[-10.0, 10.0],
+               xlim=[-10.0, 10.0])
     txt.set_text('{:.1f} sec'.format(jj * dt))
     txt.set_position((zero_point + 40.0, 6.2))
 
@@ -264,8 +264,10 @@ def animate_ego(jj):
             map_vid[aa].set_color('r')
             map_vid[aa + 1].set_color('r')
 
-    ax_pos.set_xlim([x[0, jj, 0] - 45, x[0, jj, 0] + 15])
-    ax_pos.set_ylim([x[0, jj, 1] - 6, x[0, jj, 1] + 6])
+    # ax_pos.set_xlim([x[0, jj, 0] - 45, x[0, jj, 0] + 15])
+    # ax_pos.set_ylim([x[0, jj, 1] - 6, x[0, jj, 1] + 6])
+    ax_pos.set(ylim=[-10.0, 10.0],
+               xlim=[-10.0, 10.0])
     txt.set_text('{:.1f} sec'.format(jj * dt))
     txt.set_position((x[0, jj, 0], x[0, jj, 1] + 7))
 

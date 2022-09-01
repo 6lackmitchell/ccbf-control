@@ -1,13 +1,22 @@
-from sys import platform
 import numpy as np
 
 
 nAgents = 4
 x_dist = 1.0
 y_dist = 1.0
+box_width = int(np.sqrt(nAgents))
 
-xi0 = np.array([-3.0, -1.0, 3.0, 1.0])
-yi0 = np.array([0.0, -2.0, 0.0, 2.0])
+xi0 = np.zeros((nAgents,))
+yi0 = np.zeros((nAgents,))
+for ww, bw in enumerate(range(box_width)):
+    for ll, bl in enumerate(range(box_width)):
+        xi0[ll * box_width + ww] = ww * box_width + 1
+        yi0[ll * box_width + ww] = ll * box_width + 1
+
+
+
+# xi0 = np.array([-3.0, -1.0, 3.0, 1.0])
+# yi0 = np.array([0.0, -2.0, 0.0, 2.0])
 
 xi = np.array([xi0[ii] + np.random.uniform(low=-x_dist, high=x_dist) for ii in range(nAgents)])
 yi = np.array([yi0[ii] + np.random.uniform(low=-y_dist, high=y_dist) for ii in range(nAgents)])

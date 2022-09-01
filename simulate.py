@@ -2,8 +2,6 @@
 
 import numpy as np
 import builtins
-from copy import deepcopy
-from traceback import print_exc
 
 
 def simulate(tf: float,
