@@ -61,7 +61,7 @@ class CbfQpController(Controller):
     def _compute_control(self,
                          t: float,
                          z: NDArray,
-                         cascaded: bool = True) -> (NDArray, NDArray, int, str, float):
+                         cascaded: bool = False) -> (NDArray, NDArray, int, str, float):
         """Computes the vehicle's control input based on a cascaded approach: first, the CBF constraints attempt to
         filter out unsafe inputs on the first level. If no safe control exists, then all control inputs are eligible
         for safety filtering.
@@ -80,6 +80,9 @@ class CbfQpController(Controller):
         status: more info on error/success
 
         """
+        code = 0
+        status = 'Incomplete'
+
         # Ignore agent if necessary (i.e. if comparing controllers for given initial conditions)
         ego = self.ego_id
         if self.ignored_agents is not None:
@@ -100,41 +103,54 @@ class CbfQpController(Controller):
         u_nom[ego, :], code_nom, status_nom = self.nominal_controller(t, z_copy_nom)
         self.u_nom = u_nom[ego, :]
 
-        # Get matrices and vectors for QP controller
-        Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego, cascade=cascaded)
+        if not cascaded:
+            # Get matrices and vectors for QP controller
+            Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
 
-        # Solve QP
-        sol = solve_qp_cvxopt(Q, p, A, b, G, h)
+            # Solve QP
+            sol = solve_qp_cvxopt(Q, p, A, b, G, h)
 
-        # Check solution
-        if 'code' in sol.keys():
-            code = sol['code']
-            status = sol['status']
-
-            if not code:
-                if cascaded:
-                    Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
-                    sol = solve_qp_cvxopt(Q, p, A, b, G, h)
-                    code = sol['code']
-                    status = sol['status']
-
-                    if not code:
-                        self.u = np.zeros((self.nu,))
-                    else:
-                        self.assign_control(sol, ego)
-                else:
-                    self.u = np.zeros((self.nu,))
-            else:
-                alf = np.array(sol['x'])[-1]
+            # Check solution
+            if 'code' in sol.keys():
+                code = sol['code']
+                status = sol['status']
                 self.assign_control(sol, ego)
+            else:
+                status = 'Divide by Zero'
+                self.u = np.zeros((self.nu,))
 
         else:
-            code = 0
-            status = 'Divide by Zero'
-            self.u = np.zeros((self.nu,))
+            pass
 
-        # if not code:
-        #     raise ValueError('QP Unable to be Solved.')
+            # # Get matrices and vectors for QP controller
+            # Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego, cascade=cascaded)
+            #
+            # # Solve QP
+            # sol = solve_qp_cvxopt(Q, p, A, b, G, h)
+            #
+            # # Check solution
+            # if 'code' in sol.keys():
+            #     code = sol['code']
+            #     status = sol['status']
+            #
+            #     if not code:
+            #         if cascaded:
+            #             Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
+            #             sol = solve_qp_cvxopt(Q, p, A, b, G, h)
+            #             if not sol['code']:
+            #                 self.u = np.zeros((self.nu,))
+            #             else:
+            #                 self.assign_control(sol, ego)
+            #         else:
+            #             self.u = np.zeros((self.nu,))
+            #     else:
+            #         alf = np.array(sol['x'])[-1]
+            #         self.assign_control(sol, ego)
+            #
+            # else:
+            #     code = 0
+            #     status = 'Divide by Zero'
+            #     self.u = np.zeros((self.nu,))
 
         return self.u, code, status
 

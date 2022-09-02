@@ -1,13 +1,13 @@
 import numpy as np
 
 
-nAgents = 4
+nAgents = 2
 x_dist = 1.0
 y_dist = 1.0
-box_width = int(np.sqrt(nAgents))
+box_width = int(np.sqrt(nAgents)) + (nAgents < 4)
 
-xi0 = np.zeros((nAgents,))
-yi0 = np.zeros((nAgents,))
+xi0 = np.zeros((box_width**2,))
+yi0 = np.zeros((box_width**2,))
 for ww, bw in enumerate(range(box_width)):
     for ll, bl in enumerate(range(box_width)):
         xi0[ll * box_width + ww] = ww * 2 * box_width + box_width

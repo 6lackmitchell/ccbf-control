@@ -80,7 +80,7 @@ ax_cont_a.plot(t[1:ii], 2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth+1, 
 ax_cont_a.plot(t[1:ii], -2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
 # ax_cont_a.plot(t[1:ii], 2 * np.pi * np.ones(t[1:ii].shape), label=r'$\pm\omega_{max}$', linewidth=lwidth+1, color='k')
 # ax_cont_a.plot(t[1:ii], -2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
-for aa in range(3):
+for aa in range(nAgents):
     ax_cont_a.plot(t[:ii], u[aa, :ii, 0], label='w_{}'.format(aa), linewidth=lwidth,
                    color=colors[color_idx[aa, 0]])
     ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
@@ -94,7 +94,7 @@ ax_cont_a.set(ylabel='w',#ylabel=r'$\omega$',
 # ax_cont_b.plot(t[1:ii], -9.81 * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
 ax_cont_b.plot(t[1:ii], 9.81 * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
 ax_cont_b.plot(t[1:ii], -9.81 * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
-for aa in range(3):
+for aa in range(nAgents):
     ax_cont_b.plot(t[:ii], u[aa, :ii, 1], label='a_{}'.format(aa), linewidth=lwidth,
                    color=colors[color_idx[aa, 0]])
     ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
@@ -279,7 +279,7 @@ def animate_ego(jj):
 # Create animation
 ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii/1), interval=10, repeat=False)
 writer = animation.writers['ffmpeg']
-ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))
+# ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))
 
 plt.tight_layout(pad=2.0)
 plt.show()
