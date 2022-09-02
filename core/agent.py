@@ -80,7 +80,8 @@ class Agent:
         self.data = {'x': self.x_trajectory,
                      'u': self.u_trajectory,
                      'u0': self.u0_trajectory,
-                     'cbf': self.cbf_trajectory}
+                     'cbf': self.cbf_trajectory,
+                     'ii': self.t}
 
     def compute_control(self,
                         full_state: NDArray) -> (int, str):
@@ -101,6 +102,7 @@ class Agent:
         # Update Control and CBF Trajectories
         self.u_trajectory[self.timestep, :] = self.controller.u
         self.u0_trajectory[self.timestep, :] = self.controller.u_nom
+        self.data['ii'] = self.t
         if hasattr(self.controller, 'cbf_vals'):
             self.cbf_trajectory[self.timestep, :] = self.controller.cbf_vals
 

@@ -36,8 +36,8 @@ class LqrController(Controller):
         # if t == 0.0 and self.ego_id > 2:
         #     vi[self.ego_id] = cruise_speed + np.random.uniform(low=-1.0, high=1.0)
 
-        xd = 0.0
-        yd = 0.0
+        xd = 2.0
+        yd = 2.0
         vxd = xd - ze[0]
         vyd = yd - ze[1]
 
@@ -54,7 +54,7 @@ class LqrController(Controller):
                          [1, 0],
                          [0, 1]])
 
-        Q = 0.001 * np.eye(4)
+        Q = 0.01 * np.eye(4)
         R = np.eye(2)
 
         # Compute LQR control input for double integrator model

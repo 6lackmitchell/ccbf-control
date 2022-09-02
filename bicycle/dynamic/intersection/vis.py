@@ -24,8 +24,8 @@ colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 colors[0] = colors[1]
 colors.reverse()
 
-# filepath = '/home/dasc/Documents/MB/datastore/swarm/'
-filepath = '/Users/mblack/Documents/datastore/swarm/'
+filepath = '/home/dasc/Documents/MB/datastore/swarm/'
+# filepath = '/Users/mblack/Documents/datastore/swarm/'
 
 
 # ### Define Recording Variables ###
@@ -47,6 +47,7 @@ with open(filename, 'rb') as f:
         x = np.array([data[a]['x'] for a in data.keys()])
         u = np.array([data[a]['u'] for a in data.keys()])
         u0 = np.array([data[a]['u0'] for a in data.keys()])
+        ii = int(data[0]['ii'] / dt)
         # cbf = np.array([data[a]['cbf'] for a in data.keys()])
     except:
         traceback.print_exc()
@@ -55,7 +56,7 @@ lwidth = 2
 dash = [3, 2]
 color_idx = np.array(range(0, 2*nAgents)).reshape(nAgents, 2)
 
-ii = int(tf / dt)
+# ii = int(tf / dt)
 # ii = np.min([int(5.418/dt),ii])
 
 def set_edges_black(ax):
@@ -221,9 +222,9 @@ def animate(jj):
     for aa in range(0, 2 * nAgents, 2):
         idx = int(aa / 2)
         if idx == 0:
-            x_circ, y_circ = get_ex(x[idx, jj], 1.0, d_points)
+            x_circ, y_circ = get_ex(x[idx, jj], 0.5, d_points)
         else:
-            x_circ, y_circ = get_circle(x[idx, jj], 1.0, d_points)
+            x_circ, y_circ = get_circle(x[idx, jj], 0.5, d_points)
         x_hist, y_hist = x[idx, np.max([0, jj+1 - last_1_sec]):jj+1, 0:2].T
         map_vid[aa].set_data(x_circ, y_circ)
         # map_vid[aa + 1].set_data(x_hist - left_edges + zero_point, y_hist)
@@ -277,7 +278,7 @@ def animate_ego(jj):
 
 
 # Create animation
-ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii/1), interval=10, repeat=False)
+ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii/1), interval=50, repeat=False)
 writer = animation.writers['ffmpeg']
 # ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))
 

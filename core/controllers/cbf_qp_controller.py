@@ -115,6 +115,8 @@ class CbfQpController(Controller):
                 code = sol['code']
                 status = sol['status']
                 self.assign_control(sol, ego)
+                if abs(self.u[0]) > 1e-3:
+                    pass
             else:
                 status = 'Divide by Zero'
                 self.u = np.zeros((self.nu,))
@@ -174,7 +176,7 @@ class CbfQpController(Controller):
         # Q, p: objective function
         # Au, bu: input constraints
         if self.nv > 0:
-            alpha_nom = 0.5
+            alpha_nom = 1.0
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
             bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [100, 0])
@@ -271,8 +273,8 @@ class CbfQpController(Controller):
                        solution: dict,
                        ego: int) -> None:
         """Assigns the control solution to the appropriate agent."""
-        self.u = np.array(solution['x'][self.nu * ego: self.nu * (ego + 1)]).flatten()
-
+        u = np.array(solution['x'][self.nu * ego: self.nu * (ego + 1)]).flatten()
+        self.u = np.clip(u, -self.u_max, self.u_max)
         # Assign other agents' controls if this is a centralized node
         if hasattr(self, 'centralized_agents'):
             for agent in self.centralized_agents:

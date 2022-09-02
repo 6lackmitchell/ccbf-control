@@ -7,8 +7,12 @@
       <change beforePath="$PROJECT_DIR$/bicycle/dynamic/intersection/initial_conditions.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/intersection/initial_conditions.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bicycle/dynamic/intersection/nominal_controllers.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/intersection/nominal_controllers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bicycle/dynamic/intersection/vis.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/intersection/vis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/objective_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/objective_functions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/agent.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/controllers/cbf_qp_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbf_qp_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/collision_avoidance_2d.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/collision_avoidance_2d.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/controllers/consolidated_cbf_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/consolidated_cbf_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/solve_cvxopt.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/solve_cvxopt.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simulate.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulate.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -146,5 +150,33 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bicycle/dynamic/intersection/vis.py</url>
+          <line>49</line>
+          <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/core/solve_cvxopt.py</url>
+          <line>88</line>
+          <option name="timeStamp" value="20" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/core/solve_cvxopt.py</url>
+          <line>79</line>
+          <option name="timeStamp" value="21" />
+        </line-breakpoint>
+      </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

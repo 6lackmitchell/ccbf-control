@@ -2,7 +2,7 @@ import numpy as np
 from .physical_params import u_max
 
 q0 = 100.0 / u_max[0]**2
-q1 = 1.0 / u_max[1]**2
+q1 = 0.1 / u_max[1]**2
 q2 = 2 * q0
 
 

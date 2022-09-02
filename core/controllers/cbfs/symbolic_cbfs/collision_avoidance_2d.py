@@ -25,7 +25,7 @@ R = 0.5
 
 # Define new symbols -- necessary for pairwise interactions case
 sso = se.symbols(['{}o'.format(n) for n in ss], real=True)
-x_scale = 0.75
+x_scale = 1.0
 dx = (ss[0] - sso[0]) * x_scale
 dy = ss[1] - sso[1]
 

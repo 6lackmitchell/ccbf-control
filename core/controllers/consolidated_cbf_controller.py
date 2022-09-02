@@ -45,9 +45,9 @@ class ConsolidatedCbfController(CbfQpController):
                          cbfs_pairwise,
                          ignore)
         nCBF = len(self.cbf_vals)
-        self.k_gains = np.ones((nCBF,))
+        self.k_gains = 0.25 * np.ones((nCBF,))
         self.n_agents = 1
-        self.dt = 0.01
+        self.dt = 0.05
 
     def formulate_qp(self,
                      t: float,
@@ -152,33 +152,31 @@ class ConsolidatedCbfController(CbfQpController):
                     print("{} SAFETY VIOLATION: {:.2f}".format(str(self.__class__).split('.')[-1], -h0))
                     self.safety = False
 
+                # print(np.linalg.norm(ze[0:2] - zo[0:2]))
+                # print(h0)
+                # if np.linalg.norm(ze[0:2] - zo[0:2]) < 2:
+                #     uu = 1
+                #     pass
+
                 self.cbf_vals[idx] = h_array[idx]
 
         # Format inequality constraints
-        Ai, bi = self.generate_consolidated_cbf_condition(h_array, Lfh_array, Lgh_array)
+        Ai, bi = self.generate_consolidated_cbf_condition(ego, h_array, Lfh_array, Lgh_array)
 
         A = np.vstack([Au, Ai])
         b = np.hstack([bu, bi])
 
         return Q, p, A, b, None, None
 
-    # def _generate_cbf_condition(self,
-    #                             cbf: Cbf,
-    #                             h: float,
-    #                             Lfh: float,
-    #                             Lgh: float,
-    #                             idx: int,
-    #                             adaptive: bool = False) -> (NDArray, float):
-    #     """Generates the matrix A and vector b for the Risk-Bounded CBF constraint of the form Au <= b."""
-    #     return self.generate_consolidated_cbf_condition(h, Lfh, Lgh)
-
     def generate_consolidated_cbf_condition(self,
-                                             h_array: NDArray,
-                                             Lfh_array: NDArray,
-                                             Lgh_array: NDArray) -> (NDArray, NDArray):
+                                            ego: int,
+                                            h_array: NDArray,
+                                            Lfh_array: NDArray,
+                                            Lgh_array: NDArray) -> (NDArray, NDArray):
         """Generates the inequality constraint for the consolidated CBF.
 
         ARGUMENTS
+            ego: ego vehicle id
             h: array of candidate CBFs
             Lfh: array of CBF drift terms
             Lgh: array of CBF control matrices
@@ -192,7 +190,9 @@ class ConsolidatedCbfController(CbfQpController):
         H = 1 - np.sum(exp_term)  # Get value of C-CBF
 
         # Non-centralized agents CBF dynamics become drifts
-        Lgh_uncontrolled = np.copy(Lgh_array[:, self.n_agents * self.nu:])
+        # Lgh_uncontrolled = np.copy(Lgh_array[:, self.n_agents * self.nu:])
+        Lgh_uncontrolled = np.copy(Lgh_array[:, :])
+        Lgh_uncontrolled = np.delete(Lgh_uncontrolled, np.s_[ego * self.nu:(ego + 1) * self.nu], axis=1)
         Lgh_array[:, self.n_agents * self.nu:] = 0
         # Lgh_array = Lgh_array[:, :self.n_agents * self.nu]
 
@@ -207,7 +207,7 @@ class ConsolidatedCbfController(CbfQpController):
         LgH_uncontrolled = premultiplier_k @ Lgh_uncontrolled
 
         # Tunable CBF Addition
-        kH = 0.1
+        # kH = 0.1
         kH = 1.0
         phi = np.tile(-np.array(self.u_max), len(self.k_gains)) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
 
@@ -217,6 +217,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Update k_dot
         self.k_gains = self.k_gains + k_dots * self.dt
+        # print(self.k_gains)
 
         return a_mat[:, np.newaxis].T, b_vec
 
@@ -235,12 +236,13 @@ class ConsolidatedCbfController(CbfQpController):
             k_dot
 
         """
-        threshold = 0.01  # You must be at least this tall to ride the roller coaster (aka vec orthogonal minimum)
+        threshold = 1e-4  # You must be at least this tall to ride the roller coaster (aka vec orthogonal minimum)
         gain = 10.0  # I don't know why I did this, but I did in my Matlab code
         Ao_basis = gain * null_space(Lgh_array.T)
         identity = np.eye(vec.shape[0])
         P_new = identity - (Ao_basis @ Ao_basis.T).T - Ao_basis @ Ao_basis.T + \
             (Ao_basis @ Ao_basis.T).T @ (Ao_basis @ Ao_basis.T)
+        P_new = P_new / np.max(P_new)
         if self.P is not None:
             P_dot = (P_new - self.P) / self.dt
         else:
@@ -258,7 +260,7 @@ class ConsolidatedCbfController(CbfQpController):
             LfB = np.min(eigs_P_dot) * np.linalg.norm(vec)**2
 
         # Constraints on k_gains
-        k_min = 0.50
+        k_min = 0.10
         As = -np.eye(self.k_gains.shape[0] + 1)
         As[-1, :] = np.append(-LgB, -B)
         bs = np.append(10 * (self.k_gains - k_min), LfB)
@@ -312,7 +314,8 @@ class ConsolidatedCbfController(CbfQpController):
 
         """
         gain = 50.0
-        k_star = gain * h_array / np.max([np.min(h_array), 0.1])  # Desired k values
+        gain = 0.1
+        k_star = gain * h_array / np.max([np.min(h_array), 0.5])  # Desired k values
 
         # Integrator dynamics
         Ad = np.zeros((self.k_gains.shape[0], self.k_gains.shape[0]))

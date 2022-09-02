@@ -67,13 +67,29 @@ def solve_qp_cvxopt(Q0, p0, A0=None, b0=None, G0=None, h0=None) -> dict:
         data['x'] = sol['x']
         data['code'] = 1
         data['status'] = sol['status']
+
+        if sol['status'] != 'optimal':
+            check_x = np.array(sol['x']).flatten()
+            check_A = np.array(A)
+            check_b = np.array(b)
+            if np.sum((check_A @ check_x) <= check_b) < len(check_b):
+                data['code'] = 0
+                data['status'] = 'violates_constraints'
+
     except ValueError as e:  # Catch infeasibility
         print(e)
         data['x'] = np.zeros((n, 1))
         data['code'] = 0
         data['status'] = 'infeasible_or_unbounded'
+    except ZeroDivisionError as e:
+        data['x'] = np.zeros((n, 1))
+        data['code'] = 0
+        data['status'] = 'divide_by_zero'
     except Exception as e:
         print(e)
+        data['x'] = np.zeros((n, 1))
+        data['code'] = 0
+        data['status'] = 'some_other_error'
     finally:
         return data
 
