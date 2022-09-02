@@ -10,8 +10,8 @@ xi0 = np.zeros((nAgents,))
 yi0 = np.zeros((nAgents,))
 for ww, bw in enumerate(range(box_width)):
     for ll, bl in enumerate(range(box_width)):
-        xi0[ll * box_width + ww] = ww * box_width + 1
-        yi0[ll * box_width + ww] = ll * box_width + 1
+        xi0[ll * box_width + ww] = ww * 2 * box_width + box_width
+        yi0[ll * box_width + ww] = ll * 2 * box_width + box_width
 
 
 

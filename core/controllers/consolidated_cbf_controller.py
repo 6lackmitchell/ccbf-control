@@ -83,7 +83,7 @@ class ConsolidatedCbfController(CbfQpController):
         #     bu = np.array(1 * [self.bu]).flatten()
 
         if self.nv > 0:
-            alpha_nom = 0.5
+            alpha_nom = 0.1
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
             bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [100, 0])
@@ -162,15 +162,15 @@ class ConsolidatedCbfController(CbfQpController):
 
         return Q, p, A, b, None, None
 
-    def _generate_cbf_condition(self,
-                                cbf: Cbf,
-                                h: float,
-                                Lfh: float,
-                                Lgh: float,
-                                idx: int,
-                                adaptive: bool = False) -> (NDArray, float):
-        """Generates the matrix A and vector b for the Risk-Bounded CBF constraint of the form Au <= b."""
-        return self.generate_consolidated_cbf_condition(h, Lfh, Lgh)
+    # def _generate_cbf_condition(self,
+    #                             cbf: Cbf,
+    #                             h: float,
+    #                             Lfh: float,
+    #                             Lgh: float,
+    #                             idx: int,
+    #                             adaptive: bool = False) -> (NDArray, float):
+    #     """Generates the matrix A and vector b for the Risk-Bounded CBF constraint of the form Au <= b."""
+    #     return self.generate_consolidated_cbf_condition(h, Lfh, Lgh)
 
     def generate_consolidated_cbf_condition(self,
                                              h_array: NDArray,
@@ -208,6 +208,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Tunable CBF Addition
         kH = 0.1
+        kH = 1.0
         phi = np.tile(-np.array(self.u_max), len(self.k_gains)) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
 
         # Finish constructing CBF here
@@ -319,7 +320,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Compute LQR gain
         Q = 0.01 * Bd
-        R = 0.01 * Bd
+        R = 1 * Bd
         K, _, _ = lqr(Ad, Bd, Q, R)
 
         return -K @ (self.k_gains - k_star)

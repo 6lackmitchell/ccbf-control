@@ -50,8 +50,14 @@ def simulate(tf: float,
         for aa, agent in enumerate(decentralized_agents):
             code, status = agent.compute_control(z[ii])
 
+            if not code:
+                break
+
             # Step dynamics forward
             z[ii + 1, aa, :] = agent.step_dynamics()
+
+        if not code:
+            break
 
     # Save data
     for aa, agent in enumerate(decentralized_agents):

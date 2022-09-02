@@ -54,7 +54,7 @@ class LqrController(Controller):
                          [1, 0],
                          [0, 1]])
 
-        Q = 100 * np.eye(4)
+        Q = 0.001 * np.eye(4)
         R = np.eye(2)
 
         # Compute LQR control input for double integrator model

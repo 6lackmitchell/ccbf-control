@@ -115,7 +115,10 @@ class CbfQpController(Controller):
                 if cascaded:
                     Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
                     sol = solve_qp_cvxopt(Q, p, A, b, G, h)
-                    if not sol['code']:
+                    code = sol['code']
+                    status = sol['status']
+
+                    if not code:
                         self.u = np.zeros((self.nu,))
                     else:
                         self.assign_control(sol, ego)
@@ -130,7 +133,9 @@ class CbfQpController(Controller):
             status = 'Divide by Zero'
             self.u = np.zeros((self.nu,))
 
-        print(self.u)
+        # if not code:
+        #     raise ValueError('QP Unable to be Solved.')
+
         return self.u, code, status
 
     def formulate_qp(self,

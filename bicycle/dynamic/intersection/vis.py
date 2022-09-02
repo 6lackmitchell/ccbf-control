@@ -24,7 +24,8 @@ colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 colors[0] = colors[1]
 colors.reverse()
 
-filepath = '/home/dasc/Documents/MB/datastore/swarm/'
+# filepath = '/home/dasc/Documents/MB/datastore/swarm/'
+filepath = '/Users/mblack/Documents/datastore/swarm/'
 
 
 # ### Define Recording Variables ###
@@ -85,7 +86,7 @@ for aa in range(3):
     ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
                    color=colors[color_idx[aa, 1]], dashes=dash)
 ax_cont_a.set(ylabel='w',#ylabel=r'$\omega$',
-              ylim=[np.min(u[:ii, :, 0]), np.max(u[:ii, :, 0])],
+              ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
               title='Control Inputs')
 
 # Acceleration Inputs
@@ -99,7 +100,7 @@ for aa in range(3):
     ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
                    color=colors[color_idx[aa, 1]], dashes=dash)
 ax_cont_b.set(ylabel='a',#ylabel=r'$a_r$',
-              ylim=[-9.81 - 0.5, 9.81 + 0.5])
+              ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5])
 
 # Plot Settings
 for item in ([ax_cont_a.title, ax_cont_a.xaxis.label, ax_cont_a.yaxis.label] +
@@ -175,6 +176,9 @@ d_points = 30
 #         linewidth=1, color='white', fill=True))
 
 # plt.show()
+
+x_c, y_c = get_circle(np.array([0, 0]), 0.1, d_points)
+ax_pos.plot(x_c, y_c)
 
 # Create variable reference to plot
 map_vid = []
