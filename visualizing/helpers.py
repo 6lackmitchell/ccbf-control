@@ -20,8 +20,8 @@ def get_circle(xy: NDArray,
     """
     # s = np.linspace(-np.pi, np.pi, d_points)
     s = np.linspace(0, 2 * np.pi, d_points)
-    xdata = xy[0] + (r * 0.85) * np.cos(s)
-    ydata = xy[1] + (r * 0.85) * np.sin(s)
+    xdata = xy[0] + (r * 1) * np.cos(s)
+    ydata = xy[1] + (r * 1) * np.sin(s)
 
     return xdata, ydata
 

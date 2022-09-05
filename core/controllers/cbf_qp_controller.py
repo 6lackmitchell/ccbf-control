@@ -103,6 +103,11 @@ class CbfQpController(Controller):
         u_nom[ego, :], code_nom, status_nom = self.nominal_controller(t, z_copy_nom)
         self.u_nom = u_nom[ego, :]
 
+        tuning_nominal = False
+        if tuning_nominal:
+            self.u = self.u_nom
+            return self.u, 1, "Optimal"
+
         if not cascaded:
             # Get matrices and vectors for QP controller
             Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)

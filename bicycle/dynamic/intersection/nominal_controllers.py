@@ -36,8 +36,8 @@ class LqrController(Controller):
         # if t == 0.0 and self.ego_id > 2:
         #     vi[self.ego_id] = cruise_speed + np.random.uniform(low=-1.0, high=1.0)
 
-        xd = 2.0
-        yd = 2.0
+        xd = xg[self.ego_id]
+        yd = yg[self.ego_id]
         vxd = xd - ze[0]
         vyd = yd - ze[1]
 
@@ -54,7 +54,9 @@ class LqrController(Controller):
                          [1, 0],
                          [0, 1]])
 
-        Q = 0.01 * np.eye(4)
+        gain = np.min([0.01 / (0.01 + (tracking_error[0])**2 + (tracking_error[1])**2), 1.0])
+        gain = 0.001
+        Q = gain * np.eye(4)
         R = np.eye(2)
 
         # Compute LQR control input for double integrator model
@@ -65,7 +67,7 @@ class LqrController(Controller):
         S = np.array([[-ze[3] * np.sin(ze[2]) / np.cos(ze[4]) ** 2, np.cos(ze[2]) - np.sin(ze[2]) * np.tan(ze[4])],
                       [ze[3] * np.cos(ze[2]) / np.cos(ze[4]) ** 2, np.sin(ze[2]) + np.cos(ze[2]) * np.tan(ze[4])]])
 
-        if ze[3] > 0.1:
+        if ze[3] > 0.05:
             vec = np.array([mu[0] + f(ze)[1] * f(ze)[2], mu[1] - f(ze)[0] * f(ze)[2]])
             u = np.linalg.inv(S) @ vec
             omega = u[0]

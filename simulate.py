@@ -8,7 +8,7 @@ def simulate(tf: float,
              dt: float,
              vehicle: str,
              level: str,
-             situation: str) -> None:
+             situation: str) -> bool:
     """Simulates the system specified by config.py for tf seconds at a frequency of dt.
 
     ARGUMENTS
@@ -22,6 +22,7 @@ def simulate(tf: float,
         None
 
     """
+    broken = False
     # Program-wide specifications
     builtins.PROBLEM_CONFIG = {'vehicle': vehicle,
                                'control_level': level,
@@ -29,7 +30,9 @@ def simulate(tf: float,
                                'system_model': 'deterministic'}
 
     if vehicle == 'bicycle':
-        from bicycle import nTimesteps, nAgents, nStates, z0, centralized_agents, decentralized_agents
+        from bicycle import nAgents, nStates, z0, centralized_agents, decentralized_agents
+
+    nTimesteps = int((tf - 0.0) / dt) + 1
 
     # Simulation setup
     z = np.zeros((nTimesteps, nAgents, nStates))
@@ -39,28 +42,33 @@ def simulate(tf: float,
 
     # Simulate program
     for ii, tt in enumerate(np.linspace(0, tf, nTimesteps - 1)):
+        code = 0
         if round(tt, 4) % 1 < dt:
             print("Time: {:.1f} sec".format(tt))
 
         # Compute inputs for centralized agents
         if centralized_agents is not None:
             centralized_agents.compute_control(tt, z[ii])
-        
+
         # Iterate over all agents in the system
         for aa, agent in enumerate(decentralized_agents):
             code, status = agent.compute_control(z[ii])
 
             if not code:
+                broken = True
                 break
 
             # Step dynamics forward
             z[ii + 1, aa, :] = agent.step_dynamics()
 
         if not code:
+            broken = True
             break
 
     # Save data
     for aa, agent in enumerate(decentralized_agents):
         agent.save_data(aa)
 
-    return
+    success = not broken
+
+    return success

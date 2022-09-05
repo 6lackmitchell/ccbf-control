@@ -156,9 +156,11 @@ class Agent:
         if file.is_file():
             # Load data, then add to it
             with open(self.save_file, 'rb') as f:
-                data = load(f)
-
-            data[identity] = self.data
+                try:
+                    data = load(f)
+                    data[identity] = self.data
+                except EOFError:
+                    data = {identity: self.data}
 
         else:
             data = {identity: self.data}

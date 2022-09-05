@@ -45,9 +45,8 @@ class ConsolidatedCbfController(CbfQpController):
                          cbfs_pairwise,
                          ignore)
         nCBF = len(self.cbf_vals)
-        self.k_gains = 0.25 * np.ones((nCBF,))
+        self.k_gains = 1.0 * np.ones((nCBF,))
         self.n_agents = 1
-        self.dt = 0.05
 
     def formulate_qp(self,
                      t: float,
@@ -83,7 +82,7 @@ class ConsolidatedCbfController(CbfQpController):
         #     bu = np.array(1 * [self.bu]).flatten()
 
         if self.nv > 0:
-            alpha_nom = 0.1
+            alpha_nom = 2.0
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
             bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [100, 0])
@@ -117,7 +116,7 @@ class ConsolidatedCbfController(CbfQpController):
             if cascade:
                 Lgh_array[cc, self.nu * ego] = 0.0
 
-            self.cbf_vals[cc] = h[cc]
+            self.cbf_vals[cc] = h_array[cc]
             if h0 < 0:
                 self.safety = False
 
@@ -192,14 +191,15 @@ class ConsolidatedCbfController(CbfQpController):
         # Non-centralized agents CBF dynamics become drifts
         # Lgh_uncontrolled = np.copy(Lgh_array[:, self.n_agents * self.nu:])
         Lgh_uncontrolled = np.copy(Lgh_array[:, :])
-        Lgh_uncontrolled = np.delete(Lgh_uncontrolled, np.s_[ego * self.nu:(ego + 1) * self.nu], axis=1)
-        Lgh_array[:, self.n_agents * self.nu:] = 0
-        # Lgh_array = Lgh_array[:, :self.n_agents * self.nu]
+        Lgh_uncontrolled[:, ego * self.nu:(ego + 1) * self.nu] = 0
+        Lgh_array[:, np.s_[:ego * self.nu]] = 0  # All indices before first ego index set to 0
+        Lgh_array[:, np.s_[(ego + 1) * self.nu:]] = 0  # All indices after last ego index set to 0
 
         # Get time-derivatives of gains
         premultiplier_k = self.k_gains * exp_term
         premultiplier_h = h_array * exp_term
         k_dots = self.compute_k_dots(h_array, Lgh_array, premultiplier_k)
+        k_dots = np.zeros(k_dots.shape)  # Tuning nominal controller
 
         # Compute C-CBF Dynamics
         LfH = premultiplier_k @ Lfh_array + premultiplier_h @ k_dots
@@ -209,14 +209,14 @@ class ConsolidatedCbfController(CbfQpController):
         # Tunable CBF Addition
         # kH = 0.1
         kH = 1.0
-        phi = np.tile(-np.array(self.u_max), len(self.k_gains)) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
+        phi = np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
 
         # Finish constructing CBF here
         a_mat = np.append(-LgH, -H)
         b_vec = np.array([LfH + phi])
 
         # Update k_dot
-        self.k_gains = self.k_gains + k_dots * self.dt
+        self.k_gains = self.k_gains + k_dots * self._dt
         # print(self.k_gains)
 
         return a_mat[:, np.newaxis].T, b_vec
@@ -244,9 +244,9 @@ class ConsolidatedCbfController(CbfQpController):
             (Ao_basis @ Ao_basis.T).T @ (Ao_basis @ Ao_basis.T)
         P_new = P_new / np.max(P_new)
         if self.P is not None:
-            P_dot = (P_new - self.P) / self.dt
+            P_dot = (P_new - self.P) / self._dt
         else:
-            P_dot = P_new / self.dt
+            P_dot = P_new / self._dt
 
         self.P = P_new  # Update P
 
@@ -275,7 +275,7 @@ class ConsolidatedCbfController(CbfQpController):
         Q[-1, -1] = 10
         p = np.append(-k_dot_nom, -a_nom * Q[-1, -1])
         Au = block_diag(*lk * [np.array([[1, -1]]).T])
-        bu = np.tile(1 / self.dt * np.ones((2,)), lk).flatten()
+        bu = np.tile(1 / self._dt * np.ones((2,)), lk).flatten()
         bu[-2] = 1e6  # alpha < 1e6
         bu[-1] = 0    # alpha > 0
         A = np.concatenate([As, Au])
@@ -314,7 +314,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         """
         gain = 50.0
-        gain = 0.1
+        gain = 0.01
         k_star = gain * h_array / np.max([np.min(h_array), 0.5])  # Desired k values
 
         # Integrator dynamics
@@ -326,4 +326,7 @@ class ConsolidatedCbfController(CbfQpController):
         R = 1 * Bd
         K, _, _ = lqr(Ad, Bd, Q, R)
 
-        return -K @ (self.k_gains - k_star)
+        k_dot_lqr = -K @ (self.k_gains - k_star)
+        k_dot_bounds = 5.0
+
+        return np.clip(k_dot_lqr, -k_dot_bounds, k_dot_bounds)

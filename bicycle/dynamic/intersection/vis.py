@@ -12,7 +12,7 @@ from matplotlib.patches import Rectangle
 from bicycle.dynamic import nAgents
 from bicycle.dynamic.physical_params import LW
 from bicycle.dynamic.timing_params import dt, tf
-from bicycle.dynamic.intersection import *
+from bicycle.dynamic.intersection.initial_conditions import xg, yg
 from visualizing.helpers import get_circle, get_ex
 
 matplotlib.rcParams.update({'figure.autolayout': True})
@@ -84,8 +84,8 @@ ax_cont_a.plot(t[1:ii], -2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth+1,
 for aa in range(nAgents):
     ax_cont_a.plot(t[:ii], u[aa, :ii, 0], label='w_{}'.format(aa), linewidth=lwidth,
                    color=colors[color_idx[aa, 0]])
-    ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
-                   color=colors[color_idx[aa, 1]], dashes=dash)
+    # ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
+    #                color=colors[color_idx[aa, 1]], dashes=dash)
 ax_cont_a.set(ylabel='w',#ylabel=r'$\omega$',
               ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
               title='Control Inputs')
@@ -98,8 +98,8 @@ ax_cont_b.plot(t[1:ii], -9.81 * np.ones(t[1:ii].shape), linewidth=lwidth+1, colo
 for aa in range(nAgents):
     ax_cont_b.plot(t[:ii], u[aa, :ii, 1], label='a_{}'.format(aa), linewidth=lwidth,
                    color=colors[color_idx[aa, 0]])
-    ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
-                   color=colors[color_idx[aa, 1]], dashes=dash)
+    # ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
+    #                color=colors[color_idx[aa, 1]], dashes=dash)
 ax_cont_b.set(ylabel='a',#ylabel=r'$a_r$',
               ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5])
 
@@ -181,6 +181,10 @@ d_points = 30
 x_c, y_c = get_circle(np.array([0, 0]), 0.1, d_points)
 ax_pos.plot(x_c, y_c)
 
+for aaa in range(nAgents):
+    # x_c, y_c = get_ex(np.array([xg[aaa], yg[aaa]]), 0.25, d_points)
+    ax_pos.plot(xg[aaa], yg[aaa], '*', markersize=10)
+
 # Create variable reference to plot
 map_vid = []
 for aa in range(2 * nAgents):
@@ -192,8 +196,8 @@ for aa in range(2 * nAgents):
 # Add text annotation and create variable reference
 txt = ax_pos.text(40.0, 6.2, '', ha='right', va='top', fontsize=24)
 
-ax_pos.set(ylim=[-10.0, 10.0],
-           xlim=[-10.0, 10.0])
+ax_pos.set(ylim=[-1.0, 25.0],
+           xlim=[-1.0, 25.0])
 
 # Plot Settings
 for item in ([ax_pos.title, ax_pos.xaxis.label, ax_pos.yaxis.label] +
@@ -238,8 +242,8 @@ def animate(jj):
 
     # ax_pos.set_xlim([zero_point, end_point])
     # ax_pos.set_ylim([zero_point_y - 1.0, 6.0])
-    ax_pos.set(ylim=[-10.0, 10.0],
-               xlim=[-10.0, 10.0])
+    ax_pos.set(ylim=[-1.0, 25.0],
+               xlim=[-1.0, 25.0])
     txt.set_text('{:.1f} sec'.format(jj * dt))
     txt.set_position((zero_point + 40.0, 6.2))
 
@@ -256,9 +260,9 @@ def animate_ego(jj):
         if np.linalg.norm(x[idx, jj, 0:2] - ego_pos) > 50:
             continue
         if idx == 0:
-            x_circ, y_circ = get_ex(x[idx, jj], 1.0, d_points)
+            x_circ, y_circ = get_ex(x[idx, jj], 0.5, d_points)
         else:
-            x_circ, y_circ = get_circle(x[idx, jj], 1.0, d_points)
+            x_circ, y_circ = get_circle(x[idx, jj], 0.5, d_points)
         x_hist, y_hist = x[idx, np.max([0, jj+1 - last_1_sec]):jj+1, 0:2].T
         map_vid[aa].set_data(x_circ, y_circ)
         map_vid[aa + 1].set_data(x_hist, y_hist)
@@ -271,8 +275,8 @@ def animate_ego(jj):
 
     # ax_pos.set_xlim([x[0, jj, 0] - 45, x[0, jj, 0] + 15])
     # ax_pos.set_ylim([x[0, jj, 1] - 6, x[0, jj, 1] + 6])
-    ax_pos.set(ylim=[-10.0, 10.0],
-               xlim=[-10.0, 10.0])
+    ax_pos.set(ylim=[-1.0, 25.0],
+               xlim=[-1.0, 25.0])
     txt.set_text('{:.1f} sec'.format(jj * dt))
     txt.set_position((x[0, jj, 0], x[0, jj, 1] + 7))
 

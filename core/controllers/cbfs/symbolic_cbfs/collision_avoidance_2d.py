@@ -60,7 +60,7 @@ dtaustardx = symbolic_cbf_wrapper_multiagent(dtaustardx_symbolic, ss, sso)
 d2taustardx2 = symbolic_cbf_wrapper_multiagent(d2taustardx2_symbolic, ss, sso)
 
 # tau for computing PCA-CBF
-Tmax = 2.0
+Tmax = 5.0
 kh = 1000.0
 tau_star_sym = se.Symbol('tau_star', real=True)
 tau_symbolic = tau_star_sym * ramp(tau_star_sym, kh, 0.0) - (tau_star_sym - Tmax) * ramp(tau_star_sym, kh, Tmax)
@@ -85,7 +85,8 @@ d2hdtaudx_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdx2_predictive_ca_s
 d2hdtau2_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdtau2_predictive_ca_symbolic, ss, sso)
 
 # Relaxed Predictive Collision Avoidance
-relaxation = 0.05
+# relaxation = 0.05
+relaxation = 0.01
 
 
 # CBF Callables
