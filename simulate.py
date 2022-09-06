@@ -37,6 +37,7 @@ def simulate(tf: float,
     # Simulation setup
     z = np.zeros((nTimesteps, nAgents, nStates))
     z[0, :, :] = z0
+    complete = np.zeros((nAgents,))
     # centralized_agents = deepcopy(centralized_agents_list)
     # decentralized_agents = deepcopy(decentralized_agents_list)
 
@@ -58,11 +59,18 @@ def simulate(tf: float,
                 broken = True
                 break
 
+            if agent.complete and not complete[aa]:
+                complete[aa] = True
+                print("Agent {} Completed!".format(aa))
+
             # Step dynamics forward
             z[ii + 1, aa, :] = agent.step_dynamics()
 
         if not code:
             broken = True
+            break
+
+        if np.sum(complete) == nAgents:
             break
 
     # Save data

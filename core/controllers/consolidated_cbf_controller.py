@@ -6,7 +6,8 @@ from nptyping import NDArray
 from control import lqr
 from scipy.linalg import block_diag, null_space
 from .cbfs.cbf import Cbf
-from .cbf_qp_controller import CbfQpController
+from core.controllers.cbf_qp_controller import CbfQpController
+from core.controllers.controller import Controller
 from core.solve_cvxopt import solve_qp_cvxopt
 
 vehicle = builtins.PROBLEM_CONFIG['vehicle']
@@ -33,7 +34,7 @@ class ConsolidatedCbfController(CbfQpController):
                  u_max: List,
                  nAgents: int,
                  objective_function: Callable,
-                 nominal_controller: Callable,
+                 nominal_controller: Controller,
                  cbfs_individual: List,
                  cbfs_pairwise: List,
                  ignore: List = None):

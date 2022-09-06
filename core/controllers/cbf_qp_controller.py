@@ -36,7 +36,7 @@ class CbfQpController(Controller):
                  u_max: List,
                  nAgents: int,
                  objective_function: Callable,
-                 nominal_controller: Callable,
+                 nominal_controller: Controller,
                  cbfs_individual: List,
                  cbfs_pairwise: List,
                  ignore: List = None):
@@ -100,7 +100,7 @@ class CbfQpController(Controller):
         z_copy_nom = z.copy()
         z_copy_nom[self.ego_id] = z[ego]
         u_nom = np.zeros((len(z), 2))
-        u_nom[ego, :], code_nom, status_nom = self.nominal_controller(t, z_copy_nom)
+        u_nom[ego, :], code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
         self.u_nom = u_nom[ego, :]
 
         tuning_nominal = False

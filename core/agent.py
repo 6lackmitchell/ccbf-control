@@ -21,6 +21,10 @@ class Agent:
             raise ValueError("Timestep must be an integer.")
         self._timestep = val
 
+    @property
+    def complete(self):
+        return self.controller.nominal_controller.complete
+
     def __init__(self,
                  identifier: int,
                  x0: NDArray,
@@ -96,7 +100,6 @@ class Agent:
         """
         misc = None
 
-        # Nominal controllers are defined using function, more complicated controllers use classes
         self.u, code, status = self.controller.compute_control(self.t, full_state)
 
         # Update Control and CBF Trajectories

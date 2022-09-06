@@ -48,7 +48,7 @@ def deterministic_cbf_controller(idx: int) -> CbfQpController:
         u_max,
         nAgents,
         objective_accel_and_steering,
-        LqrController(idx).compute_control,
+        LqrController(idx),
         cbfs_individual,
         cbfs_pairwise
     )
@@ -59,7 +59,7 @@ def consolidated_cbf_controller(idx: int) -> ConsolidatedCbfController:
         u_max,
         nAgents,
         objective_accel_and_steering,
-        LqrController(idx).compute_control,
+        LqrController(idx),
         cbfs_individual,
         cbfs_pairwise
     )

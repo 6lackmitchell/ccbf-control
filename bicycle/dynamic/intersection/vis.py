@@ -107,13 +107,13 @@ ax_cont_b.set(ylabel='a',#ylabel=r'$a_r$',
 for item in ([ax_cont_a.title, ax_cont_a.xaxis.label, ax_cont_a.yaxis.label] +
              ax_cont_a.get_xticklabels() + ax_cont_a.get_yticklabels()):
     item.set_fontsize(25)
-ax_cont_a.legend(fancybox=True)
+# ax_cont_a.legend(fancybox=True)
 ax_cont_a.grid(True, linestyle='dotted', color='white')
 
 for item in ([ax_cont_b.title, ax_cont_b.xaxis.label, ax_cont_b.yaxis.label] +
              ax_cont_b.get_xticklabels() + ax_cont_b.get_yticklabels()):
     item.set_fontsize(25)
-ax_cont_b.legend(fancybox=True)
+# ax_cont_b.legend(fancybox=True)
 ax_cont_b.grid(True, linestyle='dotted', color='white')
 
 plt.tight_layout(pad=2.0)

@@ -13,6 +13,7 @@ class LqrController(Controller):
                  ego_id: int):
         super().__init__()
         self.ego_id = ego_id
+        self.complete = False
 
     def _compute_control(self,
                          t: float,
@@ -48,6 +49,7 @@ class LqrController(Controller):
         tracking_error = zeta - q_star
         if np.linalg.norm(tracking_error) < 0.25:
             tracking_error = np.array([0, 0, f(ze)[0], f(ze)[1]])
+            self.complete = True
 
         A_di = np.array([[0, 0, 1, 0],
                          [0, 0, 0, 1],
