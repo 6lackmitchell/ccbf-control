@@ -59,6 +59,8 @@ class Agent:
         self.u_trajectory = None
         self.u0_trajectory = None
         self.cbf_trajectory = None
+        self.consolidated_cbf_trajectory = None
+        self.k_gains_trajectory = None
         self.safety = None
         self._timestep = None
 
@@ -77,14 +79,20 @@ class Agent:
 
         if hasattr(self.controller, 'cbf_vals'):
             self.cbf_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
+            self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps, ))
+            self.k_gains_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
         else:
             self.cbf_trajectory = np.zeros((self.nTimesteps, ))
+            self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
+            self.k_gains_trajectory = np.zeros((self.nTimesteps,))
 
         # Save data object -- auto-updating since defined by reference
         self.data = {'x': self.x_trajectory,
                      'u': self.u_trajectory,
                      'u0': self.u0_trajectory,
                      'cbf': self.cbf_trajectory,
+                     'ccbf': self.consolidated_cbf_trajectory,
+                     'kgains': self.k_gains_trajectory,
                      'ii': self.t}
 
     def compute_control(self,
@@ -108,6 +116,10 @@ class Agent:
         self.data['ii'] = self.t
         if hasattr(self.controller, 'cbf_vals'):
             self.cbf_trajectory[self.timestep, :] = self.controller.cbf_vals
+        if hasattr(self.controller, 'c_cbf'):
+            self.consolidated_cbf_trajectory[self.timestep] = self.controller.c_cbf
+        if hasattr(self.controller, 'k_gains'):
+            self.k_gains_trajectory[self.timestep, :] = self.controller.k_gains
 
         if misc is not None:
             print(misc)

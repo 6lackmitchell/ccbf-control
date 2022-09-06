@@ -46,6 +46,7 @@ class ConsolidatedCbfController(CbfQpController):
                          cbfs_pairwise,
                          ignore)
         nCBF = len(self.cbf_vals)
+        self.c_cbf = 100
         self.k_gains = 1.0 * np.ones((nCBF,))
         self.n_agents = 1
 
@@ -188,6 +189,7 @@ class ConsolidatedCbfController(CbfQpController):
         # Get C-CBF Value
         exp_term = np.exp(-self.k_gains * h_array)
         H = 1 - np.sum(exp_term)  # Get value of C-CBF
+        self.c_cbf = H
 
         # Non-centralized agents CBF dynamics become drifts
         # Lgh_uncontrolled = np.copy(Lgh_array[:, self.n_agents * self.nu:])
@@ -209,7 +211,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Tunable CBF Addition
         # kH = 0.1
-        kH = 0.1
+        kH = 0.25
         phi = np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
 
         # Finish constructing CBF here
