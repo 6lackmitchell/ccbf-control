@@ -82,7 +82,7 @@ class ConsolidatedCbfController(CbfQpController):
         #     bu = np.array(1 * [self.bu]).flatten()
 
         if self.nv > 0:
-            alpha_nom = 2.0
+            alpha_nom = 1.0
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
             bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [100, 0])
@@ -208,7 +208,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Tunable CBF Addition
         # kH = 0.1
-        kH = 1.0
+        kH = 0.1
         phi = np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
 
         # Finish constructing CBF here
