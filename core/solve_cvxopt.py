@@ -5,7 +5,13 @@ from cvxopt import matrix, solvers
 solvers.options['show_progress'] = False
 
 
-def solve_qp_cvxopt(Q0, p0, A0=None, b0=None, G0=None, h0=None) -> dict:
+def solve_qp_cvxopt(Q0,
+                    p0,
+                    A0=None,
+                    b0=None,
+                    G0=None,
+                    h0=None,
+                    level=0) -> dict:
     """Solves a quadratic program using the cvxopt library.
 
     min 1/2 x^T Q x  +  p^T x
@@ -77,6 +83,9 @@ def solve_qp_cvxopt(Q0, p0, A0=None, b0=None, G0=None, h0=None) -> dict:
                 data['status'] = 'violates_constraints'
 
     except ValueError as e:  # Catch infeasibility
+        if level == 0:
+            return solve_qp_cvxopt(Q0, p0, A0 * 1e3, b0 * 1e3, G0, h0, level + 1)
+
         print(e)
         data['x'] = np.zeros((n, 1))
         data['code'] = 0

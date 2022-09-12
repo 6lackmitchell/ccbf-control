@@ -5,7 +5,12 @@ level = 'dynamic'
 situation = 'intersection'
 
 if __name__ == "__main__":
-    end_time = 5.0
+    end_time = 50.0
     timestep = 0.05
 
+    # while True:
+
     success = simulate(end_time, timestep, vehicle, level, situation)
+        # if success:
+        #
+        #     break

@@ -21,8 +21,9 @@ except ModuleNotFoundError as e:
 l0 = 1.0
 th = 15.0 * np.pi / 180.0
 relax = 0.05
-R = 25
-Cxy = np.array([10.0, 10.0])
+box_width = 4
+R = 2 * box_width * np.sqrt(2) + box_width / 2
+Cxy = np.array([2 * box_width + box_width / 2, 2 * box_width + box_width / 2])
 LW = 3.0
 tau = 1.0
 vx = f(np.zeros((len(ss),)), True)[0]

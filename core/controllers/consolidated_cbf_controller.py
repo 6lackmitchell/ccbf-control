@@ -65,6 +65,7 @@ class ConsolidatedCbfController(CbfQpController):
         na = 1 + len(zr)
         ns = len(ze)
         self.safety = True
+        discretization_error = 0.5
 
         # Only take ego nominal control
         # full_u_nom = u_nom
@@ -84,10 +85,10 @@ class ConsolidatedCbfController(CbfQpController):
         #     bu = np.array(1 * [self.bu]).flatten()
 
         if self.nv > 0:
-            alpha_nom = 1.0
+            alpha_nom = 5.0
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
-            bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [100, 0])
+            bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [1e6, 0])
         else:
             Q, p = self.objective(u_nom.flatten())
             Au = block_diag(*(na) * [self.au])
@@ -113,7 +114,7 @@ class ConsolidatedCbfController(CbfQpController):
                 stoch = 0.0
 
             # Get CBF Lie Derivatives
-            Lfh_array[cc] = dhdx @ f(ze) + stoch
+            Lfh_array[cc] = dhdx @ f(ze) + stoch - discretization_error
             Lgh_array[cc, self.nu * ego:(ego + 1) * self.nu] = dhdx @ g(ze)  # Only assign ego control
             if cascade:
                 Lgh_array[cc, self.nu * ego] = 0.0
@@ -143,7 +144,7 @@ class ConsolidatedCbfController(CbfQpController):
                     stoch = 0.0
 
                 # Get CBF Lie Derivatives
-                Lfh_array[idx] = dhdx[:ns] @ f(ze) + dhdx[ns:] @ f(zo) + stoch
+                Lfh_array[idx] = dhdx[:ns] @ f(ze) + dhdx[ns:] @ f(zo) + stoch - discretization_error
                 Lgh_array[idx, self.nu * ego:(ego + 1) * self.nu] = dhdx[:ns] @ g(ze)
                 Lgh_array[idx, self.nu * other:(other + 1) * self.nu] = dhdx[ns:] @ g(zo)
                 if cascade:
@@ -211,7 +212,10 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Tunable CBF Addition
         # kH = 0.1
-        kH = 0.25
+        kH = 0.15
+        kH = 0.5
+        # kH = 0.75
+        # kH = 1.0
         phi = np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
 
         # Finish constructing CBF here

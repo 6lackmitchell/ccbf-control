@@ -25,6 +25,9 @@ except ModuleNotFoundError as e:
     print('No module named \'{}\' -- exiting.'.format(mod))
     raise e
 
+global integrated_error
+integrated_error = np.zeros((25,))
+
 
 class CbfQpController(Controller):
 
@@ -80,6 +83,7 @@ class CbfQpController(Controller):
         status: more info on error/success
 
         """
+        global integrated_error
         code = 0
         status = 'Incomplete'
 
@@ -101,7 +105,10 @@ class CbfQpController(Controller):
         z_copy_nom[self.ego_id] = z[ego]
         u_nom = np.zeros((len(z), 2))
         u_nom[ego, :], code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
+        u_nom[ego, :] = u_nom[ego, :] + integrated_error[ego]
         self.u_nom = u_nom[ego, :]
+
+        # print(integrated_error[ego])
 
         tuning_nominal = False
         if tuning_nominal:
@@ -158,6 +165,9 @@ class CbfQpController(Controller):
             #     code = 0
             #     status = 'Divide by Zero'
             #     self.u = np.zeros((self.nu,))
+
+        decay_const = 0.01  # needs to be < 1
+        integrated_error[ego] = (np.linalg.norm(self.u - self.u_nom) + integrated_error[ego]) * decay_const
 
         return self.u, code, status
 

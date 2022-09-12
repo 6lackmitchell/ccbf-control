@@ -10,7 +10,7 @@ Lr = 1.0  # Rear wheelbase (in m)
 
 # Control input constraints
 ar_max = 0.3 * G
-w_max = pi / 4 / 4
+w_max = pi / 4
 u_max = array([w_max, ar_max])
 
 # Road Parameters

@@ -5,7 +5,7 @@ nAgents = 25
 x_dist = 1.0
 y_dist = 1.0
 nRows = int(np.sqrt(nAgents))
-box_width = 5.0
+box_width = 4.0
 
 xi0 = np.zeros((nAgents,))
 yi0 = np.zeros((nAgents,))

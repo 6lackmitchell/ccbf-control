@@ -47,6 +47,11 @@ def simulate(tf: float,
         if round(tt, 4) % 1 < dt:
             print("Time: {:.1f} sec".format(tt))
 
+        if round(tt, 4) % 5 < dt and tt > 0:
+            for aa, agent in enumerate(decentralized_agents):
+                agent.save_data(aa)
+            print("Time: {:.1f} sec: Intermediate Save".format(tt))
+
         # Compute inputs for centralized agents
         if centralized_agents is not None:
             centralized_agents.compute_control(tt, z[ii])
@@ -57,6 +62,7 @@ def simulate(tf: float,
 
             if not code:
                 broken = True
+                print('Error in Agent {}'.format(aa + 1))
                 break
 
             if agent.complete and not complete[aa]:

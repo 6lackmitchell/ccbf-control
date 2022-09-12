@@ -40,9 +40,15 @@ class LqrController(Controller):
         xd = xg[self.ego_id]
         yd = yg[self.ego_id]
 
-        v_gain = 0.001
-        vxd = v_gain * (xd - ze[0])**3
-        vyd = v_gain * (yd - ze[1])**3
+        speed_d = 0.5
+        vd = speed_d * np.min([1, 1 / 2 * np.linalg.norm([ze[0] - xd, ze[1] - yd])])
+        th = np.arctan2(yd - ze[1], xd - ze[0])
+        vxd = vd * np.cos(th)
+        vyd = vd * np.sin(th)
+
+        # v_gain = 0.001
+        # vxd = v_gain * (xd - ze[0])**3
+        # vyd = v_gain * (yd - ze[1])**3
 
         q_star = np.array([xd, yd, vxd, vyd])  # desired state
         zeta = np.array([ze[0], ze[1], f(ze)[0], f(ze)[1]])  # double integrator state
@@ -60,7 +66,7 @@ class LqrController(Controller):
                          [1, 0],
                          [0, 1]])
 
-        gain = np.min([1.0 / (0.01 + (tracking_error[0])**2 + (tracking_error[1])**2), 10.0])
+        gain = np.min([1.0 / (0.01 + (tracking_error[0])**2 + (tracking_error[1])**2), 1.0])
         Q = gain * np.eye(4)
         R = np.eye(2)
 
