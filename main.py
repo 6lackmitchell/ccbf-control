@@ -6,7 +6,7 @@ level = 'dynamic'
 situation = 'warehouse'
 
 if __name__ == "__main__":
-    end_time = 20.0
+    end_time = 40.0
     timestep = 0.05
 
     # while True:

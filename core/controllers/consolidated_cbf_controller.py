@@ -87,7 +87,8 @@ class ConsolidatedCbfController(CbfQpController):
         if self.nv > 0:
             # alpha_nom = 5.0
             # alpha_nom = 0.01
-            alpha_nom = 0.001
+            alpha_nom = 1.0
+            alpha_nom = 0.1
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
             bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [1e6, 0])
@@ -206,7 +207,7 @@ class ConsolidatedCbfController(CbfQpController):
         premultiplier_k = self.k_gains * exp_term
         premultiplier_h = h_array * exp_term
         k_dots = self.compute_k_dots(h_array, Lgh_array, premultiplier_k)
-        k_dots = np.zeros(k_dots.shape)  # Tuning nominal controller
+        # k_dots = np.zeros(k_dots.shape)  # Tuning nominal controller
 
         # Compute C-CBF Dynamics
         LfH = premultiplier_k @ Lfh_array + premultiplier_h @ k_dots
@@ -324,8 +325,9 @@ class ConsolidatedCbfController(CbfQpController):
 
         """
         gain = 50.0
-        gain = 0.01
-        k_star = gain * h_array / np.max([np.min(h_array), 0.5])  # Desired k values
+        gain = 1.0
+        # k_star = gain * h_array / np.max([np.min(h_array), 0.5])  # Desired k values
+        k_star = np.ones((len(h_array),))
 
         # Integrator dynamics
         Ad = np.zeros((self.k_gains.shape[0], self.k_gains.shape[0]))
@@ -338,5 +340,6 @@ class ConsolidatedCbfController(CbfQpController):
 
         k_dot_lqr = -K @ (self.k_gains - k_star)
         k_dot_bounds = 5.0
+        # k_dot_bounds = 100.0
 
         return np.clip(k_dot_lqr, -k_dot_bounds, k_dot_bounds)

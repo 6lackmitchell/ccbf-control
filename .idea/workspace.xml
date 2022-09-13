@@ -3,16 +3,13 @@
   <component name="ChangeListManager">
     <list default="true" id="e1e023c8-895d-464a-90dd-354e30380a22" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/physical_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/physical_params.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/objective_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/objective_functions.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bicycle/dynamic/warehouse/initial_conditions.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/initial_conditions.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bicycle/dynamic/warehouse/nominal_controllers.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/nominal_controllers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/controllers/cbf_qp_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbf_qp_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/collision_avoidance_2d.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/collision_avoidance_2d.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/warehouse_safety.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/warehouse_safety.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/controllers/consolidated_cbf_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/consolidated_cbf_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/visualize.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualize.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,6 +167,11 @@
           <url>file://$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/collision_avoidance_2d.py</url>
           <line>178</line>
           <option name="timeStamp" value="73" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bicycle/dynamic/warehouse/vis.py</url>
+          <line>270</line>
+          <option name="timeStamp" value="96" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

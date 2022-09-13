@@ -103,6 +103,7 @@ class ZeroController(Controller):
                  ego_id: int):
         super().__init__()
         self.ego_id = ego_id
+        self.complete = False
 
     def _compute_control(self,
                          t: float,
@@ -120,6 +121,57 @@ class ZeroController(Controller):
         status: more informative success / error flag
 
         """
-        self.u = np.array([0.0, np.random.uniform(low=-0.1, high=0.1)])
+        # Modified LQR Controller from Black et al. 2022 (https://arxiv.org/pdf/2204.00127v1.pdf)
+        ze = z[self.ego_id]
+
+        # if t == 0.0 and self.ego_id > 2:
+        #     vi[self.ego_id] = cruise_speed + np.random.uniform(low=-1.0, high=1.0)
+        omega = 0.0
+
+        if self.ego_id == 7:
+            if ze[0] < -5:
+                a = 0.0
+            elif t < 25:
+                a = -1 / 3 * ze[3]
+            else:
+                a = 1/3 * (1 - ze[3])
+        elif self.ego_id == 8:
+            if ze[0] < -7:
+                a = 0.0
+            elif t < 25:
+                a = -1 / 3 * ze[3]
+            else:
+                a = 1/3 * (1 - ze[3])
+        else:
+            a = 0.0
+
+        self.u = np.array([omega, a])
 
         return self.u, 1, "Optimal"
+
+# class ZeroController(Controller):
+#
+#     def __init__(self,
+#                  ego_id: int):
+#         super().__init__()
+#         self.ego_id = ego_id
+#
+#     def _compute_control(self,
+#                          t: float,
+#                          z: NDArray) -> (int, str):
+#         """Computes the nominal input for a vehicle in the intersection situation.
+#
+#         INPUTS
+#         ------
+#         t: time (in sec)
+#         z: full state vector
+#
+#         OUTPUTS
+#         -------
+#         code: success (1) / error (0, -1, ...) code
+#         status: more informative success / error flag
+#
+#         """
+#         self.u = np.array([0.0, np.random.uniform(low=-0.1, high=0.1)])
+#
+#         return self.u, 1, "Optimal"
