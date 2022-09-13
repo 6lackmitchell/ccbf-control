@@ -162,20 +162,9 @@
           <option name="timeStamp" value="20" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <condition expression="code != 1" language="Python" />
-          <url>file://$PROJECT_DIR$/core/controllers/cbf_qp_controller.py</url>
-          <line>128</line>
-          <option name="timeStamp" value="41" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/core/solve_cvxopt.py</url>
           <line>86</line>
           <option name="timeStamp" value="58" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/bicycle/dynamic/intersection/vis.py</url>
-          <line>287</line>
-          <option name="timeStamp" value="59" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/collision_avoidance_2d.py</url>
