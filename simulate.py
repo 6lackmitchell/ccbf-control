@@ -38,6 +38,7 @@ def simulate(tf: float,
     z = np.zeros((nTimesteps, nAgents, nStates))
     z[0, :, :] = z0
     complete = np.zeros((nAgents,))
+    complete[3:] = 1
     # centralized_agents = deepcopy(centralized_agents_list)
     # decentralized_agents = deepcopy(decentralized_agents_list)
 
@@ -64,10 +65,10 @@ def simulate(tf: float,
                 broken = True
                 print('Error in Agent {}'.format(aa + 1))
                 break
-
-            if agent.complete and not complete[aa]:
-                complete[aa] = True
-                print("Agent {} Completed!".format(aa))
+            if hasattr(agent, 'complete'):
+                if agent.complete and not complete[aa]:
+                    complete[aa] = True
+                    print("Agent {} Completed!".format(aa))
 
             # Step dynamics forward
             z[ii + 1, aa, :] = agent.step_dynamics()

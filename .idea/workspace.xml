@@ -2,16 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e1e023c8-895d-464a-90dd-354e30380a22" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/initial_conditions.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/nominal_controllers.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis_mc.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/warehouse_safety.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bicycle/dynamic/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/warehouse/initial_conditions.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/initial_conditions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/warehouse_safety.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/warehouse_safety.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulate.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulate.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,14 +31,14 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "/home/dasc/Documents/MB/git/intersection/core/controllers/cbfs/symbolic_cbfs",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/dasc/Documents/MB/git/intersection/core/controllers/cbfs/symbolic_cbfs&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs" />
@@ -60,7 +55,7 @@
       <recent name="$PROJECT_DIR$/bicycle/controllers/cbfs" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.visualize">
+  <component name="RunManager" selected="Python.main">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python">
       <module name="intersection" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -167,11 +162,6 @@
           <option name="timeStamp" value="41" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/core/agent.py</url>
-          <line>174</line>
-          <option name="timeStamp" value="49" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/core/solve_cvxopt.py</url>
           <line>86</line>
           <option name="timeStamp" value="58" />
@@ -180,6 +170,16 @@
           <url>file://$PROJECT_DIR$/bicycle/dynamic/intersection/vis.py</url>
           <line>287</line>
           <option name="timeStamp" value="59" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/simulate.py</url>
+          <line>56</line>
+          <option name="timeStamp" value="67" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/core/controllers/consolidated_cbf_controller.py</url>
+          <line>133</line>
+          <option name="timeStamp" value="68" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

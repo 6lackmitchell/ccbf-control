@@ -59,7 +59,7 @@ cbf_controlled_agents = [
     Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, consolidated_cbf_controller(i), save_path) for i in range(3)
 ]
 human_agents = [
-    Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, ZeroController(i), save_path) for i in range(6)
+    Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, ZeroController(i), save_path) for i in range(3, 9)
 ]
 # + [Agent(3, z0[3, :], u0, cbf0, time, step_dynamics, deterministic_cbf_controller(3), save_path)]
 # l_cbf_ag = len(cbf_controlled_agents)
@@ -71,7 +71,7 @@ human_agents = [
 
 
 centralized_agents = None
-decentralized_agents = [cbf_controlled_agents + human_agents]
+decentralized_agents = cbf_controlled_agents + human_agents
 #
 # # For multi-agent sim
 # import builtins
