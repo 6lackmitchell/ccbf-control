@@ -2,10 +2,11 @@ from simulate import simulate
 
 vehicle = 'bicycle'
 level = 'dynamic'
-situation = 'intersection'
+# situation = 'intersection'
+situation = 'warehouse'
 
 if __name__ == "__main__":
-    end_time = 50.0
+    end_time = 20.0
     timestep = 0.05
 
     # while True:

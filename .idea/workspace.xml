@@ -2,19 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e1e023c8-895d-464a-90dd-354e30380a22" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/initial_conditions.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/nominal_controllers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis_mc.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/warehouse_safety.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/intersection/initial_conditions.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/intersection/initial_conditions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/intersection/nominal_controllers.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/intersection/nominal_controllers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/intersection/vis.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/intersection/vis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/physical_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/physical_params.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/timing_params.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/timing_params.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/controllers/cbf_qp_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbf_qp_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/collision_avoidance_2d.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/collision_avoidance_2d.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/radial_safety.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs/radial_safety.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/controllers/consolidated_cbf_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/consolidated_cbf_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/solve_cvxopt.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/solve_cvxopt.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/controllers/cbfs/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/controllers/cbfs/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulate.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulate.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,6 +47,8 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs" />
+      <recent name="$PROJECT_DIR$/core/controllers/cbfs" />
+      <recent name="$PROJECT_DIR$/bicycle/dynamic" />
       <recent name="$PROJECT_DIR$/bicycle/controllers" />
       <recent name="$PROJECT_DIR$/helpers" />
     </key>
@@ -61,7 +60,7 @@
       <recent name="$PROJECT_DIR$/bicycle/controllers/cbfs" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.visualize">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python">
       <module name="intersection" />
       <option name="INTERPRETER_OPTIONS" value="" />
