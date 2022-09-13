@@ -18,34 +18,32 @@ except ModuleNotFoundError as e:
     raise e
 
 # Defining Physical Params
-th = 15.0 * np.pi / 180.0
 relax = 0.05
-slope = 3.5
-intercept = 2.0
+slope = 3
+intercept = 0.0
 R = 0.5
-LW = 3.0
 tau = 1.0
 vx = f(np.zeros((len(ss),)), True)[0]
 vy = f(np.zeros((len(ss),)), True)[1]
 
 # Entryway Safety Nominal CBF
-h_hs_symbolic = (ss[0] - R - (ss[1] - intercept) / slope) * (-ss[0] - (ss[1] - intercept) / slope)
-dhdx_hs_symbolic = (se.DenseMatrix([h_hs_symbolic]).jacobian(se.DenseMatrix(ss))).T
-d2hdx2_hs_symbolic = dhdx_hs_symbolic.jacobian(se.DenseMatrix(ss))
-h_hs_func = symbolic_cbf_wrapper_singleagent(h_hs_symbolic, ss)
-dhdx_hs_func = symbolic_cbf_wrapper_singleagent(dhdx_hs_symbolic, ss)
-d2hdx2_hs_func = symbolic_cbf_wrapper_singleagent(d2hdx2_hs_symbolic, ss)
+h_ew_symbolic = (ss[0] - R - (ss[1] - intercept) / slope) * (-ss[0] - R - (ss[1] - intercept) / slope)
+dhdx_ew_symbolic = (se.DenseMatrix([h_ew_symbolic]).jacobian(se.DenseMatrix(ss))).T
+d2hdx2_ew_symbolic = dhdx_ew_symbolic.jacobian(se.DenseMatrix(ss))
+h_ew_func = symbolic_cbf_wrapper_singleagent(h_ew_symbolic, ss)
+dhdx_ew_func = symbolic_cbf_wrapper_singleagent(dhdx_ew_symbolic, ss)
+d2hdx2_ew_func = symbolic_cbf_wrapper_singleagent(d2hdx2_ew_symbolic, ss)
 
 # Entryway Safety Predictive CBF
-h_phs_symbolic = ((ss[0] + vx * tau) - R - ((ss[1] + vy * tau) - intercept) / slope) * (-(ss[0] + vx * tau) - ((ss[1] + vy * tau) - intercept) / slope)
-dhdx_phs_symbolic = (se.DenseMatrix([h_phs_symbolic]).jacobian(se.DenseMatrix(ss))).T
-d2hdx2_phs_symbolic = dhdx_phs_symbolic.jacobian(se.DenseMatrix(ss))
-h_phs_func = symbolic_cbf_wrapper_singleagent(h_hs_symbolic, ss)
-dhdx_phs_func = symbolic_cbf_wrapper_singleagent(dhdx_hs_symbolic, ss)
-d2hdx2_phs_func = symbolic_cbf_wrapper_singleagent(d2hdx2_hs_symbolic, ss)
+h_pew_symbolic = 10 * ((ss[0] + vx * tau) - R - ((ss[1] + vy * tau) - intercept) / slope) * (-(ss[0] + vx * tau) - R - ((ss[1] + vy * tau) - intercept) / slope)
+dhdx_pew_symbolic = (se.DenseMatrix([h_pew_symbolic]).jacobian(se.DenseMatrix(ss))).T
+d2hdx2_pew_symbolic = dhdx_pew_symbolic.jacobian(se.DenseMatrix(ss))
+h_pew_func = symbolic_cbf_wrapper_singleagent(h_pew_symbolic, ss)
+dhdx_pew_func = symbolic_cbf_wrapper_singleagent(dhdx_pew_symbolic, ss)
+d2hdx2_pew_func = symbolic_cbf_wrapper_singleagent(d2hdx2_pew_symbolic, ss)
 
 # Corridor Safety Nominal CBF
-h_or_symbolic = (ss[0] + 2) * (2 - ss[0])
+h_or_symbolic = (ss[0] + 1) * (1 - ss[0])
 dhdx_or_symbolic = (se.DenseMatrix([h_or_symbolic]).jacobian(se.DenseMatrix(ss))).T
 d2hdx2_or_symbolic = dhdx_or_symbolic.jacobian(se.DenseMatrix(ss))
 h_or_func = symbolic_cbf_wrapper_singleagent(h_or_symbolic, ss)
@@ -53,7 +51,7 @@ dhdx_or_func = symbolic_cbf_wrapper_singleagent(dhdx_or_symbolic, ss)
 d2hdx2_or_func = symbolic_cbf_wrapper_singleagent(d2hdx2_or_symbolic, ss)
 
 # Corridor Safety Predictive CBF
-h_por_symbolic = ((ss[0] + vx * tau) + 2) * (2 - (ss[0] + vx * tau))
+h_por_symbolic = ((ss[0] + vx * tau) + 1) * (1 - (ss[0] + vx * tau))
 dhdx_por_symbolic = (se.DenseMatrix([h_por_symbolic]).jacobian(se.DenseMatrix(ss))).T
 d2hdx2_por_symbolic = dhdx_por_symbolic.jacobian(se.DenseMatrix(ss))
 h_por_func = symbolic_cbf_wrapper_singleagent(h_por_symbolic, ss)
@@ -61,48 +59,48 @@ dhdx_por_func = symbolic_cbf_wrapper_singleagent(dhdx_por_symbolic, ss)
 d2hdx2_por_func = symbolic_cbf_wrapper_singleagent(d2hdx2_por_symbolic, ss)
 
 
-def h_hs(ego):
-    return h_hs_func(ego)
+def h_ew(ego):
+    return h_ew_func(ego)
 
 
-def dhdx_hs(ego):
-    ret = dhdx_hs_func(ego)
-
-    return np.squeeze(np.array(ret).astype(np.float64))
-
-
-def d2hdx2_hs(ego):
-    ret = d2hdx2_hs_func(ego)
+def dhdx_ew(ego):
+    ret = dhdx_ew_func(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def h_phs(ego):
-    return h_phs_func(ego)
+def d2hdx2_ew(ego):
+    ret = d2hdx2_ew_func(ego)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def dhdx_phs(ego):
-    ret = dhdx_phs_func(ego)
+def h_pew(ego):
+    return h_pew_func(ego)
+
+
+def dhdx_pew(ego):
+    ret = dhdx_pew_func(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
 def d2hdx2_phs(ego):
-    ret = d2hdx2_phs_func(ego)
+    ret = d2hdx2_pew_func(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def h_rphs(ego):
-    return h_hs_func(ego) * relax + h_phs_func(ego)
+def h_rpew(ego):
+    return h_ew_func(ego) * relax + h_pew_func(ego)
 
 
-def dhdx_rphs(ego):
-    return dhdx_hs_func(ego) * relax + dhdx_phs_func(ego)
+def dhdx_rpew(ego):
+    return dhdx_ew_func(ego) * relax + dhdx_pew_func(ego)
 
 
-def d2hdx2_rphs(ego):
-    return d2hdx2_hs_func(ego) * relax + d2hdx2_phs_func(ego)
+def d2hdx2_rpew(ego):
+    return d2hdx2_ew_func(ego) * relax + d2hdx2_pew_func(ego)
 
 
 def h_or(ego):
@@ -148,35 +146,37 @@ def dhdx_rpor(ego):
 def d2hdx2_rpor(ego):
     return d2hdx2_or_func(ego) * relax + d2hdx2_por_func(ego)
 
+divider = 3
+
 
 def h0_road(ego):
-    if -2 < ego[1] < 2:
+    if -divider < ego[1] < divider:
         return h_or(ego)
     else:
-        return h_hs(ego)
+        return h_ew(ego)
 
 
 def h_road(ego):
-    if -2 < ego[1] < 2:
+    if -divider < ego[1] < divider:
         return h_rpor(ego)
     else:
-        return h_rphs(ego)
+        return h_rpew(ego)
 
 
 def dhdx_road(ego):
-    if -2 < ego[1] < 2:
+    if -divider < ego[1] < divider:
         ret = dhdx_rpor(ego)
     else:
-        ret = dhdx_rphs(ego)
+        ret = dhdx_rpew(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
 def d2hdx2_road(ego):
-    if -2 < ego[1] < 2:
+    if -divider < ego[1] < divider:
         ret = d2hdx2_rpor(ego)
     else:
-        ret = d2hdx2_rphs(ego)
+        ret = d2hdx2_rpew(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 

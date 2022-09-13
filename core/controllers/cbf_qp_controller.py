@@ -166,7 +166,7 @@ class CbfQpController(Controller):
             #     status = 'Divide by Zero'
             #     self.u = np.zeros((self.nu,))
 
-        decay_const = 0.01  # needs to be < 1
+        decay_const = 0.0  # needs to be < 1
         integrated_error[ego] = (np.linalg.norm(self.u - self.u_nom) + integrated_error[ego]) * decay_const
 
         return self.u, code, status

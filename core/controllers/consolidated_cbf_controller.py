@@ -85,7 +85,9 @@ class ConsolidatedCbfController(CbfQpController):
         #     bu = np.array(1 * [self.bu]).flatten()
 
         if self.nv > 0:
-            alpha_nom = 5.0
+            # alpha_nom = 5.0
+            # alpha_nom = 0.01
+            alpha_nom = 0.001
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
             bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [1e6, 0])
@@ -191,6 +193,7 @@ class ConsolidatedCbfController(CbfQpController):
         exp_term = np.exp(-self.k_gains * h_array)
         H = 1 - np.sum(exp_term)  # Get value of C-CBF
         self.c_cbf = H
+        # print(H)
 
         # Non-centralized agents CBF dynamics become drifts
         # Lgh_uncontrolled = np.copy(Lgh_array[:, self.n_agents * self.nu:])
@@ -212,10 +215,10 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Tunable CBF Addition
         # kH = 0.1
-        kH = 0.15
-        kH = 0.5
+        # kH = 0.01
+        # kH = 0.5
         # kH = 0.75
-        # kH = 1.0
+        kH = 1.0
         phi = np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
 
         # Finish constructing CBF here

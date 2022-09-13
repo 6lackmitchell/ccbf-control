@@ -4,7 +4,7 @@ from nptyping import NDArray
 from core.controllers.controller import Controller
 from bicycle.dynamic.physical_params import LW, u_max
 from bicycle.dynamic.models import f
-from bicycle.dynamic.intersection.initial_conditions import *
+from bicycle.dynamic.warehouse.initial_conditions import *
 
 
 class LqrController(Controller):
@@ -96,6 +96,7 @@ class LqrController(Controller):
 
         return self.u, 1, "Optimal"
 
+
 class ZeroController(Controller):
 
     def __init__(self,
@@ -119,6 +120,6 @@ class ZeroController(Controller):
         status: more informative success / error flag
 
         """
-        self.u = np.array([0.0, 0.0])
+        self.u = np.array([0.0, np.random.uniform(low=-0.1, high=0.1)])
 
         return self.u, 1, "Optimal"

@@ -9,7 +9,7 @@ Lf = 1.0  # Front wheelbase (in m)
 Lr = 1.0  # Rear wheelbase (in m)
 
 # Control input constraints
-ar_max = 0.3 * G
+ar_max = 0.5 * G
 w_max = pi / 4
 u_max = array([w_max, ar_max])
 
