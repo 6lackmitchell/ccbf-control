@@ -8,7 +8,7 @@ from .timing_params import *
 from .physical_params import u_max
 from .models import f, g, nControls
 from .objective_functions import objective_accel_and_steering
-from .warehouse.nominal_controllers import LqrController, ZeroController
+from .dasclab.nominal_controllers import LqrController
 
 vehicle = builtins.PROBLEM_CONFIG['vehicle']
 control_level = builtins.PROBLEM_CONFIG['control_level']

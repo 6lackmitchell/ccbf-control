@@ -2,10 +2,17 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e1e023c8-895d-464a-90dd-354e30380a22" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis_paper.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/dasclab/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/dasclab/initial_conditions.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/dasclab/nominal_controllers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/dasclab/vis.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/dasclab/vis_mc.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bicycle/dynamic/dasclab/vis_paper.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/experiment.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/warehouse/vis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/visualize.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualize.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bicycle/dynamic/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/bicycle/dynamic/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,17 +41,17 @@
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "/home/dasc/Documents/MB/git/intersection/bicycle/dynamic/warehouse",
+    "last_opened_file_path": "/home/dasc/Documents/MB/git/intersection",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/bicycle/dynamic" />
       <recent name="$PROJECT_DIR$/bicycle/dynamic/warehouse" />
       <recent name="$PROJECT_DIR$/core/controllers/cbfs/symbolic_cbfs" />
       <recent name="$PROJECT_DIR$/core/controllers/cbfs" />
-      <recent name="$PROJECT_DIR$/bicycle/dynamic" />
-      <recent name="$PROJECT_DIR$/bicycle/controllers" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
