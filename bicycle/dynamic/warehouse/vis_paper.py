@@ -25,7 +25,7 @@ colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 colors[0] = colors[1]
 colors.reverse()
 
-filepath = '/home/dasc/Documents/MB/datastore/warehouse/'
+filepath = '/home/dasc/Documents/MB/datastore/warehouse/paper/'
 
 
 # ### Define Recording Variables ###
@@ -44,8 +44,11 @@ with open(filename, 'rb') as f:
     try:
         data = pickle.load(f)
 
+        print(data.keys())
+
         x = np.array([data[a]['x'] for a in data.keys()])
         u = np.array([data[a]['u'] for a in data.keys()])
+        k = np.array([data[a]['kgains'] if a < 3 else None for a in data.keys()][0:3])
         u0 = np.array([data[a]['u0'] for a in data.keys()])
         ii = int(data[0]['ii'] / dt)
         # cbf = np.array([data[a]['cbf'] for a in data.keys()])
@@ -117,6 +120,33 @@ for item in ([ax_cont_b.title, ax_cont_b.xaxis.label, ax_cont_b.yaxis.label] +
 ax_cont_b.grid(True, linestyle='dotted', color='white')
 
 plt.tight_layout(pad=2.0)
+
+############################################
+### Gain Trajectories ###
+fig_k = plt.figure(figsize=(8, 8))
+ax_k = fig_k.add_subplot(111)
+set_edges_black(ax_k)
+
+# Angular Control Inputs
+lbl = ['Corridor', 'Speed', 'Agent2', 'Agent3', 'Agent4', 'Agent5', 'Agent6', 'Agent7', 'Agent8', 'Agent9']
+clr = plt.rcParams['axes.prop_cycle'].by_key()['color']
+clr.reverse()
+for cbf in range(10):
+    ax_k.plot(t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf])
+    # ax_k.plot(t[1:ii], k[1, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf])
+    # ax_k.plot(t[1:ii], k[2, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf])
+ax_k.set(ylabel='k',
+         title='Adaptation Gains')
+
+# Plot Settings
+for item in ([ax_k.title, ax_k.xaxis.label, ax_k.yaxis.label] +
+             ax_k.get_xticklabels() + ax_k.get_yticklabels()):
+    item.set_fontsize(25)
+ax_k.legend(fancybox=True)
+ax_k.grid(True, linestyle='dotted', color='white')
+
+plt.tight_layout(pad=2.0)
+
 
 
 # ############################################
@@ -282,9 +312,9 @@ def animate_ego(jj):
 
 
 # Create animation
-ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii - 10), interval=30, repeat=False)
-writer = animation.writers['ffmpeg']
-ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))
+# ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii - 10), interval=30, repeat=False)
+# writer = animation.writers['ffmpeg']
+# ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))
 
 plt.tight_layout(pad=2.0)
 plt.show()

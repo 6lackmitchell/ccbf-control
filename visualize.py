@@ -11,7 +11,7 @@ builtins.PROBLEM_CONFIG = {'vehicle': vehicle,
                            'control_level': level,
                            'situation': situation,
                            'system_model': 'deterministic'}
-mod = '{}.{}.{}.vis'.format(vehicle, level, situation)
+mod = '{}.{}.{}.vis_paper'.format(vehicle, level, situation)
 
 # Problem-specific import
 try:
