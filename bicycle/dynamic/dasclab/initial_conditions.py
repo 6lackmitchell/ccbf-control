@@ -1,8 +1,13 @@
 import numpy as np
 
-xg = np.array([-2.0, 0.0, 1.75])
-yg = np.array([8.0, 9.0, 8.0])
+rover3_goal = [1.76, 0.86]
+rover5_goal = [-1.708, 0.885]
+rover7_goal = [2.33, -1.22]
+
+xg = np.array([rover3_goal[0], rover5_goal[0], rover7_goal[0]])
+yg = np.array([rover3_goal[1], rover5_goal[1], rover7_goal[1]])
 
 z0 = np.zeros((5,))
 u0 = np.zeros((2,))
-nAgents, nStates = z0.shape
+nAgents = 3
+nStates = z0.shape[0]

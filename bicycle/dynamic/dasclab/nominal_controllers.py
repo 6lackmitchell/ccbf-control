@@ -61,7 +61,9 @@ class LqrController(Controller):
                          [1, 0],
                          [0, 1]])
 
-        gain = np.min([1.0 / (0.01 + (tracking_error[0])**2 + (tracking_error[1])**2), 1.0])
+        # gain = np.min([1.0 / (0.01 + (tracking_error[0])**2 + (tracking_error[1])**2), 1.0])
+        # print(gain)
+        gain = 1
         Q = gain * np.eye(4)
         R = np.eye(2)
 
