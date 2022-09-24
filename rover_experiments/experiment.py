@@ -1,6 +1,7 @@
 """ experiment.py: entry-point for Aion rover experiment. """
-
+from datetime import datetime
 import time
+import pickle
 import numpy as np
 from typing import List
 import nptyping as npt
@@ -64,6 +65,25 @@ class MinimalPublisher(Node):
         self.i = 0
         self.z = np.zeros((nTimesteps, len(robots), nStates))
         self.u = np.zeros((nTimesteps, len(robots), nControls))
+        self.h = np.zeros((nTimesteps, len(robots), 1))
+        self.k = np.zeros((nTimesteps, len(robots), 3))
+
+    def save_data(self) -> None:
+        """Saves the logging data. """
+
+        now = datetime.now()
+        current_time = now.strftime("%H%M%S")
+        filename = '/root/px4_ros_com_ros2/logging_data/run_20220915_{}.pkl'.format(current_time)
+        data = {'x': self.z,
+                'u': self.u,
+                'h': self.h,
+                'k': self.k,
+                'i': self.i}
+
+        with open(filename, 'wb') as f:
+            pickle.dump(data, f)
+
+        print("SAVED")
 
     def timer_callback_wrapper(self,
                                rr: int,
@@ -71,7 +91,8 @@ class MinimalPublisher(Node):
         """"""
 
         def timer_callback():
-            self.i += 1
+            if rr == 0:
+                self.i += 1
             agent = self.agents[rr]
 
             z = get_robot_states(self.robots)
@@ -84,13 +105,9 @@ class MinimalPublisher(Node):
             acc = agent.controller.u[1]
             vel = z[rr, 3] + self.timer_period * acc
 
-            deadband = 0.25
-            if abs(vel) < deadband and acc > 0:
-                vel = deadband * np.sign(vel)
+            vel = np.clip(vel, -0.75, 0.75)
 
-            vel = np.clip(vel, -1, 1)
-
-            if rr > -1:
+            if rr == 1 or (rr == 2 and self.i < 2.75 * 20):
                 omg = 0.0
                 vel = 0.0
 
@@ -101,6 +118,13 @@ class MinimalPublisher(Node):
 
             cmd = np.array([0, vel, 0, 0, omg])
             robot.command_velocity(cmd)
+
+            # Update Logging
+            self.u[self.i, rr] = np.array([omg, vel])
+            if rr == 0:
+                self.h[self.i, rr] = self.agents[rr].controller.c_cbf
+                self.k[self.i, rr] = self.agents[rr].controller.k_gains
+
 
         return timer_callback
 
@@ -174,15 +198,19 @@ def _experiment(tf: float,
     
     # Set up publishers
     minimal_publisher = MinimalPublisher(robots, agents)
-    rclpy.spin(minimal_publisher)
+
+    try:
+        rclpy.spin(minimal_publisher)
+    except KeyboardInterrupt:
+        minimal_publisher.save_data()
 
     # Destroy
     minimal_publisher.destroy_node()
     rclpy.shutdown()
 
-    # Save data
-    for aa, agent in enumerate(decentralized_agents):
-        agent.save_data(aa)
+    # # Save data
+    # for aa, agent in enumerate(decentralized_agents):
+    #     agent.save_data(aa)
 
     success = not broken
 

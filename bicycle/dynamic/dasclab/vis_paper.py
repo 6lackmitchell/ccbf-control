@@ -17,28 +17,18 @@ from visualizing.helpers import get_circle, get_ex
 
 matplotlib.rcParams.update({'figure.autolayout': True})
 
-N = 2 * nAgents
-# plt.style.use(['Solarize_Light2'])
 plt.style.use(['ggplot'])
-plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.viridis(np.linspace(0, 1, N)))
+plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.viridis(np.linspace(0, 1, 6)))
 colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 colors[0] = colors[1]
 colors.reverse()
 
-filepath = '/home/dasc/Documents/MB/datastore/warehouse/paper/'
+filepath = '/home/dasc3/mitchell/dasc-groundstation-jumpstart/px4_ros_com_ros2/logging_data/'
 
-
-# ### Define Recording Variables ###
-t = np.linspace(dt, tf, int(tf/dt))
-
-import builtins
-if hasattr(builtins, "VIS_FILE"):
-    filename = filepath + builtins.VIS_FILE + '.pkl'
-else:
-    ftype = r'*.pkl'
-    files = glob.glob(filepath + ftype)
-    files.sort(key=os.path.getmtime)
-    filename = files[-1]
+ftype = r'*.pkl'
+files = glob.glob(filepath + ftype)
+files.sort(key=os.path.getmtime)
+filename = files[-1]
 
 with open(filename, 'rb') as f:
     try:
@@ -46,14 +36,136 @@ with open(filename, 'rb') as f:
 
         print(data.keys())
 
-        x = np.array([data[a]['x'] for a in data.keys()])
-        u = np.array([data[a]['u'] for a in data.keys()])
-        k = np.array([data[a]['kgains'] if a < 3 else None for a in data.keys()][0:3])
-        u0 = np.array([data[a]['u0'] for a in data.keys()])
-        ii = int(data[0]['ii'] / dt)
-        # cbf = np.array([data[a]['cbf'] for a in data.keys()])
+        x = data['x']
+        u = data['u']
+        h = data['h']
+        k = data['k']
+        ii = data['i']
+
     except:
         traceback.print_exc()
+
+print(u.shape)
+
+def set_edges_black(ax):
+    ax.spines['bottom'].set_color('#000000')
+    ax.spines['top'].set_color('#000000')
+    ax.spines['right'].set_color('#000000')
+    ax.spines['left'].set_color('#000000')
+
+
+#######################################
+#######################################
+### Control Figure ####################
+fig_control = plt.figure(figsize=(8, 8))
+ax_cont_a = fig_control.add_subplot(211)
+ax_cont_b = fig_control.add_subplot(212)
+set_edges_black(ax_cont_a)
+set_edges_black(ax_cont_b)
+
+ax_cont_a.plot(np.linspace(0,ii,ii), u[0:ii, 0, 0])
+ax_cont_b.plot(np.linspace(0,ii,ii), u[0:ii, 0, 1])
+
+plt.tight_layout(pad=2.0)
+
+plt.savefig('{}_controls.png'.format(filename[:-4]))
+
+
+#######################################
+#######################################
+### Position Figure ####################
+fig_pos = plt.figure(figsize=(8, 8))
+ax_pos_a = fig_pos.add_subplot(211)
+ax_pos_b = fig_pos.add_subplot(212)
+set_edges_black(ax_pos_a)
+set_edges_black(ax_pos_b)
+
+ax_pos_a.plot(x[0:ii, 0, 0], x[0:ii, 0, 1])
+ax_pos_b.plot(np.linspace(0,ii,ii), x[0:ii, 0, 1])
+
+plt.tight_layout(pad=2.0)
+
+plt.savefig('{}_states.png'.format(filename[:-4]))
+
+
+#######################################
+#######################################
+### Position Figure ####################
+fig_k = plt.figure(figsize=(8, 8))
+ax_k = fig_k.add_subplot(111)
+set_edges_black(ax_k)
+
+ax_k.plot(np.linspace(0,ii,ii), k[0:ii, 0])
+
+plt.tight_layout(pad=2.0)
+
+plt.savefig('{}_gains.png'.format(filename[:-4]))
+
+
+
+#######################################
+#######################################
+### Position Figure ####################
+fig_h = plt.figure(figsize=(8, 8))
+ax_h = fig_h.add_subplot(111)
+set_edges_black(ax_h)
+
+ax_h.plot(np.linspace(0,ii,ii), h[0:ii, 0])
+
+plt.tight_layout(pad=2.0)
+
+plt.savefig('{}_ccbf.png'.format(filename[:-4]))
+
+
+
+# # Angular Control Inputs
+# # ax_cont_a.plot(t[1:ii], 2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
+# # ax_cont_a.plot(t[1:ii], -2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
+# # ax_cont_a.plot(t[1:ii], 2 * np.pi * np.ones(t[1:ii].shape), label=r'$\pm\omega_{max}$', linewidth=lwidth+1, color='k')
+# # ax_cont_a.plot(t[1:ii], -2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
+# for aa in range(nAgents - 6):
+# ax_cont_a.plot(t[:ii], u[aa, :ii, 0], label='w_{}'.format(aa), linewidth=lwidth,
+# color=colors[color_idx[aa, 0]])
+#     # ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
+#     #                color=colors[color_idx[aa, 1]], dashes=dash)
+# ax_cont_a.set(ylabel='w',#ylabel=r'$\omega$',
+#               ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
+#               title='Control Inputs')
+
+# # Acceleration Inputs
+# # ax_cont_b.plot(t[1:ii], 9.81 * np.ones(t[1:ii].shape), label=r'$\pm a_{max}$', linewidth=lwidth+1, color='k')
+# # ax_cont_b.plot(t[1:ii], -9.81 * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
+# ax_cont_b.plot(t[1:ii], 9.81 * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
+# ax_cont_b.plot(t[1:ii], -9.81 * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
+# for aa in range(nAgents - 6):
+#     ax_cont_b.plot(t[:ii], u[aa, :ii, 1], label='a_{}'.format(aa), linewidth=lwidth,
+#                    color=colors[color_idx[aa, 0]])
+#     # ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
+#     #                color=colors[color_idx[aa, 1]], dashes=dash)
+# ax_cont_b.set(ylabel='a',#ylabel=r'$a_r$',
+#               ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5])
+
+# # Plot Settings
+# for item in ([ax_cont_a.title, ax_cont_a.xaxis.label, ax_cont_a.yaxis.label] +
+#              ax_cont_a.get_xticklabels() + ax_cont_a.get_yticklabels()):
+#     item.set_fontsize(25)
+# # ax_cont_a.legend(fancybox=True)
+# ax_cont_a.grid(True, linestyle='dotted', color='white')
+
+# for item in ([ax_cont_b.title, ax_cont_b.xaxis.label, ax_cont_b.yaxis.label] +
+#              ax_cont_b.get_xticklabels() + ax_cont_b.get_yticklabels()):
+#     item.set_fontsize(25)
+# # ax_cont_b.legend(fancybox=True)
+# ax_cont_b.grid(True, linestyle='dotted', color='white')
+
+plt.tight_layout(pad=2.0)
+
+plt.savefig('{}.png'.format(filename[:-4]))
+
+sys.exit()
+
+
+
 
 lwidth = 2
 dash = [3, 2]

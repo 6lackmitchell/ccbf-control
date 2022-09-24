@@ -35,7 +35,7 @@ else:
         deterministic_dynamics as system_dynamics, deterministic_step as step_dynamics
 
 # Configure parameters
-nAgents = len(z0)
+# nAgents = len(z0)
 time = [dt, tf]
 save_path = '/home/dasc/Documents/MB/datastore/warehouse/test.pkl'
 
@@ -59,11 +59,11 @@ def consolidated_cbf_controller(idx: int) -> ConsolidatedCbfController:
 #     Agent(i, u0, cbf0, time, step_dynamics, consolidated_cbf_controller(i), save_path) for i in range(3)
 # ]
 
-# rover3 = Agent(0, u0, cbf0, time, step_dynamics, consolidated_cbf_controller(0), save_path)
+rover3 = Agent(0, u0, cbf0, time, step_dynamics, consolidated_cbf_controller(0), save_path)
 # rover5 = Agent(1, u0, cbf0, time, step_dynamics, consolidated_cbf_controller(1), save_path)
 # rover7 = Agent(2, u0, cbf0, time, step_dynamics, consolidated_cbf_controller(2), save_path)
 
-rover3 = Agent(0, u0, cbf0, time, step_dynamics, LqrController(0), save_path)
+# rover3 = Agent(0, u0, cbf0, time, step_dynamics, LqrController(0), save_path)
 rover5 = Agent(1, u0, cbf0, time, step_dynamics, LqrController(1), save_path)
 rover7 = Agent(2, u0, cbf0, time, step_dynamics, LqrController(2), save_path)
 

@@ -1,7 +1,8 @@
 import numpy as np
 
-rover3_goal = [1.76, 0.86]
-rover5_goal = [-1.708, 0.885]
+# THIS IS ACTUALLY Y, X
+rover3_goal = [1.5, 0.84] #[1.75, 0.84]
+rover5_goal = [-1.57, 0.885]
 rover7_goal = [2.33, -1.22]
 
 xg = np.array([rover3_goal[0], rover5_goal[0], rover7_goal[0]])
