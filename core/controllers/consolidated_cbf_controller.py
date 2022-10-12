@@ -27,6 +27,24 @@ except ModuleNotFoundError as e:
 
 
 class ConsolidatedCbfController(CbfQpController):
+    """
+    Class docstrings should contain the following information:
+
+    Controller using the Consolidated CBF based approach first proposed 
+    in 'Adaptation for Validation of a Consolidated Control Barrier Function
+    based Control Synthesis' (Black and Panagou, 2022) 
+    (https://arxiv.org/abs/2209.08170).
+
+    Public Methods:
+    ---------------
+    formulate_qp: overloads from parent Controller class
+    generate_consolidated_cbf_condition: generates matrix and vector for CBF condition
+    compute_kdots: computes the adaptation of the gains k
+
+    Class Properties:
+    -----------------
+    Lots?
+    """
 
     P = None
 
@@ -65,30 +83,10 @@ class ConsolidatedCbfController(CbfQpController):
         na = 1 + len(zr)
         ns = len(ze)
         self.safety = True
-        discretization_error = 0.5
-
-        # Only take ego nominal control
-        # full_u_nom = u_nom
-        # u_nom = u_nom.flatten()[self.nu * ego: (ego + 1) * self.nu]
-
-        # Configure QP Matrices
-        # Q, p: objective function
-        # Au, bu: input constraints
-        # if self.nv > 0:
-        #     alpha_nom = 0.5
-        #     Q, p = self.objective(np.append(u_nom, alpha_nom))
-        #     Au = block_diag(*(1 + self.nv) * [self.au])[:-2, :-1]
-        #     bu = np.append(np.array(1 * [self.bu]).flatten(), self.nv * [100, 0])
-        # else:
-        #     Q, p = self.objective(u_nom)
-        #     Au = block_diag(*(1) * [self.au])
-        #     bu = np.array(1 * [self.bu]).flatten()
+        discretization_error = 0.0
 
         if self.nv > 0:
-            alpha_nom = 5.0
-            # alpha_nom = 0.01
             alpha_nom = 1.0
-            # alpha_nom = 0.1
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
             bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [1e6, 0])
@@ -98,7 +96,6 @@ class ConsolidatedCbfController(CbfQpController):
             bu = np.array(na * [self.bu]).flatten()
 
         # Initialize inequality constraints
-        print("CBF_VALS: {}".format(self.cbf_vals))
         lci = len(self.cbfs_individual)
         h_array = np.zeros((len(self.cbf_vals,)))
         Lfh_array = np.zeros((len(self.cbf_vals,)))
@@ -158,12 +155,6 @@ class ConsolidatedCbfController(CbfQpController):
                     print("{} SAFETY VIOLATION: {:.2f}".format(str(self.__class__).split('.')[-1], -h0))
                     self.safety = False
 
-                # print(np.linalg.norm(ze[0:2] - zo[0:2]))
-                # print(h0)
-                # if np.linalg.norm(ze[0:2] - zo[0:2]) < 2:
-                #     uu = 1
-                #     pass
-
                 self.cbf_vals[idx] = h_array[idx]
 
         # Format inequality constraints
@@ -195,11 +186,8 @@ class ConsolidatedCbfController(CbfQpController):
         exp_term = np.exp(-self.k_gains * h_array)
         H = 1 - np.sum(exp_term)  # Get value of C-CBF
         self.c_cbf = H
-        print(H)
-        print(h_array)
 
         # Non-centralized agents CBF dynamics become drifts
-        # Lgh_uncontrolled = np.copy(Lgh_array[:, self.n_agents * self.nu:])
         Lgh_uncontrolled = np.copy(Lgh_array[:, :])
         Lgh_uncontrolled[:, ego * self.nu:(ego + 1) * self.nu] = 0
         Lgh_array[:, np.s_[:ego * self.nu]] = 0  # All indices before first ego index set to 0
@@ -208,21 +196,21 @@ class ConsolidatedCbfController(CbfQpController):
         # Get time-derivatives of gains
         premultiplier_k = self.k_gains * exp_term
         premultiplier_h = h_array * exp_term
-        k_dots = self.compute_k_dots(h_array, Lgh_array, premultiplier_k)
-        # k_dots = np.zeros(k_dots.shape)  # Tuning nominal controller
 
         # Compute C-CBF Dynamics
-        LfH = premultiplier_k @ Lfh_array + premultiplier_h @ k_dots
+        LfH = premultiplier_k @ Lfh_array 
         LgH = premultiplier_k @ Lgh_array
         LgH_uncontrolled = premultiplier_k @ Lgh_uncontrolled
 
         # Tunable CBF Addition
-        # kH = 0.1
-        # kH = 0.01
-        # kH = 0.5
-        # kH = 0.75
         kH = 1.0
         phi = np.tile(-np.array(self.u_max / 10), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
+        LfH = LfH + phi
+
+        # Compute k dots
+        k_dots = self.compute_k_dots(h_array, H, LfH, Lgh_array, premultiplier_k)
+        # k_dots = np.zeros(k_dots.shape)  # Tuning nominal controller
+        LfH = LfH + premultiplier_h @ k_dots
 
         # Finish constructing CBF here
         a_mat = np.append(-LgH, -H)
@@ -236,12 +224,16 @@ class ConsolidatedCbfController(CbfQpController):
 
     def compute_k_dots(self,
                        h_array: NDArray,
+                       H: float, 
+                       LfH: float,
                        Lgh_array: NDArray,
                        vec: NDArray) -> NDArray:
         """Computes the time-derivatives of the k_gains via QP based adaptation law.
 
         ARGUMENTS
             h_array: array of CBF values
+            H: scalar c-cbf value
+            LfH: scalar LfH term for c-cbf
             Lgh_array: 2D array of Lgh terms
             vec: vector that needs to stay out of the nullspace of matrix P
 
@@ -249,6 +241,33 @@ class ConsolidatedCbfController(CbfQpController):
             k_dot
 
         """
+        # Some parameters
+        k_min = 0.1
+        k_nom = 2 * k_min * np.exp(k_min * h_array)
+        P_mat = np.eye(len(h_array))
+        p_vec = vec
+        null_gain = 10.0
+        N_mat = null_gain * null_space(Lgh_array.T)
+        Q_mat = np.eye(len(self.k_gains)) - 2 * N_mat @ N_mat.T - N_mat @ N_mat.T @ N_mat @ N_mat.T
+        _, sigma, _ = np.linalg.svd(Lgh_array.T)  # Singular values of LGH
+        sigma_r = np.min(sigma[np.where(sigma>0)[0][0]])  # Minimum non-zero singular value
+        delta = -(LfH + H) / np.linalg.norm(self.u_max)
+
+
+        # Objective Function and Partial Derivatives
+        J = 1 / 2 * (self.k_gains - k_nom).T @ P_mat @ (self.k_gains - k_nom)
+        dJdk = P_mat @ (self.k_gains - k_nom)
+        d2Jdk2 = P_mat
+
+        # Constraint Functions and Partial Derivatives
+        hi = 1 / (self.k_gains - k_min)
+        dhidk = -1 * hi**(-2)
+        d2hidk2 = 2 * hi**(-3)
+        eta = sigma_r**2 * (p_vec.T @ Q_mat @ p_vec) - delta**2
+        dpdk = np.diagonal((self.k_gains**2 - 1) * np.exp(self.k_gains * h_array))
+        detadk = 2 * sigma_r**2 * (dpdk.T @ Q @ p_vec)
+
+
         threshold = 1e-4  # You must be at least this tall to ride the roller coaster (aka vec orthogonal minimum)
         gain = 10.0  # I don't know why I did this, but I did in my Matlab code
         Ao_basis = gain * null_space(Lgh_array.T)
