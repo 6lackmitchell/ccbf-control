@@ -1,12 +1,23 @@
 import symengine as se
 import numpy as np
-from .physical_params import ar_max, w_max
-
-# Resolve
+import builtins
 from core.dynamics_wrappers import dyn_wrapper, control_affine_system_deterministic, control_affine_system_stochastic, \
     first_order_forward_euler
-from .physical_params import Lr
-from .timing_params import dt
+
+vehicle = builtins.PROBLEM_CONFIG['vehicle']
+control_level = builtins.PROBLEM_CONFIG['control_level']
+situation = builtins.PROBLEM_CONFIG['situation']
+mod = vehicle + '.' + control_level + '.' + situation
+ar_max = getattr(__import__(mod + '.physical_params', fromlist=['ar_max']), 'ar_max')
+w_max = getattr(__import__(mod + '.physical_params', fromlist=['w_max']), 'w_max')
+Lr = getattr(__import__(mod + '.physical_params', fromlist=['Lr']), 'Lr')
+dt = getattr(__import__(mod + '.timing_params', fromlist=['dt']), 'dt')
+
+# from .physical_params import ar_max, w_max
+# from .physical_params import Lr
+# from .timing_params import dt
+
+
 
 # Define Symbolic State
 sym_state = se.symbols(['x', 'y', 'psi', 'vr', 'beta'], real=True)
@@ -23,6 +34,9 @@ g_symbolic = se.DenseMatrix([[0.0, 0.0],
                              [0.0, 1.0],
                              [1.0, 0.0]])
 
+# Need to be fixed
+ar_max = 1
+w_max = 1
 s_symbolic_deterministic = se.Matrix([[0 for i in range(5)] for j in range(5)])
 s_symbolic_stochastic = 0.25 * dt * se.Matrix([[0, 0, 0, 0, 0],
                                                [0, 0, 0, 0, 0],

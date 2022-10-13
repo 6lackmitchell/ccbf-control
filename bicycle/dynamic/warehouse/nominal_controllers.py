@@ -2,7 +2,7 @@ import numpy as np
 from control import lqr
 from nptyping import NDArray
 from core.controllers.controller import Controller
-from bicycle.dynamic.physical_params import LW, u_max
+from bicycle.dynamic.warehouse.physical_params import LW, u_max
 from bicycle.dynamic.models import f
 from bicycle.dynamic.warehouse.initial_conditions import *
 

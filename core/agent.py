@@ -27,6 +27,7 @@ class Agent:
 
     def __init__(self,
                  identifier: int,
+                 z0: NDArray,
                  u0: NDArray,
                  cbf0: NDArray,
                  timing: List,
@@ -63,7 +64,8 @@ class Agent:
         self.safety = None
         self._timestep = None
 
-        self.reset(np.zeros(5,))
+        # self.reset(np.zeros(5,))  # For experiments
+        self.reset(z0)  # For simulations
 
     def reset(self,
               x0: NDArray) -> None:
