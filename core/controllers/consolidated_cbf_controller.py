@@ -1,3 +1,4 @@
+from this import d
 import numpy as np
 import builtins
 from typing import Callable, List, overload
@@ -264,8 +265,15 @@ class ConsolidatedCbfController(CbfQpController):
         dhidk = -1 * hi**(-2)
         d2hidk2 = 2 * hi**(-3)
         eta = sigma_r**2 * (p_vec.T @ Q_mat @ p_vec) - delta**2
-        dpdk = np.diagonal((self.k_gains**2 - 1) * np.exp(self.k_gains * h_array))
+        dpdk = np.diagonal((self.k_gains * h_array - 1) * np.exp(-self.k_gains * h_array))
         detadk = 2 * sigma_r**2 * (dpdk.T @ Q @ p_vec)
+        d2pdk2_vals = h_array * np.exp(-self.k_gains * h_array) + (self.k_gains * h_array - 1) * -h_array * np.exp(-self.k_gains * h_array)
+        d2pdk2 = np.zeros((len(h_array), len(h_array), len(h_array)))
+        np.fill_diagonal(d2pdk2, d2pdk2_vals)
+        d2etadk2 = 2 * sigma_r**2 * (d2pdk2.T @ Q @ p_vec + dpdk.T @ Q @ dpdk)
+
+        Phi_mat = J - np.log(hi) - np.log(eta)
+        dPhidk = dJdk 
 
 
         threshold = 1e-4  # You must be at least this tall to ride the roller coaster (aka vec orthogonal minimum)
