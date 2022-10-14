@@ -1,3 +1,4 @@
+import platform
 import builtins
 from importlib import import_module
 from core.agent import Agent
@@ -11,24 +12,7 @@ from .objective_functions import objective_accel_and_steering
 from .nominal_controllers import LqrController, ZeroController
 from .initial_conditions import *
 
-# vehicle = builtins.PROBLEM_CONFIG['vehicle']
-# control_level = builtins.PROBLEM_CONFIG['control_level']
-system_model = builtins.PROBLEM_CONFIG['system_model']
-# situation = builtins.PROBLEM_CONFIG['situation']
-# mod = vehicle + '.' + control_level + '.' + situation + '.initial_conditions'
-
-# # Programmatic version of 'from situation import *'
-# try:
-#     module = import_module(mod)
-#     globals().update(
-#         {n: getattr(module, n) for n in module.__all__} if hasattr(module, '__all__')
-#         else {k: v for (k, v) in module.__dict__.items() if not k.startswith('_')}
-#     )
-# except ModuleNotFoundError as e:
-#     print('No module named \'{}\' -- exiting.'.format(mod))
-#     raise e
-
-if system_model == 'stochastic':
+if builtins.PROBLEM_CONFIG['system_model'] == 'stochastic':
     from ..models import sigma_stochastic as sigma, \
         stochastic_dynamics as system_dynamics, stochastic_step as step_dynamics
 else:
@@ -38,7 +22,11 @@ else:
 # Configure parameters
 nAgents = len(z0)
 time = [dt, tf]
-save_path = '/home/6lackmitchell/Documents/datastore/warehouse/test.pkl'
+
+if platform.machine() == "aarch64":
+    save_path = '/home/6lackmitchell/Documents/datastore/warehouse/test.pkl'
+else:
+    save_path = '/Users/mblack/Documents/git/ccbf-control/data/warehouse/test.pkl'
 
 
 # Define controllers

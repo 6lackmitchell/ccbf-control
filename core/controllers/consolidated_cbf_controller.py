@@ -253,9 +253,14 @@ class ConsolidatedCbfController(CbfQpController):
         p_vec = vec
         null_gain = 1.0
         N_mat = null_gain * null_space(Lgh_array.T)
+        rank_Lg = N_mat.shape[0] - N_mat.shape[1]
         Q_mat = np.eye(len(self.k_gains)) - 2 * N_mat @ N_mat.T + N_mat @ N_mat.T @ N_mat @ N_mat.T
         _, sigma, _ = np.linalg.svd(Lgh_array.T)  # Singular values of LGH
-        sigma_r = np.min(sigma[np.where(sigma>0)[0]])  # Minimum non-zero singular value
+        if rank_Lg > 0:
+            sigma_r = sigma[rank_Lg - 1]
+        else:
+            sigma_r = 0  # This should not ever happen (by assumption that not all individual Lgh = 0)
+        # sigma_r = np.min(sigma[np.where(sigma>0)[0]])  # Minimum non-zero singular value
         delta = -(LfH + H) / np.linalg.norm(self.u_max)
         delta = np.max([0, delta])  # TO DO: Needs to be adjusted 
 
