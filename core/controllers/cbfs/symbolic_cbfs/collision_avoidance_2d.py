@@ -21,7 +21,7 @@ except ModuleNotFoundError as e:
     raise e
 
 # Defining Physical Params
-R = 0.25
+R = 0.5
 
 # Define new symbols -- necessary for pairwise interactions case
 sso = se.symbols(['{}o'.format(n) for n in ss], real=True)
@@ -85,8 +85,8 @@ d2hdtaudx_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdx2_predictive_ca_s
 d2hdtau2_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdtau2_predictive_ca_symbolic, ss, sso)
 
 # Relaxed Predictive Collision Avoidance
-# relaxation = 0.05
-relaxation = 0.5
+relaxation = 0.05  # for warehouse simulation
+# relaxation = 0.5  # for experiment
 
 
 # CBF Callables

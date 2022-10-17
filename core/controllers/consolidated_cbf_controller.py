@@ -66,7 +66,8 @@ class ConsolidatedCbfController(CbfQpController):
                          ignore)
         nCBF = len(self.cbf_vals)
         self.c_cbf = 100
-        self.k_gains = 1.0 * np.ones((nCBF,))
+        self.k_gains = 0.5 * np.ones((nCBF,))
+        self.k_dots = np.zeros((nCBF,))
         self.n_agents = 1
 
     def formulate_qp(self,
@@ -84,7 +85,7 @@ class ConsolidatedCbfController(CbfQpController):
         na = 1 + len(zr)
         ns = len(ze)
         self.safety = True
-        discretization_error = 0.0
+        discretization_error = self._dt * 10
 
         if self.nv > 0:
             alpha_nom = 1.0
@@ -182,6 +183,8 @@ class ConsolidatedCbfController(CbfQpController):
         RETURNS
             kdot: array of time-derivatives of k_gains
         """
+        # Introduce discretization error
+        discretization_error = self._dt * 20
 
         # Get C-CBF Value
         exp_term = np.exp(-self.k_gains * h_array)
@@ -204,15 +207,23 @@ class ConsolidatedCbfController(CbfQpController):
         LgH_uncontrolled = premultiplier_k @ Lgh_uncontrolled
 
         # Tunable CBF Addition
-        kH = 1.0
-        phi = np.tile(-np.array(self.u_max / 10), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
+        # kH = 1.0
+        # kH = 0.5
+        kH = 0.05
+        phi = np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
         LfH = LfH + phi
 
         # Compute k dots
         Lg_for_kdot = Lgh_array[:, self.nu * ego:self.nu * (ego + 1)]
         k_dots = self.compute_k_dots(h_array, H, LfH, Lg_for_kdot, premultiplier_k)
-        # k_dots = np.zeros(k_dots.shape)  # Tuning nominal controller
-        LfH = LfH + premultiplier_h @ k_dots
+        LfH = LfH + premultiplier_h @ k_dots - discretization_error
+
+        if H < 0:
+            print(f"LfH: {LfH}")
+            print(f"LgH: {LgH}")
+            print(f"H:   {H}")
+            print(self.k_gains)
+            print(H)
 
         # Finish constructing CBF here
         a_mat = np.append(-LgH, -H)
@@ -220,7 +231,6 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Update k_dot
         self.k_gains = self.k_gains + k_dots * self._dt
-        # print(self.k_gains)
 
         return a_mat[:, np.newaxis].T, b_vec
 
@@ -246,10 +256,10 @@ class ConsolidatedCbfController(CbfQpController):
         # TO DO: Correct how delta is being used -- need the max over all safe set
         # Some parameters
         k_min = 0.1
-        k_max = 10.0
-        k_des = 2 * k_min * np.exp(k_min * h_array)
+        k_max = 1.0
+        k_des = 10 * k_min * h_array
         k_des = np.clip(k_des, k_min, k_max)
-        P_mat = np.eye(len(h_array))
+        P_mat = 10 * np.eye(len(h_array))
         p_vec = vec
         null_gain = 1.0
         N_mat = null_gain * null_space(Lgh_array.T)
@@ -257,29 +267,50 @@ class ConsolidatedCbfController(CbfQpController):
         Q_mat = np.eye(len(self.k_gains)) - 2 * N_mat @ N_mat.T + N_mat @ N_mat.T @ N_mat @ N_mat.T
         _, sigma, _ = np.linalg.svd(Lgh_array.T)  # Singular values of LGH
         if rank_Lg > 0:
-            sigma_r = sigma[rank_Lg - 1]
+            sigma_r = sigma[rank_Lg - 1]  # minimum non-zero singular value
         else:
             sigma_r = 0  # This should not ever happen (by assumption that not all individual Lgh = 0)
-        # sigma_r = np.min(sigma[np.where(sigma>0)[0]])  # Minimum non-zero singular value
-        delta = -(LfH + H) / np.linalg.norm(self.u_max)
-        delta = np.max([0, delta])  # TO DO: Needs to be adjusted 
+        delta = -(LfH + H + (h_array * np.exp(-self.k_gains * h_array)) @ self.k_dots) / np.linalg.norm(self.u_max)
+        delta = 2 * abs(delta)
+        # print(delta)
+        # delta = 50.0
+        # delta = np.max([0, delta])  # TO DO: Needs to be adjusted 
 
         # Objective Function and Partial Derivatives
         J = 1 / 2 * (self.k_gains - k_des).T @ P_mat @ (self.k_gains - k_des)
         dJdk = P_mat @ (self.k_gains - k_des)
         d2Jdk2 = P_mat
 
-        # Constraint Functions and Partial Derivatives: Convention hi >= 0
-        hi = 1 / (self.k_gains - k_min)
-        dhidk = -1 * hi**(-2)
-        d2hidk2 = np.diag(2 * hi**(-3))
-        eta = sigma_r**2 * (p_vec.T @ Q_mat @ p_vec) - delta**2
+        # K Constraint Functions and Partial Derivatives: Convention hi >= 0
+        constraint_gain = 1.0
+        # hi = 10.0 / (self.k_gains - k_min)
+        # dhidk = -1 * hi**(-2)
+        # d2hidk2 = np.diag(2 * hi**(-3))
+        hi = (self.k_gains - k_min) * constraint_gain
+        dhidk = np.ones((len(self.k_gains),)) * constraint_gain
+        d2hidk2 = np.zeros((len(self.k_gains),len(self.k_gains)))
+
+
+        # Partial Derivatives of p vector
         dpdk = np.diag((self.k_gains * h_array - 1) * np.exp(-self.k_gains * h_array))
-        detadk = 2 * sigma_r**2 * (dpdk.T @ Q_mat @ p_vec)
         d2pdk2_vals = h_array * np.exp(-self.k_gains * h_array) + (self.k_gains * h_array - 1) * -h_array * np.exp(-self.k_gains * h_array)
         d2pdk2 = np.zeros((len(h_array), len(h_array), len(h_array)))
         np.fill_diagonal(d2pdk2, d2pdk2_vals)
-        d2etadk2 = 2 * sigma_r**2 * (d2pdk2.T @ Q_mat @ p_vec + dpdk.T @ Q_mat @ dpdk)
+
+        # LGH Norm Constraint Function and Partial Derivatives
+        # Square of norm
+        eta = (sigma_r**2 * (p_vec.T @ Q_mat @ p_vec) - delta**2) * constraint_gain
+        detadk = 2 * sigma_r**2 * (dpdk.T @ Q_mat @ p_vec) * constraint_gain
+        d2etadk2 = (2 * sigma_r**2 * (d2pdk2.T @ Q_mat @ p_vec + dpdk.T @ Q_mat @ dpdk)) * constraint_gain
+        # # Norm
+        # eta = sigma_r * (p_vec.T @ Q_mat @ p_vec)**(1/2) - delta
+        # detadk = sigma_r * (p_vec.T @ Q_mat @ p_vec)**(-1/2) * (dpdk.T @ Q_mat @ p_vec)
+        # d2etadk2 = sigma_r * (
+        #     (-1 * (p_vec.T @ Q_mat @ p_vec)**(-3/2) * (dpdk.T @ Q_mat @ p_vec)[:, np.newaxis] @ (dpdk.T @ Q_mat @ p_vec)[np.newaxis, :] 
+        #     + (p_vec.T @ Q_mat @ p_vec)**(-1/2) * (d2pdk2.T @ Q_mat @ p_vec + dpdk.T @ Q_mat @ dpdk))
+        # )
+        if np.isnan(eta):
+            print(eta)
 
         # Define the augmented cost function
         Phi = J - np.sum(np.log(hi)) - np.log(eta)
@@ -287,10 +318,16 @@ class ConsolidatedCbfController(CbfQpController):
         d2Phidk2 = d2Jdk2 - np.sum(d2hidk2 / hi - dhidk / hi**2) - (d2etadk2 / eta - detadk / eta**2)
 
         # Define Adaptation law
+        gradient_gain = 0.01
         # corrector_term = -np.linalg.inv(d2Phidk2) @ (P * dPhidk)  # Correction toward minimizer
-        corrector_term = -dPhidk  # Correction toward minimizer -- gradient method only
+        corrector_term = -dPhidk * gradient_gain  # Correction toward minimizer -- gradient method only
         predictor_term = 0 * self.k_gains  # Zero for now (need to see how this could depend on time)
         k_dots = corrector_term + predictor_term
+
+        if np.sum(np.isnan(k_dots)) > 0:
+            print(k_dots)
+
+        self.k_dots = k_dots
 
         return k_dots
 

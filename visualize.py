@@ -4,7 +4,7 @@ import importlib
 
 vehicle = 'bicycle'
 level = 'dynamic'
-situation = 'dasclab'
+situation = 'warehouse'
 
 # Make problem config available to other modules
 builtins.PROBLEM_CONFIG = {'vehicle': vehicle,

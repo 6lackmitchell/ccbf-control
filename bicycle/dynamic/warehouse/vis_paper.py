@@ -5,13 +5,14 @@ import os
 import glob
 import pickle
 import traceback
+import platform
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.patches import Rectangle
 from bicycle.dynamic import nAgents
 from bicycle.dynamic.physical_params import LW
-from bicycle.dynamic.timing_params import dt, tf
+from bicycle.dynamic.warehouse.timing_params import dt, tf
 from bicycle.dynamic.warehouse.initial_conditions import xg, yg
 from visualizing.helpers import get_circle, get_ex
 
@@ -25,7 +26,11 @@ colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 colors[0] = colors[1]
 colors.reverse()
 
-filepath = '/home/dasc/Documents/MB/datastore/warehouse/paper/'
+if platform.machine() == "aarch64":
+    filepath = '/home/dasc/Documents/MB/datastore/warehouse/paper/'
+else:
+    filepath = '/Users/mblack/Documents/git/ccbf-control/data/warehouse/'
+
 
 
 # ### Define Recording Variables ###
@@ -312,7 +317,7 @@ def animate_ego(jj):
 
 
 # Create animation
-# ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii - 10), interval=30, repeat=False)
+ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii - 10), interval=30, repeat=False)
 # writer = animation.writers['ffmpeg']
 # ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))
 
