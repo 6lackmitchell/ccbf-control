@@ -79,6 +79,8 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_min = 0.01
         self.k_max = 5.0
         self.dhdx = np.zeros((nCBF, 5))
+        self.filtered_wf = 0
+        self.filtered_wg = 0
 
     def formulate_qp(
         self, t: float, ze: NDArray, zr: NDArray, u_nom: NDArray, ego: int, cascade: bool = False
@@ -405,6 +407,36 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_dots = k_dots
 
         return k_dots
+
+    def k_dot(self, x: NDArray, u: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+        """Computes the time-derivative of the constituent cbf weight vector (k).
+
+        Arguments
+        ---------
+        x: state vector
+        u: control vector
+        k: constituent cbf weighting vector
+        h: array of constituent cbfs
+        Lg: matrix of constituent cbf Lgh vectors
+
+        Returns
+        -------
+        k_dot
+
+        """
+        self.P_gain = 1.0 * np.eye((len(k)))
+        wf = -np.linalg.inv(self.grad_phi_kk(x, k, h, Lg)) @ (
+            self.P_gain @ self.grad_phi_k(x, k, h, Lg) + self.grad_phi_kx(x, k, h, Lg) @ f(x)
+        )
+        wg = -np.linalg.inv(self.grad_phi_kk(x, k, h, Lg)) @ self.grad_phi_kx(x, k, h, Lg) @ g(x)
+
+        m = 1.0
+        self.filtered_wf = self.filtered_wf + (wf - self.filtered_wf) / m * self._dt
+        self.filtered_wg = self.filtered_wg + (wg - self.filtered_wg) / m * self._dt
+
+        k_dot = wf + wg @ u
+
+        return k_dot
 
     def H(self, k: NDArray, h: NDArray) -> float:
         """Computes the consolidated control barrier function (C-CBF) based on
@@ -911,11 +943,8 @@ class ConsolidatedCbfController(CbfQpController):
 
         """
         LfH = (k * np.exp(-k * h)) @ self.dhdx @ f(x)
-        LkH = -np.linalg.inv(self.grad_phi_kk(x, k, h, Lg)) @ (
-            self.grad_phi_k(x, k, h, Lg) + self.grad_phi_kx(x, k, h, Lg) @ f(x)
-        )
 
-        return -LfH - self.H(k, h) - LkH
+        return -LfH - self.H(k, h) - self.filtered_wf + abs(self.filtered_wg) @ self.u_max
 
     def grad_delta_k(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
@@ -936,15 +965,9 @@ class ConsolidatedCbfController(CbfQpController):
         def LfH(dk):
             return (dk * np.exp(-dk * h)) @ self.dhdx @ f(x)
 
-        def LkH(dk):
-            return -np.linalg.inv(self.grad_phi_kk(x, dk, h, Lg)) @ (
-                self.grad_phi_k(x, dk, h, Lg) + self.grad_phi_kx(x, dk, h, Lg) @ f(x)
-            )
-
         dLfHdk = nd.Gradient(LfH)(k)  # Compute gradient numerically
-        dLkHdk = nd.Gradient(LkH)(k)  # Compute gradient numerically
 
-        return -dLfHdk - self.grad_H_k(k, h) - dLkHdk
+        return -dLfHdk - self.grad_H_k(k, h)
 
     def grad_delta_x(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
@@ -965,15 +988,9 @@ class ConsolidatedCbfController(CbfQpController):
         def LfH(dx):
             return (k * np.exp(-k * h(dx))) @ self.dhdx(dx) @ f(dx)
 
-        def LkH(dx):
-            return -np.linalg.inv(self.grad_phi_kk(dx, k, h, Lg)) @ (
-                self.grad_phi_k(dx, k, h, Lg) + self.grad_phi_kx(dx, k, h, Lg) @ f(dx)
-            )
-
         dLfHdx = nd.Gradient(LfH)(x)  # Compute gradient numerically
-        dLkHdx = nd.Gradient(LkH)(x)  # Compute gradient numerically
 
-        return -dLfHdx - self.grad_H_x(x, k, h) - dLkHdx
+        return -dLfHdx - self.grad_H_x(x, k, h)
 
     def grad_delta_kk(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
@@ -994,21 +1011,12 @@ class ConsolidatedCbfController(CbfQpController):
         def LfH(dk):
             return (dk * np.exp(-dk * h)) @ self.dhdx @ f(x)
 
-        def LkH(dk):
-            return -np.linalg.inv(self.grad_phi_kk(x, dk, h, Lg)) @ (
-                self.grad_phi_k(x, dk, h, Lg) + self.grad_phi_kx(x, dk, h, Lg) @ f(x)
-            )
-
         def grad_LfH_k(dk):
             return nd.Gradient(LfH(k))(dk)
 
-        def grad_LkH_k(dk):
-            return nd.Gradient(LkH(k))(dk)
-
         grad_LfH_kk = nd.Gradient(grad_LfH_k)(k)
-        grad_LkH_kk = nd.Gradient(grad_LkH_k)(k)
 
-        return -grad_LfH_kk - self.grad_H_kk(k, h) - grad_LkH_kk
+        return -grad_LfH_kk - self.grad_H_kk(k, h)
 
     def grad_delta_kx(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
@@ -1029,21 +1037,12 @@ class ConsolidatedCbfController(CbfQpController):
         def LfH(dk):
             return (dk * np.exp(-dk * h)) @ self.dhdx @ f(x)
 
-        def LkH(dk):
-            return -np.linalg.inv(self.grad_phi_kk(x, dk, h, Lg)) @ (
-                self.grad_phi_k(x, dk, h, Lg) + self.grad_phi_kx(x, dk, h, Lg) @ f(x)
-            )
-
         def grad_LfH_k(dx):
             return nd.Gradient(LfH(k))(dx)
 
-        def grad_LkH_k(dx):
-            return nd.Gradient(LkH(k))(dx)
-
         grad_LfH_kx = nd.Gradient(grad_LfH_k)(x)
-        grad_LkH_kx = nd.Gradient(grad_LkH_k)(x)
 
-        return -grad_LfH_kx - self.grad_H_kx(x, k, h) - grad_LkH_kx
+        return -grad_LfH_kx - self.grad_H_kx(x, k, h)
 
     def k_desired(self, h: NDArray) -> NDArray:
         """Computes the desired gains k for the constituent cbfs. This can be
