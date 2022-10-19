@@ -159,7 +159,7 @@ plt.tight_layout(pad=2.0)
 # fig_cbfs = plt.figure(figsize=(8, 8))
 # ax_cbfs = fig_cbfs.add_subplot(111)
 # set_edges_black(ax_cbfs)
-#
+
 # # NN-CBF Values
 # ax_cbfs.plot(t[1:ii], np.zeros(t[1:ii].shape), linewidth=lwidth+1, color='k')
 # for aa in range(cbf.shape[0]):
@@ -170,14 +170,14 @@ plt.tight_layout(pad=2.0)
 # ax_cbfs.set(ylabel='h',
 #             ylim=[-0.1, 250],
 #             title='CBF Trajectories')
-#
+
 # # Plot Settings
 # for item in ([ax_cbfs.title, ax_cbfs.xaxis.label, ax_cbfs.yaxis.label] +
 #              ax_cbfs.get_xticklabels() + ax_cbfs.get_yticklabels()):
 #     item.set_fontsize(25)
 # ax_cbfs.legend(fancybox=True)
 # ax_cbfs.grid(True, linestyle='dotted', color='white')
-#
+
 # plt.tight_layout(pad=2.0)
 
 
@@ -317,7 +317,7 @@ def animate_ego(jj):
 
 
 # Create animation
-ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii - 10), interval=30, repeat=False)
+ani = animation.FuncAnimation(fig=fig_map, func=animate_ego, frames=int(ii), interval=10, repeat=False)
 # writer = animation.writers['ffmpeg']
 # ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))
 

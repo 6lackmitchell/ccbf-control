@@ -56,8 +56,8 @@ class CbfQpController(Controller):
         self.nu = len(u_max)
         self.nv = 1  # Number of additional optimization variables
         # self.cbf_vals = np.zeros((len(cbfs_individual) + (self.na - 1) * len(cbfs_pairwise)),)
-        
-        
+
+
         print("CBFS_INDIVIDUAL: {}".format(len(cbfs_individual)))
         print("CBFS_PAIRWISE: {}".format(len(cbfs_pairwise)))
         print("NA: {}".format(self.na))
@@ -172,6 +172,10 @@ class CbfQpController(Controller):
             #     status = 'Divide by Zero'
             #     self.u = np.zeros((self.nu,))
 
+        if not code:
+            print(A)
+            print(b)
+            print('wtf')
         decay_const = 0.0  # needs to be < 1
         integrated_error[ego] = (np.linalg.norm(self.u - self.u_nom) + integrated_error[ego]) * decay_const
 

@@ -85,8 +85,9 @@ d2hdtaudx_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdx2_predictive_ca_s
 d2hdtau2_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdtau2_predictive_ca_symbolic, ss, sso)
 
 # Relaxed Predictive Collision Avoidance
-relaxation = 0.05  # for warehouse simulation
-# relaxation = 0.5  # for experiment
+relaxation = 0.25  # for warehouse simulation (worked)
+# relaxation = 0.1  # for warehouse simulation
+relaxation = 0.5  # for experiment
 
 
 # CBF Callables
