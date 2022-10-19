@@ -66,9 +66,10 @@ class ConsolidatedCbfController(CbfQpController):
                          ignore)
         nCBF = len(self.cbf_vals)
         self.c_cbf = 100
-        self.k_gains = 0.5 * np.ones((nCBF,))
+        self.k_gains = 0.2 * np.ones((nCBF,))
         self.k_dots = np.zeros((nCBF,))
         self.n_agents = 1
+        self.U_mat = self.u_max[:, np.newaxis] @ self.u_max[np.newaxis, :]
 
     def formulate_qp(self,
                      t: float,
@@ -85,7 +86,7 @@ class ConsolidatedCbfController(CbfQpController):
         na = 1 + len(zr)
         ns = len(ze)
         self.safety = True
-        discretization_error = self._dt * 10
+        discretization_error = 0.0
 
         if self.nv > 0:
             alpha_nom = 1.0
@@ -184,7 +185,7 @@ class ConsolidatedCbfController(CbfQpController):
             kdot: array of time-derivatives of k_gains
         """
         # Introduce discretization error
-        discretization_error = self._dt * 20
+        discretization_error = 1.0
 
         # Get C-CBF Value
         exp_term = np.exp(-self.k_gains * h_array)
@@ -195,7 +196,7 @@ class ConsolidatedCbfController(CbfQpController):
         Lgh_uncontrolled = np.copy(Lgh_array[:, :])
         Lgh_uncontrolled[:, ego * self.nu:(ego + 1) * self.nu] = 0
         Lgh_array[:, np.s_[:ego * self.nu]] = 0  # All indices before first ego index set to 0
-        Lgh_array[:, np.s_[(ego + 1) * self.nu:]] = 0  # All indices after last ego index set to 0
+        Lgh_array[:, np.s_[(ego + 1) * self.nu:]] = 0  # All indices after last ego index set to 0 (excluding alpha)
 
         # Get time-derivatives of gains
         premultiplier_k = self.k_gains * exp_term
@@ -210,6 +211,7 @@ class ConsolidatedCbfController(CbfQpController):
         # kH = 1.0
         # kH = 0.5
         kH = 0.05
+        kH = 1.0
         phi = np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max))) @ abs(LgH_uncontrolled) * np.exp(-kH * H)
         LfH = LfH + phi
 
@@ -219,6 +221,7 @@ class ConsolidatedCbfController(CbfQpController):
         LfH = LfH + premultiplier_h @ k_dots - discretization_error
 
         if H < 0:
+            print(f"h_array: {h_array}")
             print(f"LfH: {LfH}")
             print(f"LgH: {LgH}")
             print(f"H:   {H}")
@@ -253,16 +256,39 @@ class ConsolidatedCbfController(CbfQpController):
             k_dot
 
         """
-        # TO DO: Correct how delta is being used -- need the max over all safe set
-        # Some parameters
+        # Good behavior gains
         k_min = 0.1
         k_max = 1.0
         k_des = 10 * k_min * h_array
         k_des = np.clip(k_des, k_min, k_max)
-        P_mat = 10 * np.eye(len(h_array))
+        P_gain = 10.0
+        constraint_gain = 10.0
+        gradient_gain = 0.01
+
+        # (3 Reached but H negative) gains
+        k_min = 0.01
+        k_max = 1.0
+        k_des = h_array / 5
+        k_des = np.clip(k_des, k_min, k_max)
+        P_gain = 100.0
+        constraint_gain = 1.0
+        gradient_gain = 0.001
+
+        # Testing gains
+        k_min = 0.01
+        k_max = 5.0
+        k_des = 0.1 * h_array / np.min([np.min(h_array), 2.0])
+        k_des = np.clip(k_des, k_min, k_max)
+        P_gain = 1000.0
+        kpositive_gain = 1000.0
+        constraint_gain = 1000.0
+        gradient_gain = 0.1
+
+        # TO DO: Correct how delta is being used -- need the max over all safe set
+        # Some parameters
+        P_mat = P_gain * np.eye(len(h_array))
         p_vec = vec
-        null_gain = 1.0
-        N_mat = null_gain * null_space(Lgh_array.T)
+        N_mat = null_space(Lgh_array.T)
         rank_Lg = N_mat.shape[0] - N_mat.shape[1]
         Q_mat = np.eye(len(self.k_gains)) - 2 * N_mat @ N_mat.T + N_mat @ N_mat.T @ N_mat @ N_mat.T
         _, sigma, _ = np.linalg.svd(Lgh_array.T)  # Singular values of LGH
@@ -270,11 +296,8 @@ class ConsolidatedCbfController(CbfQpController):
             sigma_r = sigma[rank_Lg - 1]  # minimum non-zero singular value
         else:
             sigma_r = 0  # This should not ever happen (by assumption that not all individual Lgh = 0)
-        delta = -(LfH + H + (h_array * np.exp(-self.k_gains * h_array)) @ self.k_dots) / np.linalg.norm(self.u_max)
-        delta = 2 * abs(delta)
-        # print(delta)
-        # delta = 50.0
-        # delta = np.max([0, delta])  # TO DO: Needs to be adjusted 
+        delta = -(LfH + 0.1 * H + (h_array * np.exp(-self.k_gains * h_array)) @ self.k_dots) / np.linalg.norm(self.u_max)
+        delta = 1 * abs(delta)
 
         # Objective Function and Partial Derivatives
         J = 1 / 2 * (self.k_gains - k_des).T @ P_mat @ (self.k_gains - k_des)
@@ -282,14 +305,9 @@ class ConsolidatedCbfController(CbfQpController):
         d2Jdk2 = P_mat
 
         # K Constraint Functions and Partial Derivatives: Convention hi >= 0
-        constraint_gain = 1.0
-        # hi = 10.0 / (self.k_gains - k_min)
-        # dhidk = -1 * hi**(-2)
-        # d2hidk2 = np.diag(2 * hi**(-3))
-        hi = (self.k_gains - k_min) * constraint_gain
-        dhidk = np.ones((len(self.k_gains),)) * constraint_gain
-        d2hidk2 = np.zeros((len(self.k_gains),len(self.k_gains)))
-
+        hi = (self.k_gains - k_min) * kpositive_gain
+        dhidk = np.ones((len(self.k_gains),)) * kpositive_gain
+        d2hidk2 = np.zeros((len(self.k_gains),len(self.k_gains))) * kpositive_gain
 
         # Partial Derivatives of p vector
         dpdk = np.diag((self.k_gains * h_array - 1) * np.exp(-self.k_gains * h_array))
@@ -297,18 +315,24 @@ class ConsolidatedCbfController(CbfQpController):
         d2pdk2 = np.zeros((len(h_array), len(h_array), len(h_array)))
         np.fill_diagonal(d2pdk2, d2pdk2_vals)
 
-        # LGH Norm Constraint Function and Partial Derivatives
-        # Square of norm
-        eta = (sigma_r**2 * (p_vec.T @ Q_mat @ p_vec) - delta**2) * constraint_gain
-        detadk = 2 * sigma_r**2 * (dpdk.T @ Q_mat @ p_vec) * constraint_gain
-        d2etadk2 = (2 * sigma_r**2 * (d2pdk2.T @ Q_mat @ p_vec + dpdk.T @ Q_mat @ dpdk)) * constraint_gain
-        # # Norm
-        # eta = sigma_r * (p_vec.T @ Q_mat @ p_vec)**(1/2) - delta
-        # detadk = sigma_r * (p_vec.T @ Q_mat @ p_vec)**(-1/2) * (dpdk.T @ Q_mat @ p_vec)
-        # d2etadk2 = sigma_r * (
-        #     (-1 * (p_vec.T @ Q_mat @ p_vec)**(-3/2) * (dpdk.T @ Q_mat @ p_vec)[:, np.newaxis] @ (dpdk.T @ Q_mat @ p_vec)[np.newaxis, :] 
-        #     + (p_vec.T @ Q_mat @ p_vec)**(-1/2) * (d2pdk2.T @ Q_mat @ p_vec + dpdk.T @ Q_mat @ dpdk))
-        # )
+        # # LGH Norm Constraint Function and Partial Derivatives
+        # # Square of norm
+        # eta = (sigma_r**2 * (p_vec.T @ Q_mat @ p_vec) - delta**2) * constraint_gain
+        # detadk = 2 * sigma_r**2 * (dpdk.T @ Q_mat @ p_vec) * constraint_gain
+        # d2etadk2 = (2 * sigma_r**2 * (d2pdk2.T @ Q_mat @ p_vec + dpdk.T @ Q_mat @ dpdk)) * constraint_gain
+
+        # V vec
+        v_vec = (p_vec @ Lgh_array).T
+        dvdk = (dpdk @ Lgh_array).T
+        d2vdk2 = (d2pdk2 @ Lgh_array).T
+
+        # New Input Constraints Condition
+        eta = ((v_vec.T @ U_mat @ v_vec) - delta**2) * constraint_gain
+        detadk = 2 * (dvdk.T @ U_mat @ v_vec) * constraint_gain
+        d2etadk2 = (2 * (d2vdk2.T @ U_mat @ v_vec + dvdk.T @ U_mat @ dvdk)) * constraint_gain
+
+        print(f"Eta: {eta}")
+
         if np.isnan(eta):
             print(eta)
 
@@ -318,11 +342,10 @@ class ConsolidatedCbfController(CbfQpController):
         d2Phidk2 = d2Jdk2 - np.sum(d2hidk2 / hi - dhidk / hi**2) - (d2etadk2 / eta - detadk / eta**2)
 
         # Define Adaptation law
-        gradient_gain = 0.01
-        # corrector_term = -np.linalg.inv(d2Phidk2) @ (P * dPhidk)  # Correction toward minimizer
-        corrector_term = -dPhidk * gradient_gain  # Correction toward minimizer -- gradient method only
+        corrector_term = -np.linalg.inv(d2Phidk2) @ (dPhidk)  # Correction toward minimizer
+        # corrector_term = -dPhidk  # Correction toward minimizer -- gradient method only
         predictor_term = 0 * self.k_gains  # Zero for now (need to see how this could depend on time)
-        k_dots = corrector_term + predictor_term
+        k_dots = gradient_gain * (corrector_term + predictor_term)
 
         if np.sum(np.isnan(k_dots)) > 0:
             print(k_dots)
@@ -331,74 +354,139 @@ class ConsolidatedCbfController(CbfQpController):
 
         return k_dots
 
+    def grad_Phi_kx(self, x: NDArray, k: NDArray) -> NDArray:
+        """Computes the gradient of Phi with respect to first
+        the gains k and then the state x.
 
+        Arguments
+        ---------
+        x: state vector
+        k: constituent cbf weighting vector
 
+        Returns
+        -------
+        grad_Phi_kx
 
-        # threshold = 1e-4  # You must be at least this tall to ride the roller coaster (aka vec orthogonal minimum)
-        # gain = 10.0  # I don't know why I did this, but I did in my Matlab code
-        # Ao_basis = gain * null_space(Lgh_array.T)
-        # identity = np.eye(vec.shape[0])
-        # P_new = identity - (Ao_basis @ Ao_basis.T).T - Ao_basis @ Ao_basis.T + \
-        #     (Ao_basis @ Ao_basis.T).T @ (Ao_basis @ Ao_basis.T)
-        # P_new = P_new / np.max(P_new)
-        # if self.P is not None:
-        #     P_dot = (P_new - self.P) / self._dt
-        # else:
-        #     P_dot = P_new / self._dt
+        """
+        grad_Phi_kx = (self.c0(x, k) * self.grad_c0_kx(x, k) - self.grad_c0_k(x, k) * self.grad_c0_x(x, k)) / self.c0(x, k)**2
 
-        # self.P = P_new  # Update P
+        return grad_Phi_kx
 
-        # # Enforce CBF condition on the orthogonal component of vec
-        # ultra_conservative = False
-        # B = vec.T @ self.P @ vec - threshold**2
-        # LfB = vec.T @ P_dot @ vec
-        # LgB = 2 * vec.T @ P_new @ np.diag(np.exp(-self.k_gains * h_array) - vec * h_array.T)  # NEEDS DEBUGGING
-        # if ultra_conservative:
-        #     eigs_P_dot, _ = np.linalg.eig(P_dot)
-        #     LfB = np.min(eigs_P_dot) * np.linalg.norm(vec)**2
+    # TO DO: Fix how to handle delta
+    def c0(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> float:
+        """Returns the viability constraint function evaluated at the current
+        state x and gain vector k.
 
-        # # Constraints on k_gains
-        # k_min = 0.10
-        # As = -np.eye(self.k_gains.shape[0] + 1)
-        # As[-1, :] = np.append(-LgB, -B)
-        # bs = np.append(10 * (self.k_gains - k_min), LfB)
+        Arguments
+        ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+        Lg: matrix of constituent cbf Lgh vectors
 
-        # # Get nominal k_dot
-        # k_dot_nom = self.k_dot_lqr(h_array)
+        Returns
+        -------
+        c0: viability constraint function evaluated at x and k
 
-        # # Get QP params -- no constraints on alpha right now
-        # a_nom = 1.0
-        # lk = len(k_dot_nom) + 1
-        # Q = 1 / 2 * np.eye(lk)
-        # Q[-1, -1] = 10
-        # p = np.append(-k_dot_nom, -a_nom * Q[-1, -1])
-        # Au = block_diag(*lk * [np.array([[1, -1]]).T])
-        # bu = np.tile(1 / self._dt * np.ones((2,)), lk).flatten()
-        # bu[-2] = 1e6  # alpha < 1e6
-        # bu[-1] = 0    # alpha > 0
-        # A = np.concatenate([As, Au])
-        # b = np.concatenate([bs, bu])
+        """
+        # TO DO
+        delta = 1
 
-        # # Compute k_dot
-        # sol = solve_qp_cvxopt(Q, p, A, b, None, None)
+        q_vec = k * np.exp(-k * h)
 
-        # # Check solution
-        # if 'code' in sol.keys():
-        #     code = sol['code']
-        #     status = sol['status']
+        return q_vec @ Lg @ self.U_mat @ Lg.T @ q_vec.T - delta**2
 
-        #     if not code:
-        #         k_dots = np.zeros((lk - 1,))
-        #     else:
-        #         alf = np.array(sol['x'])[-1]
-        #         k_dots = np.array(sol['x']).flatten()[:-1]
+    # TO DO: Fix how to handle delta
+    def grad_c0_k(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+        """Computes the gradient of the viability constraint function evaluated at the current
+        state x and gain vector k with respect to k.
 
-        # else:
-        #     code = 0
-        #     status = 'Divide by Zero'
-        #     k_dots = np.zeros((lk - 1,))
+        Arguments
+        ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+        Lg: matrix of constituent cbf Lgh vectors
 
-        # return k_dots
+        Returns
+        -------
+        grad_c0_k: gradient of viability constraint function with respect to k
+
+        """
+        # TO DO
+        delta = 1  # Need to fix
+        ddeltadk = np.ones((len(k),))  # Need to fix
+
+        q_vec = k * np.exp(-k * h)
+        dqdk = np.diag((k * h - 1) * np.exp(-k * h))
+
+        grad_c0_k = 2 * dqdk @ Lg @ self.U_mat @ Lg.T @ q_vec.T - 2 * delta * ddeltadk
+
+        return grad_c0_k
+
+    # TO DO: Handle delta, handle dhdx for all h, handle dLgdx
+    def grad_c0_x(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+        """Computes the gradient of the viability constraint function evaluated at the current
+        state x and gain vector k with respect to x.
+
+        Arguments
+        ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+        Lg: matrix of constituent cbf Lgh vectors
+
+        Returns
+        -------
+        grad_c0_x: gradient of viability constraint function with respect to x
+
+        """
+        # TO DO
+        dhdx = np.ones((len(k), len(x)))
+        dLgdx = np.ones((len(k), 2, len(x)))
+        delta = 1  # Need to fix
+        ddeltadx = np.ones((len(x),))  # Need to fix
+
+        q_vec = k * np.exp(-k * h)
+        dqdx = -k**2 * np.exp(-k * h) @ dhdx
+
+        grad_c0_x = 2 * dqdx @ Lg @ self.U_mat @ Lg.T @ q_vec.T + 2 * q_vec @ dLgdx @ self.U_mat @ Lg.T @ q_vec.T - 2 * delta * ddeltadx
+
+        return grad_c0_x
+
+    # TO DO: NEED TO FINISH
+    def grad_c0_kx(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+        """Computes the gradient of the viability constraint function evaluated at the current
+        state x and gain vector k with respect to first k and then x.
+
+        Arguments
+        ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+
+        Returns
+        -------
+        grad_c0_kx: gradient of viability constraint function with respect to k then x
+
+        """
+        dhdx = np.ones((len(k), len(x)))
+        dLgdx = np.ones((len(k), 2, len(x)))
+        delta = 1  # Need to fix
+        ddeltadk = np.ones((len(k),))  # Need to fix
+        ddeltadx = np.ones((len(x),))  # Need to fix
+        d2deltadxdk = np.ones((len(x), len(k)))  # Need to fix
+
+        q_vec = k * np.exp(-k * h)
+        dqdk = np.diag((k * h - 1) * np.exp(-k * h))
+        dqdx = -k**2 * np.exp(-k * h) @ dhdx
+        d2qdxdk = (k**2 * h - 2 * k) * np.exp(-k * h) @ dhdx
+
+        grad_c0_kx = 2 * d2qdxdk @ Lg @ self.U_mat @ Lg.T @ q_vec.T + 2 * dqdx @ Lg @ self.U_mat @ Lg.T @ dqdk.T + 2 * dqdk @ dLgdx @ self.U_mat @ Lg.T @ q_vec.T + 2 * q_vec @ dLgdx @ self.U_mat @ Lg.T @ dqdk.T - 2 * (ddeltadk @ ddeltadx + delta * d2deltadxdk)
+
+        return grad_c0_kx
+        
+
 
     def k_dot_lqr(self,
                   h_array: NDArray) -> NDArray:
