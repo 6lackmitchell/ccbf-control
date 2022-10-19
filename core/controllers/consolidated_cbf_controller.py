@@ -1,4 +1,5 @@
 import numpy as np
+import numdifftools as nd
 import builtins
 from typing import Callable, List, overload
 from importlib import import_module
@@ -396,6 +397,8 @@ class ConsolidatedCbfController(CbfQpController):
 
         Arguments
         ---------
+        k: constituent cbf weighting vector
+        h: array of constituent cbfs
 
         Returns
         -------
@@ -405,6 +408,82 @@ class ConsolidatedCbfController(CbfQpController):
         H = 1 - np.sum(np.exp(-k * h))
 
         return H
+
+    def grad_H_k(self, k: NDArray, h: NDArray) -> float:
+        """Computes the gradient of the consolidated control barrier function (C-CBF)
+        with respect to the weights (k).
+
+        Arguments
+        ---------
+        k: constituent cbf weighting vector
+        h: array of constituent cbfs
+
+        Returns
+        -------
+        grad_H_k: gradient of C-CBF with respect to k
+
+        """
+        grad_H_k = h * np.exp(-k * h)
+
+        return grad_H_k
+
+    # TO DO: Handle dhdx
+    def grad_H_x(self, x: NDArray, k: NDArray, h: NDArray) -> float:
+        """Computes the gradient of the consolidated control barrier function (C-CBF)
+        with respect to the state (x).
+
+        Arguments
+        ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: array of constituent cbfs
+
+        Returns
+        -------
+        grad_H_x: gradient of C-CBF with respect to x
+
+        """
+        grad_H_x = k * np.exp(-k * h) @ dhdx(x)
+
+        return grad_H_x
+
+    def grad_H_kk(self, k: NDArray, h: NDArray) -> float:
+        """Computes the gradient of the consolidated control barrier function (C-CBF)
+        with respect to the weights (k) twice.
+
+        Arguments
+        ---------
+        k: constituent cbf weighting vector
+        h: array of constituent cbfs
+
+        Returns
+        -------
+        grad_H_kk: gradient of C-CBF with respect to k twice
+
+        """
+        grad_H_kk = -(h**2) * np.exp(-k * h)
+
+        return grad_H_kk
+
+    # TO DO: Handle dhdx
+    def grad_H_kx(self, x: NDArray, k: NDArray, h: NDArray) -> float:
+        """Computes the gradient of the consolidated control barrier function (C-CBF)
+        with respect to the gains (k) and then the state (x).
+
+        Arguments
+        ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: array of constituent cbfs
+
+        Returns
+        -------
+        grad_H_kx: gradient of C-CBF with respect to k and then x
+
+        """
+        grad_H_kx = dhdx(x) @ np.exp(-k * h) - h * k * np.exp(-k * h) @ dhdx(x)
+
+        return grad_H_kx
 
     def grad_phi_k(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the gradient of Phi with respect to the gains k.
@@ -777,80 +856,160 @@ class ConsolidatedCbfController(CbfQpController):
         """
         return np.zeros((len(k),))
 
-    def delta(self, x: NDArray, k: NDArray, h: NDArray) -> float:
+    def delta(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> float:
+        """Computes the threshold above which the product LgH*u_max must remain for control viability.
+        In other words, in order to be able to satisfy:
+
+        LfH + LgH*u + LkH + alpha(H) >= 0
+
+        it must hold that LgH*u_max >= -LfH - LkH - alpha(H).
+
+        Arguments
+        ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+        Lg: matrix of constituent cbf Lgh vectors
+
+        Returns
+        -------
+        delta = LfH + alpha(H) + LkH
+
+        """
+        LfH = (k * np.exp(-k * h)) @ dhdx @ f(x)
+        LkH = -np.linalg.inv(self.grad_phi_kk(x, k, h, Lg)) @ (
+            self.grad_phi_k(x, k, h, Lg) + self.grad_phi_kx(x, k, h, Lg) @ f(x)
+        )
+
+        return -LfH - self.H(k, h) - LkH
+
+    def grad_delta_k(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
 
         Arguments
         ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+        Lg: matrix of constituent cbf Lgh vectors
 
         Returns
         -------
+        grad_delta_k: gradient of delta with respect to k
 
         """
+        # Define functions to compute gradient numerically
+        def LfH(dk):
+            return (dk * np.exp(-dk * h)) @ dhdx @ f(x)
 
-        LkH = -np.linalg.inv(self.grad_phi_kk()) @ (self.grad_phi_k() + self.grad_phi_kx() @ f(x))
+        def LkH(dk):
+            return -np.linalg.inv(self.grad_phi_kk(x, dk, h, Lg)) @ (
+                self.grad_phi_k(x, dk, h, Lg) + self.grad_phi_kx(x, dk, h, Lg) @ f(x)
+            )
 
-        return LfH + H + LkH
+        dLfHdk = nd.Gradient(LfH)(k)  # Compute gradient numerically
+        dLkHdk = nd.Gradient(LkH)(k)  # Compute gradient numerically
 
-    def grad_delta_k(self, x: NDArray, k: NDArray, h: NDArray) -> NDArray:
+        return -dLfHdk - self.grad_H_k(k, h) - dLkHdk
+
+    def grad_delta_x(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
 
         Arguments
         ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+        Lg: matrix of constituent cbf Lgh vectors
 
         Returns
         -------
+        grad_delta_x: gradient of delta with respect to x
 
         """
+        # Define functions to compute gradient numerically
+        def LfH(dx):
+            return (k * np.exp(-k * h(dx))) @ dhdx(dx) @ f(dx)
 
-        LkH = -np.linalg.inv(self.grad_phi_kk()) @ (self.grad_phi_k() + self.grad_phi_kx() @ f(x))
+        def LkH(dx):
+            return -np.linalg.inv(self.grad_phi_kk(dx, k, h, Lg)) @ (
+                self.grad_phi_k(dx, k, h, Lg) + self.grad_phi_kx(dx, k, h, Lg) @ f(dx)
+            )
 
-        return LfH + H + LkH
+        dLfHdx = nd.Gradient(LfH)(x)  # Compute gradient numerically
+        dLkHdx = nd.Gradient(LkH)(x)  # Compute gradient numerically
 
-    def grad_delta_x(self, x: NDArray, k: NDArray, h: NDArray) -> NDArray:
+        return -dLfHdx - self.grad_H_x(x, k, h) - dLkHdx
+
+    def grad_delta_kk(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
 
         Arguments
         ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+        Lg: matrix of constituent cbf Lgh vectors
 
         Returns
         -------
+        grad_delta_kk: gradient of delta with respect to k twice
 
         """
+        # Brute force/repetitive code for now, optimize if this is too slow
+        def LfH(dk):
+            return (dk * np.exp(-dk * h)) @ dhdx @ f(x)
 
-        LkH = -np.linalg.inv(self.grad_phi_kk()) @ (self.grad_phi_k() + self.grad_phi_kx() @ f(x))
+        def LkH(dk):
+            return -np.linalg.inv(self.grad_phi_kk(x, dk, h, Lg)) @ (
+                self.grad_phi_k(x, dk, h, Lg) + self.grad_phi_kx(x, dk, h, Lg) @ f(x)
+            )
 
-        return LfH + H + LkH
+        def grad_LfH_k(dk):
+            return nd.Gradient(LfH(k))(dk)
 
-    def grad_delta_kk(self, x: NDArray, k: NDArray, h: NDArray) -> NDArray:
+        def grad_LkH_k(dk):
+            return nd.Gradient(LkH(k))(dk)
+
+        grad_LfH_kk = nd.Gradient(grad_LfH_k)(k)
+        grad_LkH_kk = nd.Gradient(grad_LkH_k)(k)
+
+        return -grad_LfH_kk - self.grad_H_kk(k, h) - grad_LkH_kk
+
+    def grad_delta_kx(self, x: NDArray, k: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
 
         Arguments
         ---------
+        x: state vector
+        k: constituent cbf weighting vector
+        h: constituent cbf vector
+        Lg: matrix of constituent cbf Lgh vectors
 
         Returns
         -------
+        grad_delta_kx: gradient of delta with respect to k and then x
 
         """
+        # Brute force/repetitive code for now, optimize if this is too slow
+        def LfH(dk):
+            return (dk * np.exp(-dk * h)) @ dhdx @ f(x)
 
-        LkH = -np.linalg.inv(self.grad_phi_kk()) @ (self.grad_phi_k() + self.grad_phi_kx() @ f(x))
+        def LkH(dk):
+            return -np.linalg.inv(self.grad_phi_kk(x, dk, h, Lg)) @ (
+                self.grad_phi_k(x, dk, h, Lg) + self.grad_phi_kx(x, dk, h, Lg) @ f(x)
+            )
 
-        return LfH + H + LkH
+        def grad_LfH_k(dx):
+            return nd.Gradient(LfH(k))(dx)
 
-    def grad_delta_kx(self, x: NDArray, k: NDArray, h: NDArray) -> NDArray:
-        """Computes the threshold above which the product LgH*u_max must remain for control viability.
+        def grad_LkH_k(dx):
+            return nd.Gradient(LkH(k))(dx)
 
-        Arguments
-        ---------
+        grad_LfH_kx = nd.Gradient(grad_LfH_k)(x)
+        grad_LkH_kx = nd.Gradient(grad_LkH_k)(x)
 
-        Returns
-        -------
-
-        """
-
-        LkH = -np.linalg.inv(self.grad_phi_kk()) @ (self.grad_phi_k() + self.grad_phi_kx() @ f(x))
-
-        return LfH + H + LkH
+        return -grad_LfH_kx - self.grad_H_kx(x, k, h) - grad_LkH_kx
 
     def k_desired(self, h: NDArray) -> NDArray:
         """Computes the desired gains k for the constituent cbfs. This can be
