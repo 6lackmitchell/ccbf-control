@@ -1,6 +1,4 @@
 # Data files
-datastore
-datastore/
 .idea/
 *.DS_Store
 
@@ -139,4 +137,5 @@ dmypy.json
 .idea/workspace.xml
 .idea/misc.xml
 .idea/intersection.iml
+.DS_Store
 .DS_Store
