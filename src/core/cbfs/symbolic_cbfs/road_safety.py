@@ -2,19 +2,19 @@ import builtins
 import numpy as np
 import symengine as se
 from importlib import import_module
-from core.controllers.cbfs.cbf_wrappers import symbolic_cbf_wrapper_singleagent
+from core.cbfs.cbf_wrappers import symbolic_cbf_wrapper_singleagent
 
-vehicle = builtins.PROBLEM_CONFIG['vehicle']
-control_level = builtins.PROBLEM_CONFIG['control_level']
-mod = vehicle + '.' + control_level + '.models'
+vehicle = builtins.PROBLEM_CONFIG["vehicle"]
+control_level = builtins.PROBLEM_CONFIG["control_level"]
+mod = vehicle + "." + control_level + ".models"
 
 # Programmatic import
 try:
     module = import_module(mod)
-    globals().update({'f': getattr(module, 'f')})
-    globals().update({'ss': getattr(module, 'sym_state')})
+    globals().update({"f": getattr(module, "f")})
+    globals().update({"ss": getattr(module, "sym_state")})
 except ModuleNotFoundError as e:
-    print('No module named \'{}\' -- exiting.'.format(mod))
+    print("No module named '{}' -- exiting.".format(mod))
     raise e
 
 # Defining Physical Params
@@ -43,7 +43,9 @@ dhdx_phs_func = symbolic_cbf_wrapper_singleagent(dhdx_hs_symbolic, ss)
 d2hdx2_phs_func = symbolic_cbf_wrapper_singleagent(d2hdx2_hs_symbolic, ss)
 
 # On-Ramp Safety Nominal CBF
-h_or_symbolic = (ss[0] * np.tan(th) + LW / (2 * np.cos(th)) - ss[1]) * (ss[1] - (ss[0] * np.tan(th) - LW / (2 * np.cos(th))))
+h_or_symbolic = (ss[0] * np.tan(th) + LW / (2 * np.cos(th)) - ss[1]) * (
+    ss[1] - (ss[0] * np.tan(th) - LW / (2 * np.cos(th)))
+)
 dhdx_or_symbolic = (se.DenseMatrix([h_or_symbolic]).jacobian(se.DenseMatrix(ss))).T
 d2hdx2_or_symbolic = dhdx_or_symbolic.jacobian(se.DenseMatrix(ss))
 h_or_func = symbolic_cbf_wrapper_singleagent(h_or_symbolic, ss)
@@ -51,8 +53,9 @@ dhdx_or_func = symbolic_cbf_wrapper_singleagent(dhdx_or_symbolic, ss)
 d2hdx2_or_func = symbolic_cbf_wrapper_singleagent(d2hdx2_or_symbolic, ss)
 
 # On-Ramp Safety Predictive CBF
-h_por_symbolic = ((ss[0] + vx * tau) * np.tan(th) + LW / (2 * np.cos(th)) - (ss[1] + vy * tau)) * \
-                 ((ss[1] + vy * tau) - ((ss[0] + vx * tau) * np.tan(th) - LW / (2 * np.cos(th))))
+h_por_symbolic = ((ss[0] + vx * tau) * np.tan(th) + LW / (2 * np.cos(th)) - (ss[1] + vy * tau)) * (
+    (ss[1] + vy * tau) - ((ss[0] + vx * tau) * np.tan(th) - LW / (2 * np.cos(th)))
+)
 dhdx_por_symbolic = (se.DenseMatrix([h_por_symbolic]).jacobian(se.DenseMatrix(ss))).T
 d2hdx2_por_symbolic = dhdx_por_symbolic.jacobian(se.DenseMatrix(ss))
 h_por_func = symbolic_cbf_wrapper_singleagent(h_por_symbolic, ss)
@@ -180,7 +183,7 @@ def d2hdx2_road(ego):
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # This is a unit test
     ms = 97.5
     ze = np.array([-ms * np.cos(th), -ms * np.sin(th), th, 15.0, 0.0])
@@ -188,7 +191,4 @@ if __name__ == '__main__':
     print(h_road(ze))
     print(dhdx_road(ze))
     print(d2hdx2_road(ze))
-    print('stop')
-
-
-
+    print("stop")

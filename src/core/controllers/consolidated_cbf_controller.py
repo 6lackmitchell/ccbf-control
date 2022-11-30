@@ -7,7 +7,7 @@ from importlib import import_module
 from nptyping import NDArray
 from control import lqr
 from scipy.linalg import block_diag, null_space
-from .cbfs.cbf import Cbf
+from ..cbfs.cbf import Cbf
 from core.controllers.cbf_qp_controller import CbfQpController
 from core.controllers.controller import Controller
 from core.solve_cvxopt import solve_qp_cvxopt

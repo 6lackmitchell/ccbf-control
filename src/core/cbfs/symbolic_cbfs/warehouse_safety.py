@@ -2,7 +2,7 @@ import builtins
 import numpy as np
 import symengine as se
 from importlib import import_module
-from core.controllers.cbfs.cbf_wrappers import symbolic_cbf_wrapper_singleagent
+from core.cbfs.cbf_wrappers import symbolic_cbf_wrapper_singleagent
 
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]

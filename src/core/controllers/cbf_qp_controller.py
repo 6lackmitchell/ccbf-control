@@ -7,7 +7,7 @@ from typing import Callable, List
 from scipy.linalg import block_diag
 from core.solve_cvxopt import solve_qp_cvxopt
 from core.controllers.controller import Controller
-from core.controllers.cbfs import Cbf
+from core.cbfs import Cbf
 
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]

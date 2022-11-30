@@ -2,7 +2,7 @@ import builtins
 import numpy as np
 import symengine as se
 from importlib import import_module
-from core.controllers.cbfs.cbf_wrappers import (
+from core.cbfs.cbf_wrappers import (
     symbolic_cbf_wrapper_multiagent,
     symbolic_cbf_wrapper_singleagent,
 )
