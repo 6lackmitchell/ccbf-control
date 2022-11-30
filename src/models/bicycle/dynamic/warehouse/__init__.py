@@ -1,5 +1,5 @@
-import platform
 import builtins
+from sys import platform
 from importlib import import_module
 from core.agent import Agent
 from core.cbfs import cbfs_individual, cbfs_pairwise, cbf0
@@ -29,10 +29,17 @@ else:
 nAgents = len(z0)
 time = [dt, tf]
 
-if platform.machine() == "aarch64":
-    save_path = "/home/6lackmitchell/Documents/datastore/warehouse/test.pkl"
-else:
-    save_path = "/Users/mblack/Documents/git/ccbf-control/data/warehouse/test.pkl"
+if platform == "linux" or platform == "linux2":
+    # linux
+    pre_path = "/home/6lackmitchell/"
+elif platform == "darwin":
+    # OS X
+    pre_path = "/Users/mblack/"
+elif platform == "win32":
+    # Windows...
+    pass
+
+save_path = pre_path + "Documents/git/ccbf-control/data/bicycle/dynamic/warehouse/test.pkl"
 
 
 # Define controllers

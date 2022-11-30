@@ -6,15 +6,15 @@ import os
 import glob
 import pickle
 import traceback
-import platform
+from sys import platform
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.patches import Rectangle
-from bicycle.dynamic import nAgents
-from bicycle.dynamic.physical_params import LW
-from bicycle.dynamic.warehouse.timing_params import dt, tf
-from bicycle.dynamic.warehouse.initial_conditions import xg, yg
+from models.bicycle.dynamic import nAgents
+from models.bicycle.dynamic.physical_params import LW
+from models.bicycle.dynamic.warehouse.timing_params import dt, tf
+from models.bicycle.dynamic.warehouse.initial_conditions import xg, yg
 from visualizing.helpers import get_circle, get_ex
 
 matplotlib.rcParams.update({"figure.autolayout": True})
@@ -27,10 +27,17 @@ colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 colors[0] = colors[1]
 colors.reverse()
 
-if platform.machine() == "aarch64":
-    filepath = "/home/dasc/Documents/MB/datastore/warehouse/paper/"
-else:
-    filepath = "/Users/mblack/Documents/git/ccbf-control/data/warehouse/"
+if platform == "linux" or platform == "linux2":
+    # linux
+    pre_path = "/home/6lackmitchell/"
+elif platform == "darwin":
+    # OS X
+    pre_path = "/Users/mblack/"
+elif platform == "win32":
+    # Windows...
+    pass
+
+filepath = pre_path + "Documents/git/ccbf-control/data/bicycle/dynamic/warehouse/"
 
 
 # ### Define Recording Variables ###

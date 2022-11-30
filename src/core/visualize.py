@@ -2,23 +2,33 @@
 import builtins
 import importlib
 
-vehicle = "bicycle"
-level = "dynamic"
-situation = "warehouse"
 
-# Make problem config available to other modules
-builtins.PROBLEM_CONFIG = {
-    "vehicle": vehicle,
-    "control_level": level,
-    "situation": situation,
-    "system_model": "deterministic",
-}
-mod = "{}.{}.{}.vis_paper".format(vehicle, level, situation)
+def visualize(vehicle: str, level: str, situation: str, root_dir: str) -> bool:
+    """Plots simulation results for the system specified by the arguments.
 
-# Problem-specific import
-try:
+    Arguments:
+        vehicle: the vehicle to be simulated
+        level: the control level (i.e. kinematic, dynamic, etc.)
+        situation: i.e. intersection_old, intersection, etc.
+
+    Returns:
+        success: true / false flag
+
+    """
+    filepath = root_dir + f"/{vehicle}/{level}/{situation}/"
+
+    # Make problem config available to other modules
+    builtins.PROBLEM_CONFIG = {
+        "vehicle": vehicle,
+        "control_level": level,
+        "situation": situation,
+        "system_model": "deterministic",
+    }
+    mod = "models.{}.{}.{}.vis_paper".format(vehicle, level, situation)
+
+    # Problem-specific import
     module = importlib.import_module(mod)
-    # module = importlib.import_module(config + '.vis_mc')
-except ModuleNotFoundError as e:
-    print("No module named '{}' -- exiting.".format(mod))
-    raise e
+    # globals().update({"replay": getattr(module, "replay")})
+
+    # filename = None  # "baseline_no_estimation.pkl"
+    # return replay(filepath, filename)

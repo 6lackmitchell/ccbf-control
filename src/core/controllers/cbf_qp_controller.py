@@ -59,9 +59,6 @@ class CbfQpController(Controller):
         self.nv = 1  # Number of additional optimization variables
         # self.cbf_vals = np.zeros((len(cbfs_individual) + (self.na - 1) * len(cbfs_pairwise)),)
 
-        print("CBFS_INDIVIDUAL: {}".format(len(cbfs_individual)))
-        print("CBFS_PAIRWISE: {}".format(len(cbfs_pairwise)))
-        print("NA: {}".format(self.na))
         self.cbf_vals = np.zeros(
             (len(cbfs_individual) + (self.na - 1) * len(cbfs_pairwise)),
         )
