@@ -9,20 +9,20 @@ from core.solve_cvxopt import solve_qp_cvxopt
 from core.controllers.controller import Controller
 from core.controllers.cbfs import Cbf
 
-vehicle = builtins.PROBLEM_CONFIG['vehicle']
-control_level = builtins.PROBLEM_CONFIG['control_level']
-system_model = builtins.PROBLEM_CONFIG['system_model']
-mod = vehicle + '.' + control_level + '.models'
+vehicle = builtins.PROBLEM_CONFIG["vehicle"]
+control_level = builtins.PROBLEM_CONFIG["control_level"]
+system_model = builtins.PROBLEM_CONFIG["system_model"]
+mod = vehicle + "." + control_level + ".models"
 
 # Programmatic import
 try:
     module = import_module(mod)
-    globals().update({'f': getattr(module, 'f')})
-    globals().update({'g': getattr(module, 'g')})
-    globals().update({'sigma': getattr(module, 'sigma_{}'.format(system_model))})
+    globals().update({"f": getattr(module, "f")})
+    globals().update({"g": getattr(module, "g")})
+    globals().update({"sigma": getattr(module, "sigma_{}".format(system_model))})
 
 except ModuleNotFoundError as e:
-    print('No module named \'{}\' -- exiting.'.format(mod))
+    print("No module named '{}' -- exiting.".format(mod))
     raise e
 
 global integrated_error
@@ -35,14 +35,16 @@ class CbfQpController(Controller):
     _generate_cbf_condition = None
     _dt = None
 
-    def __init__(self,
-                 u_max: List,
-                 nAgents: int,
-                 objective_function: Callable,
-                 nominal_controller: Controller,
-                 cbfs_individual: List,
-                 cbfs_pairwise: List,
-                 ignore: List = None):
+    def __init__(
+        self,
+        u_max: List,
+        nAgents: int,
+        objective_function: Callable,
+        nominal_controller: Controller,
+        cbfs_individual: List,
+        cbfs_pairwise: List,
+        ignore: List = None,
+    ):
         super().__init__()
         self.u_max = u_max
         self.na = nAgents
@@ -57,20 +59,20 @@ class CbfQpController(Controller):
         self.nv = 1  # Number of additional optimization variables
         # self.cbf_vals = np.zeros((len(cbfs_individual) + (self.na - 1) * len(cbfs_pairwise)),)
 
-
         print("CBFS_INDIVIDUAL: {}".format(len(cbfs_individual)))
         print("CBFS_PAIRWISE: {}".format(len(cbfs_pairwise)))
         print("NA: {}".format(self.na))
-        self.cbf_vals = np.zeros((len(cbfs_individual) + (self.na - 1) * len(cbfs_pairwise)),)
+        self.cbf_vals = np.zeros(
+            (len(cbfs_individual) + (self.na - 1) * len(cbfs_pairwise)),
+        )
 
         # Define individual input constraints
         self.au = block_diag(*self.nu * [np.array([[1, -1]]).T])
         self.bu = np.tile(np.array(self.u_max).reshape(self.nu, 1), self.nu).flatten()
 
-    def _compute_control(self,
-                         t: float,
-                         z: NDArray,
-                         cascaded: bool = False) -> (NDArray, NDArray, int, str, float):
+    def _compute_control(
+        self, t: float, z: NDArray, cascaded: bool = False
+    ) -> (NDArray, NDArray, int, str, float):
         """Computes the vehicle's control input based on a cascaded approach: first, the CBF constraints attempt to
         filter out unsafe inputs on the first level. If no safe control exists, then all control inputs are eligible
         for safety filtering.
@@ -91,7 +93,7 @@ class CbfQpController(Controller):
         """
         global integrated_error
         code = 0
-        status = 'Incomplete'
+        status = "Incomplete"
 
         # Ignore agent if necessary (i.e. if comparing controllers for given initial conditions)
         ego = self.ego_id
@@ -104,7 +106,7 @@ class CbfQpController(Controller):
 
         # Partition state into ego and other
         ze = z[ego, :]
-        zo = np.vstack([z[:ego, :], z[ego + 1:, :]])
+        zo = np.vstack([z[:ego, :], z[ego + 1 :, :]])
 
         # Compute nominal control input for ego only -- assume others are zero
         z_copy_nom = z.copy()
@@ -129,14 +131,14 @@ class CbfQpController(Controller):
             sol = solve_qp_cvxopt(Q, p, A, b, G, h)
 
             # Check solution
-            if 'code' in sol.keys():
-                code = sol['code']
-                status = sol['status']
+            if "code" in sol.keys():
+                code = sol["code"]
+                status = sol["status"]
                 self.assign_control(sol, ego)
                 if abs(self.u[0]) > 1e-3:
                     pass
             else:
-                status = 'Divide by Zero'
+                status = "Divide by Zero"
                 self.u = np.zeros((self.nu,))
 
         else:
@@ -173,21 +175,19 @@ class CbfQpController(Controller):
             #     self.u = np.zeros((self.nu,))
 
         if not code:
-            print(A)
-            print(b)
+            print(A[-1, :])
+            print(b[-1])
             print('wtf')
         decay_const = 0.0  # needs to be < 1
-        integrated_error[ego] = (np.linalg.norm(self.u - self.u_nom) + integrated_error[ego]) * decay_const
+        integrated_error[ego] = (
+            np.linalg.norm(self.u - self.u_nom) + integrated_error[ego]
+        ) * decay_const
 
         return self.u, code, status
 
-    def formulate_qp(self,
-                     t: float,
-                     ze: NDArray,
-                     zr: NDArray,
-                     u_nom: NDArray,
-                     ego: int,
-                     cascade: bool = False) -> (NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, float):
+    def formulate_qp(
+        self, t: float, ze: NDArray, zr: NDArray, u_nom: NDArray, ego: int, cascade: bool = False
+    ) -> (NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, float):
         """Configures the Quadratic Program parameters (Q, p for objective function, A, b for inequality constraints,
         G, h for equality constraints).
 
@@ -231,7 +231,7 @@ class CbfQpController(Controller):
             # Get CBF Lie Derivatives
             Lfh = dhdx @ f(ze) + stoch
             Lgh = np.zeros((self.nu * na,))
-            Lgh[self.nu * ego:(ego + 1) * self.nu] = dhdx @ g(ze)  # Only assign ego control
+            Lgh[self.nu * ego : (ego + 1) * self.nu] = dhdx @ g(ze)  # Only assign ego control
             if cascade:
                 Lgh[self.nu * ego] = 0.0
 
@@ -250,30 +250,38 @@ class CbfQpController(Controller):
 
                 h0 = cbf.h0(ze, zo)
                 h = cbf.h(ze, zo)
-                dhdx = cbf.dhdx(ze,  zo)
+                dhdx = cbf.dhdx(ze, zo)
 
                 # Stochastic Term -- 0 for deterministic systems
                 if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
                     d2hdx2 = cbf.d2hdx2(ze, zo)
-                    stoch = 0.5 * (np.trace(sigma(ze).T @ d2hdx2[:ns, :ns] @ sigma(ze)) +
-                                   np.trace(sigma(zo).T @ d2hdx2[ns:, ns:] @ sigma(zo)))
+                    stoch = 0.5 * (
+                        np.trace(sigma(ze).T @ d2hdx2[:ns, :ns] @ sigma(ze))
+                        + np.trace(sigma(zo).T @ d2hdx2[ns:, ns:] @ sigma(zo))
+                    )
                 else:
                     stoch = 0.0
 
                 # Get CBF Lie Derivatives
                 Lfh = dhdx[:ns] @ f(ze) + dhdx[ns:] @ f(zo) + stoch
                 Lgh = np.zeros((self.nu * na,))
-                Lgh[self.nu * ego:(ego + 1) * self.nu] = dhdx[:ns] @ g(ze)
+                Lgh[self.nu * ego : (ego + 1) * self.nu] = dhdx[:ns] @ g(ze)
                 if cascade:
                     Lgh[self.nu * ego] = 0.0
                 # Lgh[self.nu * idx:(idx + 1) * self.nu] = dhdx[ns:] @ g(zo)  # Only allow ego to compensate for safety
 
                 if h0 < 0:
-                    print("{} SAFETY VIOLATION: {:.2f}".format(str(self.__class__).split('.')[-1], -h0))
+                    print(
+                        "{} SAFETY VIOLATION: {:.2f}".format(
+                            str(self.__class__).split(".")[-1], -h0
+                        )
+                    )
                     self.safety = False
 
                 update_idx = lci + cc * zr.shape[0] + ii
-                Ai[update_idx, :], bi[update_idx] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, update_idx, adaptive=True)
+                Ai[update_idx, :], bi[update_idx] = self.generate_cbf_condition(
+                    cbf, h, Lfh, Lgh, update_idx, adaptive=True
+                )
                 self.cbf_vals[update_idx] = h
 
         A = np.vstack([Au, Ai])
@@ -281,28 +289,22 @@ class CbfQpController(Controller):
 
         return Q, p, A, b, None, None
 
-    def generate_cbf_condition(self,
-                               cbf: Cbf,
-                               h: float,
-                               Lfh: float,
-                               Lgh: NDArray,
-                               idx: int,
-                               adaptive: bool = False) -> (NDArray, float):
-        """Calls the child _generate_cbf_condition method. """
+    def generate_cbf_condition(
+        self, cbf: Cbf, h: float, Lfh: float, Lgh: NDArray, idx: int, adaptive: bool = False
+    ) -> (NDArray, float):
+        """Calls the child _generate_cbf_condition method."""
         if self._generate_cbf_condition is not None:
             return self._generate_cbf_condition(cbf, h, Lfh, Lgh, idx, adaptive)
         else:
             return cbf.generate_cbf_condition(h, Lfh, Lgh, adaptive)
 
-    def assign_control(self,
-                       solution: dict,
-                       ego: int) -> None:
+    def assign_control(self, solution: dict, ego: int) -> None:
         """Assigns the control solution to the appropriate agent."""
-        u = np.array(solution['x'][self.nu * ego: self.nu * (ego + 1)]).flatten()
+        u = np.array(solution["x"][self.nu * ego : self.nu * (ego + 1)]).flatten()
         self.u = np.clip(u, -self.u_max, self.u_max)
         # Assign other agents' controls if this is a centralized node
-        if hasattr(self, 'centralized_agents'):
+        if hasattr(self, "centralized_agents"):
             for agent in self.centralized_agents:
-                agent.u = np.array(solution['x'][agent.nu * agent.id: self.nu * (agent.id + 1)]).flatten()
-
-
+                agent.u = np.array(
+                    solution["x"][agent.nu * agent.id : self.nu * (agent.id + 1)]
+                ).flatten()
