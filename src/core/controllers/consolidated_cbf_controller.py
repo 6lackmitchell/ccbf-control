@@ -15,7 +15,7 @@ from core.solve_cvxopt import solve_qp_cvxopt
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]
 system_model = builtins.PROBLEM_CONFIG["system_model"]
-mod = vehicle + "." + control_level + ".models"
+mod = "models." + vehicle + "." + control_level + ".models"
 
 # Programmatic import
 try:

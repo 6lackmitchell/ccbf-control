@@ -4,11 +4,7 @@ import numpy as np
 import builtins
 
 
-def simulate(tf: float,
-             dt: float,
-             vehicle: str,
-             level: str,
-             situation: str) -> bool:
+def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> bool:
     """Simulates the system specified by config.py for tf seconds at a frequency of dt.
 
     ARGUMENTS
@@ -24,13 +20,15 @@ def simulate(tf: float,
     """
     broken = False
     # Program-wide specifications
-    builtins.PROBLEM_CONFIG = {'vehicle': vehicle,
-                               'control_level': level,
-                               'situation': situation,
-                               'system_model': 'deterministic'}
+    builtins.PROBLEM_CONFIG = {
+        "vehicle": vehicle,
+        "control_level": level,
+        "situation": situation,
+        "system_model": "deterministic",
+    }
 
-    if vehicle == 'bicycle':
-        from bicycle import nAgents, nStates, z0, centralized_agents, decentralized_agents
+    if vehicle == "bicycle":
+        from models.bicycle import nAgents, nStates, z0, centralized_agents, decentralized_agents
 
     nTimesteps = int((tf - 0.0) / dt) + 1
 
@@ -63,9 +61,9 @@ def simulate(tf: float,
 
             if not code:
                 broken = True
-                print('Error in Agent {}'.format(aa + 1))
+                print("Error in Agent {}".format(aa + 1))
                 break
-            if hasattr(agent, 'complete'):
+            if hasattr(agent, "complete"):
                 if agent.complete and not complete[aa]:
                     complete[aa] = True
                     print("Agent {} Completed!".format(aa))

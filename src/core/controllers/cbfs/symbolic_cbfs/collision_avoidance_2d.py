@@ -10,7 +10,7 @@ from core.mathematics.symbolic_functions import ramp
 
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]
-mod = vehicle + "." + control_level + ".models"
+mod = "models." + vehicle + "." + control_level + ".models"
 
 # Programmatic import
 try:

@@ -12,7 +12,7 @@ from core.controllers.cbfs import Cbf
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]
 system_model = builtins.PROBLEM_CONFIG["system_model"]
-mod = vehicle + "." + control_level + ".models"
+mod = "models." + vehicle + "." + control_level + ".models"
 
 # Programmatic import
 try:
@@ -177,7 +177,7 @@ class CbfQpController(Controller):
         if not code:
             print(A[-1, :])
             print(b[-1])
-            print('wtf')
+            print("wtf")
         decay_const = 0.0  # needs to be < 1
         integrated_error[ego] = (
             np.linalg.norm(self.u - self.u_nom) + integrated_error[ego]
