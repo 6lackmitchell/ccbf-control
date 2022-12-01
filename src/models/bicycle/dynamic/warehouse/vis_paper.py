@@ -305,9 +305,10 @@ ax_pos.set_yticks([])
 ax_pos.legend(fancybox=True, fontsize=15)
 ax_pos.grid(False)
 
+time_scale_factor = 10
 
 def animate_ego(jj):
-    jj = int(jj * 100)
+    jj = int(jj * time_scale_factor)
     last_1_sec = 40
     ego_pos = x[0, jj, 0:2]
     for aa in range(0, 3 * nAgents, 3):
@@ -364,7 +365,7 @@ def animate_ego(jj):
 
 # Create animation
 ani = animation.FuncAnimation(
-    fig=fig_map, func=animate_ego, frames=int(ii / 100), interval=10, repeat=False
+    fig=fig_map, func=animate_ego, frames=int(ii / time_scale_factor), interval=10, repeat=False
 )
 # writer = animation.writers['ffmpeg']
 # ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))
