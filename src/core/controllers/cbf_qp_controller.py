@@ -47,7 +47,6 @@ class CbfQpController(Controller):
     ):
         super().__init__()
         self.u_max = u_max
-        self.na = nAgents
         self.objective = objective_function
         self.nominal_controller = nominal_controller
         self.cbfs_individual = cbfs_individual
@@ -55,17 +54,24 @@ class CbfQpController(Controller):
         self.ignored_agents = ignore
         self.code = 0
         self.status = "Initialized"
-        self.nu = len(u_max)
-        self.nv = 1  # Number of additional optimization variables
-        # self.cbf_vals = np.zeros((len(cbfs_individual) + (self.na - 1) * len(cbfs_pairwise)),)
+
+        # Control Parameters
+        self.n_controls = len(u_max)
+        self.n_agents = nAgents
+        self.n_dec_vars = 1
+        self.desired_class_k = 1.0
+        self.max_class_k = 1e6
 
         self.cbf_vals = np.zeros(
-            (len(cbfs_individual) + (self.na - 1) * len(cbfs_pairwise)),
+            (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
         )
+        self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
 
         # Define individual input constraints
-        self.au = block_diag(*self.nu * [np.array([[1, -1]]).T])
-        self.bu = np.tile(np.array(self.u_max).reshape(self.nu, 1), self.nu).flatten()
+        self.au = block_diag(*self.n_controls * [np.array([[1, -1]]).T])
+        self.bu = np.tile(
+            np.array(self.u_max).reshape(self.n_controls, 1), self.n_controls
+        ).flatten()
 
     def _compute_control(
         self, t: float, z: NDArray, cascaded: bool = False
@@ -136,7 +142,7 @@ class CbfQpController(Controller):
                     pass
             else:
                 status = "Divide by Zero"
-                self.u = np.zeros((self.nu,))
+                self.u = np.zeros((self.n_controls,))
 
         else:
             pass
@@ -157,11 +163,11 @@ class CbfQpController(Controller):
             #             Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
             #             sol = solve_qp_cvxopt(Q, p, A, b, G, h)
             #             if not sol['code']:
-            #                 self.u = np.zeros((self.nu,))
+            #                 self.u = np.zeros((self.n_controls,))
             #             else:
             #                 self.assign_control(sol, ego)
             #         else:
-            #             self.u = np.zeros((self.nu,))
+            #             self.u = np.zeros((self.n_controls,))
             #     else:
             #         alf = np.array(sol['x'])[-1]
             #         self.assign_control(sol, ego)
@@ -169,7 +175,7 @@ class CbfQpController(Controller):
             # else:
             #     code = 0
             #     status = 'Divide by Zero'
-            #     self.u = np.zeros((self.nu,))
+            #     self.u = np.zeros((self.n_controls,))
 
         if not code:
             print(A[-1, :])
@@ -197,11 +203,11 @@ class CbfQpController(Controller):
         # Configure QP Matrices
         # Q, p: objective function
         # Au, bu: input constraints
-        if self.nv > 0:
+        if self.n_dec_vars > 0:
             alpha_nom = 1.0
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
-            Au = block_diag(*(na + self.nv) * [self.au])[:-2, :-1]
-            bu = np.append(np.array(na * [self.bu]).flatten(), self.nv * [100, 0])
+            Au = block_diag(*(na + self.n_dec_vars) * [self.au])[:-2, :-1]
+            bu = np.append(np.array(na * [self.bu]).flatten(), self.n_dec_vars * [100, 0])
         else:
             Q, p = self.objective(u_nom.flatten())
             Au = block_diag(*(na) * [self.au])
@@ -209,7 +215,7 @@ class CbfQpController(Controller):
 
         # Initialize inequality constraints
         lci = len(self.cbfs_individual)
-        Ai = np.zeros((lci + len(zr), self.nu * na + self.nv))
+        Ai = np.zeros((lci + len(zr), self.n_controls * na + self.n_dec_vars))
         bi = np.zeros((lci + len(zr),))
 
         # Iterate over individual CBF constraints
@@ -227,10 +233,12 @@ class CbfQpController(Controller):
 
             # Get CBF Lie Derivatives
             Lfh = dhdx @ f(ze) + stoch
-            Lgh = np.zeros((self.nu * na,))
-            Lgh[self.nu * ego : (ego + 1) * self.nu] = dhdx @ g(ze)  # Only assign ego control
+            Lgh = np.zeros((self.n_controls * na,))
+            Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx @ g(
+                ze
+            )  # Only assign ego control
             if cascade:
-                Lgh[self.nu * ego] = 0.0
+                Lgh[self.n_controls * ego] = 0.0
 
             # Ai[cc, :], bi[cc] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, cc, adaptive=True)
             Ai[cc, :], bi[cc] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, cc)
@@ -261,11 +269,11 @@ class CbfQpController(Controller):
 
                 # Get CBF Lie Derivatives
                 Lfh = dhdx[:ns] @ f(ze) + dhdx[ns:] @ f(zo) + stoch
-                Lgh = np.zeros((self.nu * na,))
-                Lgh[self.nu * ego : (ego + 1) * self.nu] = dhdx[:ns] @ g(ze)
+                Lgh = np.zeros((self.n_controls * na,))
+                Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx[:ns] @ g(ze)
                 if cascade:
-                    Lgh[self.nu * ego] = 0.0
-                # Lgh[self.nu * idx:(idx + 1) * self.nu] = dhdx[ns:] @ g(zo)  # Only allow ego to compensate for safety
+                    Lgh[self.n_controls * ego] = 0.0
+                # Lgh[self.n_controls * idx:(idx + 1) * self.n_controls] = dhdx[ns:] @ g(zo)  # Only allow ego to compensate for safety
 
                 if h0 < 0:
                     print(
@@ -297,11 +305,11 @@ class CbfQpController(Controller):
 
     def assign_control(self, solution: dict, ego: int) -> None:
         """Assigns the control solution to the appropriate agent."""
-        u = np.array(solution["x"][self.nu * ego : self.nu * (ego + 1)]).flatten()
+        u = np.array(solution["x"][self.n_controls * ego : self.n_controls * (ego + 1)]).flatten()
         self.u = np.clip(u, -self.u_max, self.u_max)
         # Assign other agents' controls if this is a centralized node
         if hasattr(self, "centralized_agents"):
             for agent in self.centralized_agents:
                 agent.u = np.array(
-                    solution["x"][agent.nu * agent.id : self.nu * (agent.id + 1)]
+                    solution["x"][agent.nu * agent.id : self.n_controls * (agent.id + 1)]
                 ).flatten()
