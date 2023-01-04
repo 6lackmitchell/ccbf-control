@@ -6,7 +6,7 @@ Provides interface to the ConsolidatedCbfController class.
 import numpy as np
 import numdifftools as nd
 import builtins
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 from importlib import import_module
 from nptyping import NDArray
 from control import lqr
@@ -297,7 +297,7 @@ class ConsolidatedCbfController(CbfQpController):
         k_ccbf = 0.25
 
         # Get C-CBF Value
-        H = self.H(self.k_gains, h_array)
+        H = self.consolidated_cbf()
         self.c_cbf = H
 
         # Non-centralized agents CBF dynamics become drifts
@@ -311,28 +311,38 @@ class ConsolidatedCbfController(CbfQpController):
         Lgh_array[:, indices_after_ego] = 0
 
         # Get time-derivatives of gains
-        exp_term = np.exp(-self.k_gains * h_array)
-        premultiplier_k = self.k_gains * exp_term
-        premultiplier_h = h_array * exp_term
+        dphidh = self.adapter.k_weights * np.exp(-self.adapter.k_weights * self.cbf_vals)
+        dphidk = self.cbf_vals * np.exp(-self.adapter.k_weights * self.cbf_vals)
 
         # Compute C-CBF Dynamics
-        LfH = premultiplier_k @ Lfh_array
-        LgH = premultiplier_k @ Lgh_array
-        LgH_uncontrolled = premultiplier_k @ Lgh_uncontrolled
+        LfH = dphidh @ Lfh_array
+        LgH = dphidh @ Lgh_array
+        LgH_uncontrolled = dphidh @ Lgh_uncontrolled
 
         # Tunable CBF Addition
-        phi = (
+        Phi = (
             np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max)))
             @ abs(LgH_uncontrolled)
             * np.exp(-k_ccbf * H)
         )
-        LfH = LfH + phi
+        LfH = LfH + Phi - discretization_error
+        Lf_for_kdot = LfH + dphidk @ self.k_dot_f
         Lg_for_kdot = Lgh_array[:, self.n_controls * ego : self.n_controls * (ego + 1)]
 
-        # Compute kdot
-        k_dot = self.k_dot(x, self.u, self.k_gains, h_array, Lg_for_kdot)
+        # Compute drift k_dot
+        k_dot_drift = self.adapter.k_dot_drift(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
 
-        LfH = LfH + premultiplier_h @ k_dot - discretization_error
+        # Compute controlled k_dot
+        k_dot_cont = self.adapter.k_dot_controlled(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
+
+        # Update k_dot
+        k_weights, k_dots = self.adapter.update(x, self.u, self.cbf_vals, LfH, Lg_for_kdot)
+
+        # # Compute kdot
+        # k_dot = self.k_dot(x, self.u, self.k_gains, h_array, Lg_for_kdot)
+
+        # Augment LgH with adaptation term
+        LgH
 
         if H < 0:
             print(f"h_array: {h_array}")
@@ -347,14 +357,16 @@ class ConsolidatedCbfController(CbfQpController):
         b_vec = np.array([LfH])
 
         # Update k_dot
-        self.k_gains = self.k_gains + k_dot * self._dt
-        if np.sum(self.k_gains <= 0) > 0:
-            print(f"kdots: {k_dot}")
-            print(f"kvals: {self.k_gains}")
-            print(f"kdes: {self.k_desired(h_array)}")
+        k_weights, k_dots = self.adapter.update(x, self.u, self.cbf_vals, LfH, Lg_for_kdot)
+        if np.sum(k_weights <= 0) > 0:
+            print(f"kdots: {k_dots}")
+            print(f"kvals: {k_weights}")
             print("Illegal K Value")
 
         return a_mat[:, np.newaxis].T, b_vec
+
+    def consolidated_cbf(self):
+        return np.exp(-self.adapter.k_weights * self.cbf_vals)
 
     # def compute_k_dots(
     #     self, h_array: NDArray, H: float, LfH: float, Lgh_array: NDArray, vec: NDArray
@@ -570,13 +582,35 @@ class AdaptationLaw:
         self.k_max = 5.0
         self.k_dot_gain = 0.01
 
-    def compute_kdot(self, x: NDArray, u: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def update(
+        self, x: NDArray, u: NDArray, h: NDArray, Lf: float, Lg: NDArray, dt: float
+    ) -> Tuple[NDArray, NDArray]:
+        """Updates the adaptation gains and returns the new k weights.
+
+        Arguments:
+            x (NDArray): state vector
+            u (NDArray): control input applied to system
+            h (NDArray): vector of candidate CBFs
+            Lf (float): C-CBF drift term (includes filtered kdot)
+            Lg (NDArray): matrix of stacked Lgh vectors
+            dt: timestep in sec
+
+        Returns
+            k_weights: weights on constituent candidate cbfs
+
+        """
+        self._k_weights = self._k_weights + self.compute_kdot(x, u, h, Lf, Lg) * dt
+
+        return self._k_weights, self._k_dot
+
+    def compute_kdot(self, x: NDArray, u: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the time-derivative k_dot of the k_weights vector.
 
         Arguments:
             x (NDArray): state vector
             u (NDArray): control input applied to system
             h (NDArray): vector of candidate CBFs
+            Lf (float): C-CBF drift term (includes filtered kdot)
             Lg (NDArray): matrix of stacked Lgh vectors
 
         Returns:
@@ -584,17 +618,18 @@ class AdaptationLaw:
 
         """
 
-        self._k_dot = self.k_dot_drift(x, h, Lg) + self.k_dot_controlled(x, h, Lg) @ u
+        self._k_dot = self.k_dot_drift(x, h, Lf, Lg) + self.k_dot_controlled(x, h, Lf, Lg) @ u
 
         return self._k_dot
 
-    def k_dot_drift(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def k_dot_drift(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the drift (uncontrolled) component of the time-derivative
         k_dot of the k_weights vector.
 
         Arguments:
             x (NDArray): state vector
             h (NDArray): vector of candidate CBFs
+            Lf (float): C-CBF drift term (includes filtered kdot)
             Lg (NDArray): matrix of stacked Lgh vectors
 
         Returns:
@@ -605,24 +640,24 @@ class AdaptationLaw:
         P = self.grad_cost_kk()
         Q = np.diag(1 / self.ci() ** 2)
         R = (
-            self.czero(x, h, Lg) * self.grad_czero_kk(x, h, Lg)
-            - self.grad_czero_k(x, h, Lg)[:, np.newaxis]
-            @ self.grad_czero_k(x, h, Lg)[np.newaxis, :]
-        ) / self.czero(x, h, Lg) ** 2
-        M = self.grad_phi_kk(x, h, Lg) + P + Q + R
+            self.czero(x, h, Lf, Lg) * self.grad_czero_kk(x, h, Lf, Lg)
+            - self.grad_czero_k(x, h, Lf, Lg)[:, np.newaxis]
+            @ self.grad_czero_k(x, h, Lf, Lg)[np.newaxis, :]
+        ) / self.czero(x, h, Lf, Lg) ** 2
+        M = self.grad_phi_kk(x, h, Lf, Lg) + P + Q + R
         X = (
-            self.czero(x, h, Lg) * self.grad_czero_kx(x, h, Lg)
-            - self.grad_czero_k(x, h, Lg)[:, np.newaxis]
-            @ self.grad_czero_x(x, h, Lg)[np.newaxis, :]
-        ) / self.czero(x, h, Lg) ** 2
+            self.czero(x, h, Lf, Lg) * self.grad_czero_kx(x, h, Lf, Lg)
+            - self.grad_czero_k(x, h, Lf, Lg)[:, np.newaxis]
+            @ self.grad_czero_x(x, h, Lf, Lg)[np.newaxis, :]
+        ) / self.czero(x, h, Lf, Lg) ** 2
 
         k_dot_drift = -np.linalg.inv(M) @ (
-            self.cost_gain_mat @ self.grad_phi_k(x, h, Lg) + X @ self.f(x)
+            self.cost_gain_mat @ self.grad_phi_k(x, h, Lf, Lg) + X @ self.f(x)
         )
 
         return k_dot_drift
 
-    def k_dot_controlled(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def k_dot_controlled(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the controlled component of the time-derivative
         k_dot of the k_weights vector.
 
@@ -630,6 +665,7 @@ class AdaptationLaw:
             x (NDArray): state vector
             u (NDArray): control input applied to system
             h (NDArray): vector of candidate CBFs
+            Lf (float): C-CBF drift term (includes filtered kdot)
             Lg (NDArray): matrix of stacked Lgh vectors
 
         Returns:
@@ -640,28 +676,29 @@ class AdaptationLaw:
         P = self.grad_cost_kk()
         Q = np.diag(1 / self.ci() ** 2)
         R = (
-            self.czero(x, h, Lg) * self.grad_czero_kk(x, h, Lg)
-            - self.grad_czero_k(x, h, Lg)[:, np.newaxis]
-            @ self.grad_czero_k(x, h, Lg)[np.newaxis, :]
-        ) / self.czero(x, h, Lg) ** 2
-        M = self.grad_phi_kk(x, h, Lg) + P + Q + R
+            self.czero(x, h, Lf, Lg) * self.grad_czero_kk(x, h, Lf, Lg)
+            - self.grad_czero_k(x, h, Lf, Lg)[:, np.newaxis]
+            @ self.grad_czero_k(x, h, Lf, Lg)[np.newaxis, :]
+        ) / self.czero(x, h, Lf, Lg) ** 2
+        M = self.grad_phi_kk(x, h, Lf, Lg) + P + Q + R
         X = (
-            self.czero(x, h, Lg) * self.grad_czero_kx(x, h, Lg)
-            - self.grad_czero_k(x, h, Lg)[:, np.newaxis]
-            @ self.grad_czero_x(x, h, Lg)[np.newaxis, :]
-        ) / self.czero(x, h, Lg) ** 2
+            self.czero(x, h, Lf, Lg) * self.grad_czero_kx(x, h, Lf, Lg)
+            - self.grad_czero_k(x, h, Lf, Lg)[:, np.newaxis]
+            @ self.grad_czero_x(x, h, Lf, Lg)[np.newaxis, :]
+        ) / self.czero(x, h, Lf, Lg) ** 2
 
         k_dot_controlled = -np.linalg.inv(M) @ X @ self.g(x)
 
         return k_dot_controlled
 
-    def grad_phi_k(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def grad_phi_k(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of Phi with respect to the gains k.
 
         Arguments
         ---------
         x: state vector
         h: array of constituent cbfs
+        Lf (float): C-CBF drift term (includes filtered kdot)
         Lg: matrix of constituent cbf Lgh vectors
 
         Returns
@@ -672,12 +709,12 @@ class AdaptationLaw:
         grad_phi_k = (
             self.grad_cost_k(h)
             - self.grad_ci_k() / self.ci()
-            - self.grad_czero_k(x, h, Lg) / self.czero(x, h, Lg)
+            - self.grad_czero_k(x, h, Lf, Lg) / self.czero(x, h, Lf, Lg)
         )
 
         return grad_phi_k.T
 
-    def grad_phi_kk(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def grad_phi_kk(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of Phi with respect to
         the gains k twice.
 
@@ -685,6 +722,7 @@ class AdaptationLaw:
         ---------
         x: state vector
         h: array of constituent cbfs
+        Lf: C-CBF drift term (includes filtered kdot)
         Lg: matrix of constituent cbf Lgh vectors
 
         Returns
@@ -700,16 +738,16 @@ class AdaptationLaw:
             )
             / self.ci() ** 2
             - (
-                self.grad_czero_kk(x, h, Lg) * self.czero(x, h, Lg)
-                - self.grad_czero_k(x, h, Lg)[:, np.newaxis]
-                @ self.grad_czero_k(x, h, Lg)[np.newaxis, :]
+                self.grad_czero_kk(x, h, Lf, Lg) * self.czero(x, h, Lf, Lg)
+                - self.grad_czero_k(x, h, Lf, Lg)[:, np.newaxis]
+                @ self.grad_czero_k(x, h, Lf, Lg)[np.newaxis, :]
             )
-            / self.czero(x, h, Lg) ** 2
+            / self.czero(x, h, Lf, Lg) ** 2
         )
 
         return grad_phi_kk
 
-    def grad_phi_kx(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def grad_phi_kx(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of Phi with respect to first
         the gains k and then the state x.
 
@@ -717,6 +755,7 @@ class AdaptationLaw:
         ---------
         x: state vector
         h: array of constituent cbfs
+        Lf: C-CBF drift term (includes filtered kdot)
         Lg: matrix of constituent cbf Lgh vectors
 
         Returns
@@ -727,11 +766,11 @@ class AdaptationLaw:
         grad_phi_kx = (
             self.grad_cost_kx(x, h)
             - (
-                self.grad_czero_kx(x, h, Lg) * self.czero(x, h, Lg)
-                - self.grad_czero_k(x, h, Lg)[:, np.newaxis]
-                * self.grad_czero_x(x, h, Lg)[np.newaxis, :]
+                self.grad_czero_kx(x, h, Lf, Lg) * self.czero(x, h, Lf, Lg)
+                - self.grad_czero_k(x, h, Lf, Lg)[:, np.newaxis]
+                * self.grad_czero_x(x, h, Lf, Lg)[np.newaxis, :]
             )
-            / self.czero(x, h, Lg) ** 2
+            / self.czero(x, h, Lf, Lg) ** 2
             - (
                 self.grad_ci_kx() * self.ci()
                 - self.grad_ci_k()[:, np.newaxis] * self.grad_ci_x()[np.newaxis, :]
@@ -810,7 +849,7 @@ class AdaptationLaw:
 
         return grad_cost_kx
 
-    def czero(self, x: NDArray, h: NDArray, Lg: NDArray) -> float:
+    def czero(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> float:
         """Returns the viability constraint function evaluated at the current
         state x and gain vector k.
 
@@ -818,6 +857,7 @@ class AdaptationLaw:
         ---------
         x: state vector
         h: constituent cbf vector
+        Lf: C-CBF drift term (includes filtered kdot)
         Lg: matrix of constituent cbf Lgh vectors
 
         Returns
@@ -825,11 +865,11 @@ class AdaptationLaw:
         c0: viability constraint function evaluated at x and k
 
         """
-        czero = self.q @ Lg @ self.U @ Lg.T @ self.q.T - self.delta(x, h) ** 2
+        czero = self.q @ Lg @ self.U @ Lg.T @ self.q.T - self.delta(x, h, Lf) ** 2
 
         return czero * self.czero_gain
 
-    def grad_czero_k(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def grad_czero_k(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
         state x and gain vector k with respect to k.
 
@@ -837,6 +877,7 @@ class AdaptationLaw:
         ---------
         x: state vector
         h: constituent cbf vector
+        Lf: C-CBF drift term (includes filtered kdot)
         Lg: matrix of constituent cbf Lgh vectors
 
         Returns
@@ -845,12 +886,12 @@ class AdaptationLaw:
 
         """
         grad_c0_k = 2 * self.dqdk @ Lg @ self.U @ Lg.T @ self.q.T - 2 * self.delta(
-            x, h
-        ) * self.grad_delta_k(x, h)
+            x, h, Lf
+        ) * self.grad_delta_k(x, h, Lf)
 
         return grad_c0_k * self.czero_gain
 
-    def grad_czero_x(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def grad_czero_x(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
         state x and gain vector k with respect to x.
 
@@ -859,6 +900,7 @@ class AdaptationLaw:
         x: state vector
         k: constituent cbf weighting vector
         h: constituent cbf vector
+        Lf: C-CBF drift term (includes filtered kdot)
         Lg: matrix of constituent cbf Lgh vectors
 
         Returns
@@ -872,12 +914,12 @@ class AdaptationLaw:
         grad_c0_x = (
             2 * self.dqdx.T @ Lg @ self.U @ Lg.T @ self.q.T
             + 2 * self.q @ dLgdx @ self.U @ Lg.T @ self.q.T
-            - 2 * self.delta(x, h) * self.grad_delta_x(x, h)
+            - 2 * self.delta(x, h, Lf) * self.grad_delta_x(x, h, Lf)
         )
 
         return grad_c0_x * self.czero_gain
 
-    def grad_czero_kk(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def grad_czero_kk(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
         state x and gain vector k with respect to first k and then k again.
 
@@ -885,6 +927,8 @@ class AdaptationLaw:
         ---------
         x: state vector
         h: constituent cbf vector
+        Lf: C-CBF drift term (includes filtered kdot)
+        Lg: matrix of constituent cbf Lgh vectors
 
         Returns
         -------
@@ -897,9 +941,9 @@ class AdaptationLaw:
                 2 * self.d2qdk2 @ Lg @ self.U @ Lg.T @ self.q.T
                 + 2 * self.dqdk @ Lg @ self.U @ Lg.T @ self.dqdk.T
                 - 2
-                * self.grad_delta_k(x, h)[:, np.newaxis]
-                @ self.grad_delta_k(x, h)[np.newaxis, :]
-                - 2 * self.delta(x, h) * self.grad_delta_kk(x, h)
+                * self.grad_delta_k(x, h, Lf)[:, np.newaxis]
+                @ self.grad_delta_k(x, h, Lf)[np.newaxis, :]
+                - 2 * self.delta(x, h, Lf) * self.grad_delta_kk(x, h, Lf)
             )
 
         else:
@@ -910,7 +954,7 @@ class AdaptationLaw:
 
         return grad_c0_kk * self.czero_gain
 
-    def grad_czero_kx(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
+    def grad_czero_kx(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
         state x and gain vector k with respect to first k and then x.
 
@@ -918,6 +962,8 @@ class AdaptationLaw:
         ---------
         x: state vector
         h: constituent cbf vector
+        Lf: C-CBF drift term (includes filtered kdot)
+        Lg: matrix of constituent cbf Lgh vectors
 
         Returns
         -------
@@ -932,8 +978,9 @@ class AdaptationLaw:
             + 4 * (self.dqdk @ dLgdx @ self.U_mat @ Lg.T @ self.q_vec.T).T
             - 2
             * (
-                self.grad_delta_k(x, h)[:, np.newaxis] @ self.grad_delta_x(x, h)[np.newaxis, :]
-                + self.delta(x, h) * self.grad_delta_kx(x, h)
+                self.grad_delta_k(x, h, Lf)[:, np.newaxis]
+                @ self.grad_delta_x(x, h, Lf)[np.newaxis, :]
+                + self.delta(x, h, Lf) * self.grad_delta_kx(x, h, Lf)
             )
         )
 
@@ -1010,7 +1057,7 @@ class AdaptationLaw:
         return np.zeros((len(self._k_weights),)) * self.ci_gain
 
     #! TO DO: fix epsilon robustness
-    def delta(self, x: NDArray, h: NDArray) -> float:
+    def delta(self, x: NDArray, h: NDArray, Lf: float) -> float:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
         In other words, in order to be able to satisfy:
 
@@ -1022,23 +1069,23 @@ class AdaptationLaw:
         ---------
         x: state vector
         h: constituent cbf vector
-        Lg: matrix of constituent cbf Lgh vectors
+        Lf: C-CBF drift term (includes filtered kdot)
 
         Returns
         -------
         delta = LfH + alpha(H) + LkH
 
         """
-        LfH = self.q @ self.dhdx @ f(x)
         dhdk = h * np.exp(-self._k_weights * h)
 
+        alpha = 1.0
         epsilon = 1.0  # -- Add robustness epsilon
 
-        delta = -LfH - self.H(h) - (dhdk @ self._k_dot_f - epsilon)
+        delta = -Lf - alpha * self.H(h) - (dhdk @ self._k_dot_f - epsilon)
 
         return delta if delta > 0 else 0.0
 
-    def grad_delta_k(self, x: NDArray, h: NDArray) -> NDArray:
+    def grad_delta_k(self, x: NDArray, h: NDArray, Lf: float) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
 
         Arguments
@@ -1084,7 +1131,7 @@ class AdaptationLaw:
 
         # dLfHdx = nd.Jacobian(LfH)(x)[0, :]  # Compute gradient numerically
 
-        # TO DO: Get d2hdx2 and dfdx symbolically
+        #! TO DO: Get d2hdx2 and dfdx symbolically
         d2hdx2 = 0
         dfdx = 0
         dLfHdx = self.dqdx @ self.dhdx @ f(x) + self.q @ d2hdx2 @ f(x) + self.q @ self.dhdx @ dfdx
@@ -1346,3 +1393,9 @@ class AdaptationLaw:
     def k_dot(self) -> NDArray:
         """Getter for k_dot."""
         return self._k_dot
+
+
+if __name__ == "__main__":
+    nWeights = 5
+    uMax = np.array([10.0, 10.0])
+    adapt = AdaptationLaw(nWeights, uMax)
