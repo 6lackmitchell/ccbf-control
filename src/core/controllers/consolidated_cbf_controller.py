@@ -77,11 +77,23 @@ class ConsolidatedCbfController(CbfQpController):
         )
         nCBF = len(self.cbf_vals)
         self.c_cbf = 100
-        self.n_agents = 1
+        self.n_agents = nAgents
         self.filtered_wf = np.zeros((nCBF,))
         self.filtered_wg = np.zeros((nCBF, len(self.u_max)))
+        self.k_weights = np.zeros((nCBF,))
+        self.k_dot = np.zeros((nCBF,))
 
         self.adapter = AdaptationLaw(nCBF, u_max, kZero=0.5)
+
+    def _compute_control(self, t: float, z: NDArray, cascaded: bool = False) -> (NDArray, int, str):
+        self.u, code, status = super()._compute_control(t, z, cascaded)
+
+        # Update k weights, k_dot
+        k_weights, k_dot = self.adapter.update(self.u, self._dt)
+        self.k_weights = k_weights
+        self.k_dot = k_dot
+
+        return self.u, code, status
 
     #! TO DO'S
     #! - log k and kdot for data file
@@ -93,11 +105,11 @@ class ConsolidatedCbfController(CbfQpController):
 
         """
 
-        # Update C-CBF Parameters
-        if t > 0:
-            # Update estimates
-            k_dot = self.compute_k_dot(self.u)
-            self.k += self._dt * k_dot
+        # # Update C-CBF Parameters
+        # if t > 0:
+        #     # Update estimates
+        #     k_dot = self.compute_k_dot(self.u)
+        #     self.k += self._dt * k_dot
 
         # Compute Q matrix and p vector for QP objective function
         Q, p = self.compute_objective_qp(u_nom)
@@ -265,7 +277,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         """
         if self.n_dec_vars > 0:
-            Au = block_diag(*(self.n_agents * self.n_controls + self.n_dec_vars) * [self.au])
+            Au = block_diag(*(self.n_agents + self.n_dec_vars) * [self.au])[:-2, :-1]
             bu = np.append(
                 np.array(self.n_agents * [self.bu]).flatten(),
                 self.n_dec_vars * [self.max_class_k, 0],
@@ -335,14 +347,9 @@ class ConsolidatedCbfController(CbfQpController):
         # Compute controlled k_dot
         k_dot_cont = self.adapter.k_dot_controlled(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
 
-        # Update k_dot
-        k_weights, k_dots = self.adapter.update(x, self.u, self.cbf_vals, LfH, Lg_for_kdot)
-
-        # # Compute kdot
-        # k_dot = self.k_dot(x, self.u, self.k_gains, h_array, Lg_for_kdot)
-
-        # Augment LgH with adaptation term
-        LgH
+        # Augment LfH and LgH from kdot
+        LfH += dphidk @ k_dot_drift
+        LgH[self.n_controls * ego : self.n_controls * (ego + 1)] += dphidk @ k_dot_cont
 
         if H < 0:
             print(f"h_array: {h_array}")
@@ -355,13 +362,6 @@ class ConsolidatedCbfController(CbfQpController):
         # Finish constructing CBF here
         a_mat = np.append(-LgH, -H)
         b_vec = np.array([LfH])
-
-        # Update k_dot
-        k_weights, k_dots = self.adapter.update(x, self.u, self.cbf_vals, LfH, Lg_for_kdot)
-        if np.sum(k_weights <= 0) > 0:
-            print(f"kdots: {k_dots}")
-            print(f"kvals: {k_weights}")
-            print("Illegal K Value")
 
         return a_mat[:, np.newaxis].T, b_vec
 
@@ -559,6 +559,8 @@ class AdaptationLaw:
         self._k_weights = kZero * np.ones((nWeights,))
         self._k_dot = np.zeros((nWeights,))
         self._k_dot_f = np.zeros((nWeights,))
+        self._k_dot_drift = np.zeros((nWeights,))
+        self._k_dot_controlled = np.zeros((nWeights, len(uMax)))
 
         # q vector and derivatives
         self.q = np.zeros((nWeights,))
@@ -582,9 +584,7 @@ class AdaptationLaw:
         self.k_max = 5.0
         self.k_dot_gain = 0.01
 
-    def update(
-        self, x: NDArray, u: NDArray, h: NDArray, Lf: float, Lg: NDArray, dt: float
-    ) -> Tuple[NDArray, NDArray]:
+    def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
         """Updates the adaptation gains and returns the new k weights.
 
         Arguments:
@@ -599,26 +599,22 @@ class AdaptationLaw:
             k_weights: weights on constituent candidate cbfs
 
         """
-        self._k_weights = self._k_weights + self.compute_kdot(x, u, h, Lf, Lg) * dt
+        self._k_weights = self._k_weights + self.compute_kdot(u) * dt
 
         return self._k_weights, self._k_dot
 
-    def compute_kdot(self, x: NDArray, u: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
+    def compute_kdot(self, u: NDArray) -> NDArray:
         """Computes the time-derivative k_dot of the k_weights vector.
 
         Arguments:
-            x (NDArray): state vector
             u (NDArray): control input applied to system
-            h (NDArray): vector of candidate CBFs
-            Lf (float): C-CBF drift term (includes filtered kdot)
-            Lg (NDArray): matrix of stacked Lgh vectors
 
         Returns:
             k_dot (NDArray): time-derivative of kWeights
 
         """
 
-        self._k_dot = self.k_dot_drift(x, h, Lf, Lg) + self.k_dot_controlled(x, h, Lf, Lg) @ u
+        self._k_dot = self._k_dot_drift + self._k_dot_controlled @ u
 
         return self._k_dot
 
@@ -655,7 +651,9 @@ class AdaptationLaw:
             self.cost_gain_mat @ self.grad_phi_k(x, h, Lf, Lg) + X @ f(x)
         )
 
-        return k_dot_drift
+        self._k_dot_drift = k_dot_drift
+
+        return self._k_dot_drift
 
     def k_dot_controlled(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the controlled component of the time-derivative
@@ -689,7 +687,9 @@ class AdaptationLaw:
 
         k_dot_controlled = -np.linalg.inv(M) @ X @ g(x)
 
-        return k_dot_controlled
+        self._k_dot_controlled = k_dot_controlled
+
+        return self._k_dot_controlled
 
     def grad_phi_k(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of Phi with respect to the gains k.
