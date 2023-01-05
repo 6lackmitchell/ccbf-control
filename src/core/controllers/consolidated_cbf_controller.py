@@ -326,7 +326,7 @@ class ConsolidatedCbfController(CbfQpController):
             * np.exp(-k_ccbf * H)
         )
         LfH = LfH + Phi - discretization_error
-        Lf_for_kdot = LfH + dphidk @ self.k_dot_f
+        Lf_for_kdot = LfH + dphidk @ self.adapter.k_dot_f
         Lg_for_kdot = Lgh_array[:, self.n_controls * ego : self.n_controls * (ego + 1)]
 
         # Compute drift k_dot
@@ -366,7 +366,7 @@ class ConsolidatedCbfController(CbfQpController):
         return a_mat[:, np.newaxis].T, b_vec
 
     def consolidated_cbf(self):
-        return np.exp(-self.adapter.k_weights * self.cbf_vals)
+        return 1 - np.sum(np.exp(-self.adapter.k_weights * self.cbf_vals))
 
     # def compute_k_dots(
     #     self, h_array: NDArray, H: float, LfH: float, Lgh_array: NDArray, vec: NDArray
@@ -511,7 +511,7 @@ class ConsolidatedCbfController(CbfQpController):
         # Update vectors and gradients
         self.q_vec = k * np.exp(-k * h)
         self.dqdk = np.diag((1 - k * h) * np.exp(-k * h))
-        self.dqdx = np.diag(-(k**2) * np.exp(-k * h)) @ self.dhdx
+        self.dqdx = self.dhdx.T @ np.diag(-(k**2) * np.exp(-k * h))
         d2qdk2_vals = (k * h**2 - 2 * h) * np.exp(-k * h)
         self.d2qdk2 = np.zeros((len(h), len(h), len(h)))
         np.fill_diagonal(self.d2qdk2, d2qdk2_vals)
@@ -563,7 +563,7 @@ class AdaptationLaw:
         # q vector and derivatives
         self.q = np.zeros((nWeights,))
         self.dqdk = np.zeros((nWeights, nWeights))
-        self.dqdx = np.zeros((nStates, nWeights))
+        self.dqdx = np.zeros((nWeights, nStates))
         self.d2qdk2 = np.zeros((nWeights, nWeights, nWeights))
         self.d2qdkdx = np.zeros((nWeights, nStates, nWeights))
 
@@ -652,7 +652,7 @@ class AdaptationLaw:
         ) / self.czero(x, h, Lf, Lg) ** 2
 
         k_dot_drift = -np.linalg.inv(M) @ (
-            self.cost_gain_mat @ self.grad_phi_k(x, h, Lf, Lg) + X @ self.f(x)
+            self.cost_gain_mat @ self.grad_phi_k(x, h, Lf, Lg) + X @ f(x)
         )
 
         return k_dot_drift
@@ -687,7 +687,7 @@ class AdaptationLaw:
             @ self.grad_czero_x(x, h, Lf, Lg)[np.newaxis, :]
         ) / self.czero(x, h, Lf, Lg) ** 2
 
-        k_dot_controlled = -np.linalg.inv(M) @ X @ self.g(x)
+        k_dot_controlled = -np.linalg.inv(M) @ X @ g(x)
 
         return k_dot_controlled
 
@@ -914,7 +914,7 @@ class AdaptationLaw:
         grad_c0_x = (
             2 * self.dqdx.T @ Lg @ self.U @ Lg.T @ self.q.T
             + 2 * self.q @ dLgdx @ self.U @ Lg.T @ self.q.T
-            - 2 * self.delta(x, h, Lf) * self.grad_delta_x(x, h, Lf)
+            - 2 * self.delta(x, h, Lf) * self.grad_delta_x(x, h)
         )
 
         return grad_c0_x * self.czero_gain
@@ -935,7 +935,7 @@ class AdaptationLaw:
         grad_c0_kk: gradient of viability constraint function with respect to k then x
 
         """
-        if self.delta(x, h) > 0:
+        if self.delta(x, h, Lf) > 0:
 
             grad_c0_kk = (
                 2 * self.d2qdk2 @ Lg @ self.U @ Lg.T @ self.q.T
@@ -943,7 +943,7 @@ class AdaptationLaw:
                 - 2
                 * self.grad_delta_k(x, h, Lf)[:, np.newaxis]
                 @ self.grad_delta_k(x, h, Lf)[np.newaxis, :]
-                - 2 * self.delta(x, h, Lf) * self.grad_delta_kk(x, h, Lf)
+                - 2 * self.delta(x, h, Lf) * self.grad_delta_kk(x, h)
             )
 
         else:
@@ -973,14 +973,13 @@ class AdaptationLaw:
         dLgdx = np.zeros((len(x), len(self._k_weights), 2))
 
         grad_c0_kx = (
-            2 * self.q_vec @ Lg @ self.U_mat @ Lg.T @ self.d2qdkdx
-            + 2 * self.dqdk @ Lg @ self.U_mat @ Lg.T @ self.dqdx
-            + 4 * (self.dqdk @ dLgdx @ self.U_mat @ Lg.T @ self.q_vec.T).T
+            2 * self.d2qdkdx @ Lg @ self.U @ Lg.T @ self.q.T
+            + 2 * self.dqdk @ Lg @ self.U @ Lg.T @ self.dqdx
+            + 4 * (self.dqdk @ dLgdx @ self.U @ Lg.T @ self.q.T).T
             - 2
             * (
-                self.grad_delta_k(x, h, Lf)[:, np.newaxis]
-                @ self.grad_delta_x(x, h, Lf)[np.newaxis, :]
-                + self.delta(x, h, Lf) * self.grad_delta_kx(x, h, Lf)
+                self.grad_delta_k(x, h, Lf)[:, np.newaxis] @ self.grad_delta_x(x, h)[np.newaxis, :]
+                + self.delta(x, h, Lf) * self.grad_delta_kx(x, h)
             )
         )
 
@@ -1132,11 +1131,11 @@ class AdaptationLaw:
         # dLfHdx = nd.Jacobian(LfH)(x)[0, :]  # Compute gradient numerically
 
         #! TO DO: Get d2hdx2 and dfdx symbolically
-        d2hdx2 = 0
-        dfdx = 0
-        dLfHdx = self.dqdx @ self.dhdx @ f(x) + self.q @ d2hdx2 @ f(x) + self.q @ self.dhdx @ dfdx
+        d2hdx2 = np.zeros((5, 10, 5))
+        dfdx = np.zeros((5, 5))
+        dLfHdx = self.dqdx.T @ self.dhdx @ f(x) + self.q @ d2hdx2 @ f(x) + self.q @ self.dhdx @ dfdx
 
-        return -dLfHdx - self.grad_H_x() + self.grad_H_kx(h) @ self._k_dot_f
+        return -dLfHdx - self.grad_H_x() + self.grad_H_kx(h).T @ self._k_dot_f
 
     def grad_delta_kk(self, x: NDArray, h: NDArray) -> NDArray:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
@@ -1179,13 +1178,13 @@ class AdaptationLaw:
         # grad_LfH_kx = nd.Jacobian(grad_LfH_k)(x)
 
         # TO DO: Get d2hdx2 and dfdx symbolically
-        d2hdx2 = 0
-        dfdx = 0
+        d2hdx2 = np.zeros((5, 10, 5))
+        dfdx = np.zeros((5, 5))
         grad_LfH_kx = (
             self.d2qdkdx @ self.dhdx @ f(x) + self.q @ d2hdx2 @ f(x) + self.q @ self.dhdx @ dfdx
         )
 
-        return -grad_LfH_kx - self.grad_H_kx(h) + self.grad_H_kkx(h) @ self._k_dot_f
+        return -grad_LfH_kx - self.grad_H_kx(h) + (self.grad_H_kkx(h).T @ self._k_dot_f).T
 
     def H(self, h: NDArray) -> float:
         """Computes the consolidated control barrier function (C-CBF) based on
@@ -1311,12 +1310,13 @@ class AdaptationLaw:
         grad_H_kkx: gradient of C-CBF with respect to k twice
 
         """
-        filling = (
+        #! TO DO: Check whether this is correct
+        grad_H_kkx = (
             h**2 * self._k_weights * np.exp(-self._k_weights * h)
             - 2 * h * np.exp(-self._k_weights * h)
-        ) @ self.dhdx
-        grad_H_kkx = np.zeros((len(self._k_weights), len(self._k_weights), self.dqdx.shape[1]))
-        np.fill_diagonal(grad_H_kkx, filling)
+        )[:, np.newaxis] @ self.dhdx[:, np.newaxis, :]
+        # grad_H_kkx = np.zeros((len(self._k_weights), len(self._k_weights), self.dqdx.shape[1]))
+        # np.fill_diagonal(grad_H_kkx, filling)
 
         return grad_H_kkx
 
@@ -1391,8 +1391,13 @@ class AdaptationLaw:
 
     @property
     def k_dot(self) -> NDArray:
-        """Getter for k_dot."""
+        """Getter for _k_dot."""
         return self._k_dot
+
+    @property
+    def k_dot_f(self) -> NDArray:
+        """Getter for _k_dot_f."""
+        return self._k_dot_f
 
 
 if __name__ == "__main__":
