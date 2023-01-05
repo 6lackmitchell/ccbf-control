@@ -12,7 +12,7 @@ class Agent:
 
     @property
     def timestep(self):
-        assert(type(self._timestep) == int)
+        assert type(self._timestep) == int
         return self._timestep
 
     @timestep.setter
@@ -25,16 +25,18 @@ class Agent:
     def complete(self):
         return self.controller.nominal_controller.complete
 
-    def __init__(self,
-                 identifier: int,
-                 z0: NDArray,
-                 u0: NDArray,
-                 cbf0: NDArray,
-                 timing: List,
-                 dynamics: Callable,
-                 controller: Controller,
-                 save_file: str):
-        """ Class initializer. """
+    def __init__(
+        self,
+        identifier: int,
+        z0: NDArray,
+        u0: NDArray,
+        cbf0: NDArray,
+        timing: List,
+        dynamics: Callable,
+        controller: Controller,
+        save_file: str,
+    ):
+        """Class initializer."""
         self.id = identifier
         self.u = u0
         self.u_nom = u0
@@ -67,8 +69,7 @@ class Agent:
         # self.reset(np.zeros(5,))  # For experiments
         self.reset(z0)  # For simulations
 
-    def reset(self,
-              x0: NDArray) -> None:
+    def reset(self, x0: NDArray) -> None:
         """Resets run variables for new trial."""
         self.x = x0
         self.t = 0.0
@@ -78,27 +79,28 @@ class Agent:
         self.u0_trajectory = np.zeros((self.nTimesteps, self.u_nom.shape[0]))
         self.safety = np.zeros((self.nTimesteps,))
 
-        if hasattr(self.controller, 'cbf_vals'):
+        if hasattr(self.controller, "cbf_vals"):
             self.cbf_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
-            self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps, ))
+            self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
             self.k_gains_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
         else:
-            self.cbf_trajectory = np.zeros((self.nTimesteps, ))
+            self.cbf_trajectory = np.zeros((self.nTimesteps,))
             self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
             self.k_gains_trajectory = np.zeros((self.nTimesteps,))
 
         # Save data object -- auto-updating since defined by reference
-        self.data = {'x': self.x_trajectory,
-                     'u': self.u_trajectory,
-                     'u0': self.u0_trajectory,
-                     'cbf': self.cbf_trajectory,
-                     'ccbf': self.consolidated_cbf_trajectory,
-                     'kgains': self.k_gains_trajectory,
-                     'ii': self.t}
+        self.data = {
+            "x": self.x_trajectory,
+            "u": self.u_trajectory,
+            "u0": self.u0_trajectory,
+            "cbf": self.cbf_trajectory,
+            "ccbf": self.consolidated_cbf_trajectory,
+            "kgains": self.k_gains_trajectory,
+            "ii": self.t,
+        }
 
-    def compute_control(self,
-                        full_state: NDArray) -> (int, str):
-        """ Computes the control input for the Agent.
+    def compute_control(self, full_state: NDArray) -> (int, str):
+        """Computes the control input for the Agent.
         INPUTS
         ------
         full_state: full state vector for all agents
@@ -114,13 +116,13 @@ class Agent:
         # Update Control and CBF Trajectories
         self.u_trajectory[self.timestep, :] = self.controller.u
         self.u0_trajectory[self.timestep, :] = self.controller.u_nom
-        self.data['ii'] = self.t
-        if hasattr(self.controller, 'cbf_vals'):
+        self.data["ii"] = self.t
+        if hasattr(self.controller, "cbf_vals"):
             self.cbf_trajectory[self.timestep, :] = self.controller.cbf_vals
-        if hasattr(self.controller, 'c_cbf'):
+        if hasattr(self.controller, "c_cbf"):
             self.consolidated_cbf_trajectory[self.timestep] = self.controller.c_cbf
-        if hasattr(self.controller, 'k_gains'):
-            self.k_gains_trajectory[self.timestep, :] = self.controller.k_gains
+        if hasattr(self.controller, "k_weights"):
+            self.k_gains_trajectory[self.timestep, :] = self.controller.k_weights
 
         if misc is not None:
             print(misc)
@@ -128,7 +130,7 @@ class Agent:
         return code, status
 
     def step_dynamics(self) -> NDArray:
-        """ Advances the Agent's dynamics forward in time using the current state and control input.
+        """Advances the Agent's dynamics forward in time using the current state and control input.
         INPUTS
         ------
         None -- Requires only class variables
@@ -142,9 +144,8 @@ class Agent:
 
         return x_updated
 
-    def update(self,
-               x_new: NDArray) -> None:
-        """ Updates the class time and state vector.
+    def update(self, x_new: NDArray) -> None:
+        """Updates the class time and state vector.
         INPUTS
         ------
         x_new: new state vector
@@ -157,8 +158,7 @@ class Agent:
         self.timestep = self.timestep + 1
         self.t = self.timestep * self.dt
 
-    def save_data(self,
-                  identity: int) -> None:
+    def save_data(self, identity: int) -> None:
         """Saves the agent's individual simulation data out to a .pkl file.
         INPUTS
         ------
@@ -171,7 +171,7 @@ class Agent:
         file = Path(self.save_file)
         if file.is_file():
             # Load data, then add to it
-            with open(self.save_file, 'rb') as f:
+            with open(self.save_file, "rb") as f:
                 try:
                     data = load(f)
                     data[identity] = self.data
@@ -182,5 +182,5 @@ class Agent:
             data = {identity: self.data}
 
         # Write data to file
-        with open(self.save_file, 'wb') as f:
+        with open(self.save_file, "wb") as f:
             dump(data, f)
