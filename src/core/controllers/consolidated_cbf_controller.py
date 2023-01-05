@@ -95,8 +95,6 @@ class ConsolidatedCbfController(CbfQpController):
 
         return self.u, code, status
 
-    #! TO DO'S
-    #! - log k and kdot for data file
     def formulate_qp(
         self, t: float, ze: NDArray, zr: NDArray, u_nom: NDArray, ego: int, cascade: bool = False
     ) -> (NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, float):
@@ -306,7 +304,8 @@ class ConsolidatedCbfController(CbfQpController):
         """
         # Introduce parameters
         discretization_error = 0.1
-        k_ccbf = 0.25
+        k_ccbf = 0.1
+        # k_ccbf = 1.0
 
         # Get C-CBF Value
         H = self.consolidated_cbf()
@@ -579,9 +578,9 @@ class AdaptationLaw:
         self.cost_gain_mat = 100.0 * np.eye(nWeights)
         self.czero_gain = 0.01
         self.ci_gain = 0.01
-        self.k_des_gain = 0.25
+        self.k_des_gain = 0.1
         self.k_min = 0.1
-        self.k_max = 5.0
+        self.k_max = 50.0
         self.k_dot_gain = 0.01
 
     def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
@@ -615,6 +614,7 @@ class AdaptationLaw:
         """
 
         self._k_dot = self._k_dot_drift + self._k_dot_controlled @ u
+        self._k_dot_f = self._k_dot
 
         return self._k_dot
 
@@ -1078,7 +1078,8 @@ class AdaptationLaw:
         dhdk = h * np.exp(-self._k_weights * h)
 
         alpha = 1.0
-        epsilon = 1.0  # -- Add robustness epsilon
+        epsilon = 100.0  # -- Add robustness epsilon
+        epsilon = 10.0  # -- Add robustness epsilon
 
         delta = -Lf - alpha * self.H(h) - (dhdk @ self._k_dot_f - epsilon)
 
@@ -1131,7 +1132,7 @@ class AdaptationLaw:
         # dLfHdx = nd.Jacobian(LfH)(x)[0, :]  # Compute gradient numerically
 
         #! TO DO: Get d2hdx2 and dfdx symbolically
-        d2hdx2 = np.zeros((5, 10, 5))
+        d2hdx2 = np.zeros((5, len(self._k_weights), 5))
         dfdx = np.zeros((5, 5))
         dLfHdx = self.dqdx.T @ self.dhdx @ f(x) + self.q @ d2hdx2 @ f(x) + self.q @ self.dhdx @ dfdx
 
@@ -1178,7 +1179,7 @@ class AdaptationLaw:
         # grad_LfH_kx = nd.Jacobian(grad_LfH_k)(x)
 
         # TO DO: Get d2hdx2 and dfdx symbolically
-        d2hdx2 = np.zeros((5, 10, 5))
+        d2hdx2 = np.zeros((5, len(self._k_weights), 5))
         dfdx = np.zeros((5, 5))
         grad_LfH_kx = (
             self.d2qdkdx @ self.dhdx @ f(x) + self.q @ d2hdx2 @ f(x) + self.q @ self.dhdx @ dfdx

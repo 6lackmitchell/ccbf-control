@@ -176,7 +176,7 @@ lbl = [
 ]
 clr = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 clr.reverse()
-for cbf in range(10):
+for cbf in range(k.shape[2]):
     ax_k.plot(
         t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf]
     )
@@ -306,6 +306,7 @@ ax_pos.legend(fancybox=True, fontsize=15)
 ax_pos.grid(False)
 
 time_scale_factor = 10
+
 
 def animate_ego(jj):
     jj = int(jj * time_scale_factor)
