@@ -971,10 +971,10 @@ class AdaptationLaw:
         """
         dhdk = h * np.exp(-self._k_weights * h)
 
-        alpha = 1.0
+        alpha = 0.5
         epsilon = 100.0  # -- Add robustness epsilon
         epsilon = 10.0  # -- Add robustness epsilon
-        epsilon = 1.0  # -- Add robustness epsilon
+        # epsilon = 1.0  # -- Add robustness epsilon
 
         delta = -Lf - alpha * self.H(h) - (dhdk @ self._k_dot_f - epsilon)
 

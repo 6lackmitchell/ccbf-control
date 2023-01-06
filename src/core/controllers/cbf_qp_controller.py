@@ -59,7 +59,7 @@ class CbfQpController(Controller):
         self.n_controls = len(u_max)
         self.n_agents = nAgents
         self.n_dec_vars = 1
-        self.desired_class_k = 1.0
+        self.desired_class_k = 0.5
         self.max_class_k = 1e6
 
         self.cbf_vals = np.zeros(
