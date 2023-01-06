@@ -28,8 +28,9 @@ R = 0.5
 # Define new symbols -- necessary for pairwise interactions case
 sso = se.symbols(["{}o".format(n) for n in ss], real=True)
 x_scale = 1.0
+y_scale = 1.0
 dx = (ss[0] - sso[0]) * x_scale
-dy = ss[1] - sso[1]
+dy = (ss[1] - sso[1]) * y_scale
 
 # Collision Avoidance CBF
 h_nominal_ca_symbolic = (ss[0] - sso[0]) ** 2 + (ss[1] - sso[1]) ** 2 - (2 * R) ** 2
@@ -50,7 +51,7 @@ for sego, sother in zip(ss, sso):
     vxo = vxo.replace(sego, sother)
     vyo = vyo.replace(sego, sother)
 dvx = (vxe - vxo) * x_scale
-dvy = vye - vyo
+dvy = (vye - vyo) * y_scale
 
 tau_sym = se.Symbol("tau", real=True)
 
@@ -97,6 +98,7 @@ d2hdtau2_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdtau2_predictive_ca_
 # Relaxed Predictive Collision Avoidance
 relaxation = 0.25  # for warehouse simulation (worked)
 relaxation = 0.1  # for warehouse simulation
+relaxation = 0.5  # for warehouse simulation
 # relaxation = 0.5  # for experiment
 
 
