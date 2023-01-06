@@ -61,6 +61,10 @@ g = dyn_wrapper(g_symbolic, sym_state)
 sigma_deterministic = dyn_wrapper(s_symbolic_deterministic, sym_state)
 sigma_stochastic = dyn_wrapper(s_symbolic_stochastic, sym_state)
 
+# Partial Derivative
+dfdx_symbolic = (se.DenseMatrix([f_symbolic]).jacobian(se.DenseMatrix(sym_state))).T
+dfdx = dyn_wrapper(dfdx_symbolic, sym_state)
+
 # System Dynamics
 deterministic_dynamics = control_affine_system_deterministic(f, g)
 stochastic_dynamics = control_affine_system_stochastic(f, g, sigma_stochastic, dt)
