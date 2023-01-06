@@ -62,6 +62,8 @@ with open(filename, "rb") as f:
         x = np.array([data[a]["x"] for a in data.keys()])
         u = np.array([data[a]["u"] for a in data.keys()])
         k = np.array([data[a]["kgains"] if a < 3 else None for a in data.keys()][0:3])
+        kdot = np.array([data[a]["kdot"] if a < 3 else None for a in data.keys()][0:3])
+        kdotf = np.array([data[a]["kdotf"] if a < 3 else None for a in data.keys()][0:3])
         u0 = np.array([data[a]["u0"] for a in data.keys()])
         ii = int(data[0]["ii"] / dt)
         # cbf = np.array([data[a]['cbf'] for a in data.keys()])
@@ -193,6 +195,39 @@ for item in (
     item.set_fontsize(25)
 ax_k.legend(fancybox=True)
 ax_k.grid(True, linestyle="dotted", color="white")
+
+plt.tight_layout(pad=2.0)
+
+
+############################################
+### Kdot Trajectories ###
+fig_kdot = plt.figure(figsize=(8, 8))
+ax_kdot = fig_kdot.add_subplot(111)
+set_edges_black(ax_kdot)
+
+for cbf in range(k.shape[2]):
+    ax_kdot.plot(
+        t[1:ii], kdot[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf]
+    )
+    ax_kdot.plot(
+        t[1:ii],
+        kdotf[0, 1:ii, cbf],
+        "-.",
+        linewidth=lwidth + 1,
+        color=clr[int(1.5 * cbf)],
+        label=lbl[cbf],
+    )
+ax_kdot.set(ylabel="k", title="Adaptation Derivatives")
+
+# Plot Settings
+for item in (
+    [ax_kdot.title, ax_kdot.xaxis.label, ax_kdot.yaxis.label]
+    + ax_kdot.get_xticklabels()
+    + ax_kdot.get_yticklabels()
+):
+    item.set_fontsize(25)
+ax_kdot.legend(fancybox=True)
+ax_kdot.grid(True, linestyle="dotted", color="white")
 
 plt.tight_layout(pad=2.0)
 
