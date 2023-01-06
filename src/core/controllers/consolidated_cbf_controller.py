@@ -356,9 +356,28 @@ class ConsolidatedCbfController(CbfQpController):
         Lf_for_kdot = LfH + dphidk @ self.adapter.k_dot_f
         Lg_for_kdot = Lgh_array[:, self.n_controls * ego : self.n_controls * (ego + 1)]
 
-        # Update adapter partial derivatives
+        # Update adapter
         self.adapter.dhdx = self.dhdx
         self.adapter.d2hdx2 = self.d2hdx2.swapaxes(0, 2).swapaxes(1, 2)
+        self.adapter.q = dphidh
+        self.adapter.dqdk = np.diag(
+            (1 - self.k_weights * self.cbf_vals) * np.exp(-self.k_weights * self.cbf_vals)
+        )
+        self.adapter.dqdx = (
+            self.dhdx.T @ np.diag(-(self.k_weights**2) * np.exp(-self.k_weights * self.cbf_vals))
+        ).T
+        d2qdk2_vals = (self.k_weights * self.cbf_vals**2 - 2 * self.cbf_vals) * np.exp(
+            -self.k_weights * self.cbf_vals
+        )
+        np.fill_diagonal(self.adapter.d2qdk2, d2qdk2_vals)
+        triple_diag = np.zeros((len(self.k_weights), len(self.k_weights), len(self.k_weights)))
+        np.fill_diagonal(
+            triple_diag,
+            (self.k_weights**2 * self.cbf_vals - 2 * self.k_weights)
+            * np.exp(-self.k_weights * self.cbf_vals),
+        )
+        d2qdkdx = triple_diag @ self.dhdx
+        self.adapter.d2qdkdx = d2qdkdx.swapaxes(0, 1).swapaxes(1, 2)
 
         # Compute drift k_dot
         k_dot_drift = self.adapter.k_dot_drift(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
@@ -440,11 +459,11 @@ class AdaptationLaw:
         self.ci_gain = 0.01
         self.k_des_gain = 0.25
         self.k_min = 0.1
-        self.k_max = 50.0
+        self.k_max = 1000.0
         self.k_dot_gain = 0.01
 
-        self.czero_gain = 0.1
-        self.ci_gain = 0.1
+        self.czero_gain = 0.01
+        self.ci_gain = 0.01
 
     def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
         """Updates the adaptation gains and returns the new k weights.
@@ -739,6 +758,8 @@ class AdaptationLaw:
         # Adjust for numerical stability
         if abs(czero) < 1e-3:
             czero = 1e-3
+        elif abs(czero) > 1e9:
+            czero = 1e9
 
         return czero * self.czero_gain
 
