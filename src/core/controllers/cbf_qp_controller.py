@@ -66,6 +66,7 @@ class CbfQpController(Controller):
             (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
         )
         self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
+        self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 5, 5))
 
         # Define individual input constraints
         self.au = block_diag(*self.n_controls * [np.array([[1, -1]]).T])

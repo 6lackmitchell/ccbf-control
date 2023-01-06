@@ -63,6 +63,8 @@ class Agent:
         self.cbf_trajectory = None
         self.consolidated_cbf_trajectory = None
         self.k_gains_trajectory = None
+        self.k_dot_trajectory = None
+        self.k_dot_f_trajectory = None
         self.safety = None
         self._timestep = None
 
@@ -83,10 +85,14 @@ class Agent:
             self.cbf_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
             self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
             self.k_gains_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
+            self.k_dot_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
+            self.k_dot_f_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
         else:
             self.cbf_trajectory = np.zeros((self.nTimesteps,))
             self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
             self.k_gains_trajectory = np.zeros((self.nTimesteps,))
+            self.k_dot_trajectory = np.zeros((self.nTimesteps,))
+            self.k_dot_f_trajectory = np.zeros((self.nTimesteps,))
 
         # Save data object -- auto-updating since defined by reference
         self.data = {
@@ -96,6 +102,8 @@ class Agent:
             "cbf": self.cbf_trajectory,
             "ccbf": self.consolidated_cbf_trajectory,
             "kgains": self.k_gains_trajectory,
+            "kdot": self.k_dot_trajectory,
+            "kdotf": self.k_dot_f_trajectory,
             "ii": self.t,
         }
 
@@ -123,6 +131,10 @@ class Agent:
             self.consolidated_cbf_trajectory[self.timestep] = self.controller.c_cbf
         if hasattr(self.controller, "k_weights"):
             self.k_gains_trajectory[self.timestep, :] = self.controller.k_weights
+        if hasattr(self.controller, "k_dot"):
+            self.k_dot_trajectory[self.timestep, :] = self.controller.k_dot
+        if hasattr(self.controller, "k_dot_f"):
+            self.k_dot_f_trajectory[self.timestep, :] = self.controller.k_dot_f
 
         if misc is not None:
             print(misc)
