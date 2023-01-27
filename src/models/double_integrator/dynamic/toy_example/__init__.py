@@ -2,8 +2,18 @@ import builtins
 from sys import platform
 from importlib import import_module
 from core.agent import Agent
-from core.cbfs import cbfs_individual, cbfs_pairwise, cbf0
-from core.controllers.cbf_qp_controller import CbfQpController
+from core.cbfs import (
+    cbfs_individual,
+    cbfs_individual1,
+    cbfs_individual2,
+    cbfs_individual3,
+    cbfs_individual4,
+    cbfs_pairwise,
+    cbf0,
+)
+
+# from core.controllers.cbf_qp_controller_breeden_hocbf import CbfQpController
+from core.controllers.cbf_qp_controller_exponential_hocbf import CbfQpController
 from core.controllers.consolidated_cbf_controller import ConsolidatedCbfController
 from ..models import f, g, nControls
 from .timing_params import *
@@ -56,13 +66,46 @@ def consolidated_cbf_controller(idx: int) -> ConsolidatedCbfController:
     )
 
 
-def cbf_controller(idx: int) -> CbfQpController:
+def cbf_controller1(idx: int) -> CbfQpController:
     return CbfQpController(
         u_max,
         nAgents,
         objective_accel_and_steering,
         ProportionalController(idx),
-        cbfs_individual,
+        cbfs_individual1,
+        cbfs_pairwise,
+    )
+
+
+def cbf_controller2(idx: int) -> CbfQpController:
+    return CbfQpController(
+        u_max,
+        nAgents,
+        objective_accel_and_steering,
+        ProportionalController(idx),
+        cbfs_individual2,
+        cbfs_pairwise,
+    )
+
+
+def cbf_controller3(idx: int) -> CbfQpController:
+    return CbfQpController(
+        u_max,
+        nAgents,
+        objective_accel_and_steering,
+        ProportionalController(idx),
+        cbfs_individual3,
+        cbfs_pairwise,
+    )
+
+
+def cbf_controller4(idx: int) -> CbfQpController:
+    return CbfQpController(
+        u_max,
+        nAgents,
+        objective_accel_and_steering,
+        ProportionalController(idx),
+        cbfs_individual4,
         cbfs_pairwise,
     )
 
@@ -71,7 +114,10 @@ def cbf_controller(idx: int) -> CbfQpController:
 cbf_controlled_agents = [
     Agent(0, z0[0, :], u0, cbf0, time, step_dynamics, consolidated_cbf_controller(0), save_path),
     Agent(1, z0[1, :], u0, cbf0, time, step_dynamics, ProportionalController(1), save_path),
-    # Agent(2, z0[2, :], u0, cbf0, time, step_dynamics, cbf_controller(2), save_path),
+    Agent(2, z0[2, :], u0, cbf0, time, step_dynamics, cbf_controller1(2), save_path),
+    Agent(3, z0[3, :], u0, cbf0, time, step_dynamics, cbf_controller2(3), save_path),
+    Agent(4, z0[4, :], u0, cbf0, time, step_dynamics, cbf_controller3(4), save_path),
+    Agent(5, z0[5, :], u0, cbf0, time, step_dynamics, cbf_controller4(5), save_path),
 ]
 # human_agents = [
 #     Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, ZeroController(i), save_path)

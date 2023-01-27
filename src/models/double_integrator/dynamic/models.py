@@ -14,11 +14,6 @@ situation = builtins.PROBLEM_CONFIG["situation"]
 mod = "models." + vehicle + "." + control_level + "." + situation
 dt = getattr(__import__(mod + ".timing_params", fromlist=["dt"]), "dt")
 
-# from .physical_params import ar_max, w_max
-# from .physical_params import Lr
-# from .timing_params import dt
-
-
 # Define Symbolic State
 sym_state = se.symbols(["x", "y", "vx", "vy"], real=True)
 

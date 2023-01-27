@@ -76,18 +76,19 @@ class ConsolidatedCbfController(CbfQpController):
             cbfs_pairwise,
             ignore,
         )
+        kZero = 0.5
         nCBF = len(self.cbf_vals)
         self.c_cbf = 100
         self.n_agents = nAgents
         self.filtered_wf = np.zeros((nCBF,))
         self.filtered_wg = np.zeros((nCBF, len(self.u_max)))
-        self.k_weights = np.zeros((nCBF,))
+        self.k_weights = kZero * np.ones((nCBF,))
         self.k_dot = np.zeros((nCBF,))
         self.k_dot_f = np.zeros((nCBF,))
-        self.czero = 0
+        self.czero1 = 0
+        self.czero2 = 0
 
-        # self.adapter = AdaptationLaw(nCBF, u_max, kZero=0.5)
-        self.adapter = AdaptationLaw(nCBF, u_max, kZero=0.5)
+        self.adapter = AdaptationLaw(nCBF, u_max, kZero=kZero)
 
     def _compute_control(self, t: float, z: NDArray, cascaded: bool = False) -> (NDArray, int, str):
         self.u, code, status = super()._compute_control(t, z, cascaded)
@@ -97,7 +98,8 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_weights = k_weights
         self.k_dot = k_dot
         self.k_dot_f = k_dot_f
-        self.czero = self.adapter.czero_val
+        self.czero1 = self.adapter.czero_val1
+        self.czero2 = self.adapter.czero_val2
 
         return self.u, code, status
 
@@ -116,7 +118,7 @@ class ConsolidatedCbfController(CbfQpController):
         #     self.k += self._dt * k_dot
 
         # Compute Q matrix and p vector for QP objective function
-        Q, p = self.compute_objective_qp(u_nom)
+        Q, p = self.compute_objective_qp(u_nom, ze)
 
         # Compute input constraints of form Au @ u <= bu
         Au, bu = self.compute_input_constraints()
@@ -252,7 +254,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         return Q, p, A, b, None, None
 
-    def compute_objective_qp(self, u_nom: NDArray) -> (NDArray, NDArray):
+    def compute_objective_qp(self, u_nom: NDArray, ze: NDArray) -> (NDArray, NDArray):
         """Computes the matrix Q and vector p for the objective function of the
         form
 
@@ -270,11 +272,12 @@ class ConsolidatedCbfController(CbfQpController):
             Q, p = self.objective(
                 np.concatenate(
                     [u_nom.flatten(), np.array(self.n_dec_vars * [self.desired_class_k])]
-                )
+                ),
+                ze[:2],
             )
             # Q, p = self.objective(np.append(u_nom.flatten(), self.desired_class_k))
         else:
-            Q, p = self.objective(u_nom.flatten())
+            Q, p = self.objective(u_nom.flatten(), ze[:2])
 
         return Q, p
 
@@ -450,7 +453,8 @@ class AdaptationLaw:
         self._k_3dot_drift_f = np.zeros((nWeights,))
 
         # logging variables
-        self.czero_val = 0.0
+        self.czero_val1 = 0.0
+        self.czero_val2 = 0.0
 
         # q vector and derivatives
         self.q = np.zeros((nWeights,))
@@ -460,6 +464,7 @@ class AdaptationLaw:
         self.d2qdkdx = np.zeros((nWeights, nStates, nWeights))
 
         # control contraint matrix
+        self.u_max = uMax
         self.U = uMax[:, np.newaxis] @ uMax[np.newaxis, :]
 
         # dhdx, d2hdx2 matrices
@@ -467,27 +472,14 @@ class AdaptationLaw:
         self.d2hdx2 = np.zeros((nStates, nWeights, nStates))
 
         # Gains and Parameters
-        self.cost_gain_mat = 100.0 * np.eye(nWeights)
-        self.czero_gain = 0.01
-        self.ci_gain = 0.01
-        self.k_des_gain = 2.25
-        self.k_min = 0.1
-        self.k_max = 1000.0
-
-        self.czero_gain = 0.1
-        self.ci_gain = 0.1
-        self.cost_gain_mat *= 1.0
-
-        # TESTING
+        self.k_dot_gain = 0.5
         self.cost_gain_mat = 1.0 * np.eye(nWeights)
         self.k_des_gain = 3.0
         self.k_min = 0.1
-        self.k_max = 3.0
-        self.czero_gain = 0.05
-        self.czero_gain = 0.01
+        self.k_max = 10.0
+        self.czero_gain = 0.02
         self.ci_gain = self.czero_gain
-        # self.cost_gain_mat *= 0.1
-        self.cost_gain_mat *= 40.0
+        self.cost_gain_mat *= 50.0
 
     def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
         """Updates the adaptation gains and returns the new k weights.
@@ -560,8 +552,10 @@ class AdaptationLaw:
             @ self.grad_czero_x(x, h, Lf, Lg)[np.newaxis, :]
         ) / self.czero(x, h, Lf, Lg) ** 2
 
-        k_dot_drift = -np.linalg.inv(M) @ (
-            self.cost_gain_mat @ self.grad_phi_k(x, h, Lf, Lg) + X @ f(x)
+        k_dot_drift = (
+            -self.k_dot_gain
+            * np.linalg.inv(M)
+            @ (self.cost_gain_mat @ self.grad_phi_k(x, h, Lf, Lg) + X @ f(x))
         )
 
         self._k_dot_drift = k_dot_drift
@@ -598,7 +592,7 @@ class AdaptationLaw:
             @ self.grad_czero_x(x, h, Lf, Lg)[np.newaxis, :]
         ) / self.czero(x, h, Lf, Lg) ** 2
 
-        k_dot_controlled = -np.linalg.inv(M) @ X @ g(x)
+        k_dot_controlled = -self.k_dot_gain * np.linalg.inv(M) @ X @ g(x)
 
         self._k_dot_controlled = k_dot_controlled
 
@@ -780,13 +774,14 @@ class AdaptationLaw:
         """
         czero = self.q @ Lg @ self.U @ Lg.T @ self.q.T - self.delta(x, h, Lf) ** 2
 
-        # Adjust for numerical stability
-        if abs(czero) < 1e-3:
-            czero = 1e-3
-        elif abs(czero) > 1e9:
-            czero = 1e9
+        # # Adjust for numerical stability
+        # if abs(czero) < 1e-3:
+        #     czero = 1e-3
+        # elif abs(czero) > 1e9:
+        #     czero = 1e9
 
-        self.czero_val = czero * self.czero_gain
+        self.czero_val1 = czero * self.czero_gain
+        self.czero_val2 = ((abs(self.q @ Lg) @ self.u_max) - self.delta(x, h, Lf)) * self.czero_gain
 
         return czero * self.czero_gain
 
@@ -829,8 +824,7 @@ class AdaptationLaw:
         grad_c0_x: gradient of viability constraint function with respect to x
 
         """
-        # TO DO
-        dLgdx = np.zeros((len(x), len(self._k_weights), 2))
+        dLgdx = self.d2hdx2 @ g(x)
 
         grad_c0_x = (
             2 * self.dqdx.T @ Lg @ self.U @ Lg.T @ self.q.T
@@ -891,7 +885,7 @@ class AdaptationLaw:
         grad_c0_kx: gradient of viability constraint function with respect to k then x
 
         """
-        dLgdx = np.zeros((len(x), len(self._k_weights), 2))
+        dLgdx = self.d2hdx2 @ g(x)
 
         grad_c0_kx = (
             2 * self.d2qdkdx @ Lg @ self.U @ Lg.T @ self.q.T
@@ -999,9 +993,7 @@ class AdaptationLaw:
         dhdk = h * np.exp(-self._k_weights * h)
 
         alpha = 0.1
-        # epsilon = 100.0  # -- Add robustness epsilon
-        # epsilon = 10.0  # -- Add robustness epsilon
-        epsilon = 0.0  # -- Add robustness epsilon
+        epsilon = 0.0  # Filter very accurate
 
         delta = -Lf - alpha * self.H(h) - (dhdk @ self._k_dot_drift_f - epsilon)
 
@@ -1040,21 +1032,6 @@ class AdaptationLaw:
         grad_delta_x: gradient of delta with respect to x
 
         """
-        # # TO DO: define dhdx as a function of x and numerically compute gradient
-        # def hx(dx):
-        #     return h
-
-        # def dhdx(dx):
-        #     return self.dhdx
-
-        # # Define functions to compute gradient numerically
-        # def LfH(dx):
-        #     return (self._k_weights * np.exp(-self._k_weights * hx(dx))) @ dhdx(dx) @ f(dx)
-
-        # dLfHdx = nd.Jacobian(LfH)(x)[0, :]  # Compute gradient numerically
-
-        #! TO DO: Get dfdx symbolically
-        # dfdx = np.zeros((5, 5))
         dLfHdx = (
             self.dqdx.T @ self.dhdx @ f(x)
             + self.q @ self.d2hdx2 @ f(x)
@@ -1242,8 +1219,6 @@ class AdaptationLaw:
             h**2 * self._k_weights * np.exp(-self._k_weights * h)
             - 2 * h * np.exp(-self._k_weights * h)
         )[:, np.newaxis] @ self.dhdx[:, np.newaxis, :]
-        # grad_H_kkx = np.zeros((len(self._k_weights), len(self._k_weights), self.dqdx.shape[1]))
-        # np.fill_diagonal(grad_H_kkx, filling)
 
         return grad_H_kkx
 

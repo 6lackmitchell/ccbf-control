@@ -65,6 +65,9 @@ class Agent:
         self.k_gains_trajectory = None
         self.k_dot_trajectory = None
         self.k_dot_f_trajectory = None
+        self.czero1_trajectory = None
+        self.czero2_trajectory = None
+
         self.safety = None
         self._timestep = None
 
@@ -87,14 +90,16 @@ class Agent:
             self.k_gains_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
             self.k_dot_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
             self.k_dot_f_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
-            self.czero_trajectory = np.zeros((self.nTimesteps,))
+            self.czero1_trajectory = np.zeros((self.nTimesteps,))
+            self.czero2_trajectory = np.zeros((self.nTimesteps,))
         else:
             self.cbf_trajectory = np.zeros((self.nTimesteps,))
             self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
             self.k_gains_trajectory = np.zeros((self.nTimesteps,))
             self.k_dot_trajectory = np.zeros((self.nTimesteps,))
             self.k_dot_f_trajectory = np.zeros((self.nTimesteps,))
-            self.czero_trajectory = np.zeros((self.nTimesteps,))
+            self.czero1_trajectory = np.zeros((self.nTimesteps,))
+            self.czero2_trajectory = np.zeros((self.nTimesteps,))
 
         # Save data object -- auto-updating since defined by reference
         self.data = {
@@ -106,7 +111,8 @@ class Agent:
             "kgains": self.k_gains_trajectory,
             "kdot": self.k_dot_trajectory,
             "kdotf": self.k_dot_f_trajectory,
-            "czero": self.czero_trajectory,
+            "czero1": self.czero1_trajectory,
+            "czero2": self.czero2_trajectory,
             "ii": self.t,
         }
 
@@ -138,8 +144,10 @@ class Agent:
             self.k_dot_trajectory[self.timestep, :] = self.controller.k_dot
         if hasattr(self.controller, "k_dot_f"):
             self.k_dot_f_trajectory[self.timestep, :] = self.controller.k_dot_f
-        if hasattr(self.controller, "czero"):
-            self.czero_trajectory[self.timestep] = self.controller.czero
+        if hasattr(self.controller, "czero1"):
+            self.czero1_trajectory[self.timestep] = self.controller.czero1
+        if hasattr(self.controller, "czero2"):
+            self.czero2_trajectory[self.timestep] = self.controller.czero2
 
         if misc is not None:
             print(misc)

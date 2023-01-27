@@ -4,7 +4,7 @@ import numpy as np
 
 N_COMPARISONS = 1
 N_COMPARISONS += (
-    1  # No safety, Arbitrary HO-CBF, Joseph's HO-CBF w/ input constraints, HO-CBF w/ alpha decision
+    5  # No safety, Arbitrary HO-CBF, Joseph's HO-CBF w/ input constraints, HO-CBF w/ alpha decision
 )
 xg = np.array(N_COMPARISONS * [2.0])
 yg = np.array(N_COMPARISONS * [2.0])
