@@ -122,8 +122,6 @@ class CbfQpController(Controller):
         u_nom[ego, :] = u_nom[ego, :] + integrated_error[ego]
         self.u_nom = u_nom[ego, :]
 
-        # print(integrated_error[ego])
-
         tuning_nominal = False
         if tuning_nominal:
             self.u = self.u_nom
@@ -150,44 +148,10 @@ class CbfQpController(Controller):
         else:
             pass
 
-            # # Get matrices and vectors for QP controller
-            # Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego, cascade=cascaded)
-            #
-            # # Solve QP
-            # sol = solve_qp_cvxopt(Q, p, A, b, G, h)
-            #
-            # # Check solution
-            # if 'code' in sol.keys():
-            #     code = sol['code']
-            #     status = sol['status']
-            #
-            #     if not code:
-            #         if cascaded:
-            #             Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
-            #             sol = solve_qp_cvxopt(Q, p, A, b, G, h)
-            #             if not sol['code']:
-            #                 self.u = np.zeros((self.n_controls,))
-            #             else:
-            #                 self.assign_control(sol, ego)
-            #         else:
-            #             self.u = np.zeros((self.n_controls,))
-            #     else:
-            #         alf = np.array(sol['x'])[-1]
-            #         self.assign_control(sol, ego)
-            #
-            # else:
-            #     code = 0
-            #     status = 'Divide by Zero'
-            #     self.u = np.zeros((self.n_controls,))
-
         if not code:
             print(A[-1, :])
             print(b[-1])
             print("wtf")
-        decay_const = 0.0  # needs to be < 1
-        integrated_error[ego] = (
-            np.linalg.norm(self.u - self.u_nom) + integrated_error[ego]
-        ) * decay_const
 
         return self.u, code, status
 
@@ -207,90 +171,58 @@ class CbfQpController(Controller):
         # Q, p: objective function
         # Au, bu: input constraints
         if self.n_dec_vars > 0:
-            alpha_nom = 1.0
-            Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
+            alpha_nom = 0.1
+            Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom), ze[:2])
             Au = block_diag(*(na + self.n_dec_vars) * [self.au])[:-2, :-1]
             bu = np.append(np.array(na * [self.bu]).flatten(), self.n_dec_vars * [100, 0])
         else:
-            Q, p = self.objective(u_nom.flatten())
+            Q, p = self.objective(u_nom.flatten(), ze[:2])
             Au = block_diag(*(na) * [self.au])
             bu = np.array(na * [self.bu]).flatten()
 
         # Initialize inequality constraints
-        lci = len(self.cbfs_individual)
+        lci = 5
         Ai = np.zeros((lci + len(zr), self.n_controls * na + self.n_dec_vars))
         bi = np.zeros((lci + len(zr),))
 
         # Iterate over individual CBF constraints
+        R = [0.5, 0.5, 0.5]
+        cx = [1.0, 1.5, 2.4]
+        cy = [1.0, 2.25, 1.5]
+        l1 = [1.0, 2.0, 5.0, 10.0]
+        l0 = [0.25, 0.5, 1.25, 2.5]
         for cc, cbf in enumerate(self.cbfs_individual):
-            h0 = cbf.h0(ze)
-            h = cbf.h(ze)
-            dhdx = cbf.dhdx(ze)
+            if cc < 3:
+                dx = ze[0] - cx[cc]
+                dy = ze[1] - cy[cc]
+                h = dx**2 + dy**2 - R[cc] ** 2
+                h0 = dx**2 + dy**2 - R[cc] ** 2
+                hdot = 2 * (dx * ze[2] + dy * ze[3])
+                Lf2h = 2 * (ze[2] ** 2 + ze[3] ** 2)
+                LgLfh = 2 * np.array([dx, dy])
 
-            # Stochastic Term -- 0 for deterministic systems
-            if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
-                d2hdx2 = cbf.d2hdx2(ze)
-                stoch = 0.5 * np.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
+                # Exponential CBF Condition
+                H = l1[self.ego_id - 2] * hdot + l1[self.ego_id - 2] * l0[self.ego_id - 2] * h
+                LfH = Lf2h
+                LgH = LgLfh
+
             else:
-                stoch = 0.0
+                H = (1 - ze[cc - 1]) * (ze[cc - 1] + 1)
+                LfH = 0.0
+                if cc == 3:
+                    LgH = -2 * ze[cc - 1] * np.array([1, 0])
+                else:
+                    LgH = -2 * ze[cc - 1] * np.array([0, 1])
 
-            # Get CBF Lie Derivatives
-            Lfh = dhdx @ f(ze) + stoch
+            h = H
+            Lfh = LfH
             Lgh = np.zeros((self.n_controls * na,))
-            Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx @ g(
-                ze
-            )  # Only assign ego control
-            if cascade:
-                Lgh[self.n_controls * ego] = 0.0
+            Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = LgH
 
-            # Ai[cc, :], bi[cc] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, cc, adaptive=True)
             Ai[cc, :], bi[cc] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, cc)
             self.cbf_vals[cc] = h
             if h0 < 0:
                 self.safety = False
-
-        # Iterate over pairwise CBF constraints
-        for cc, cbf in enumerate(self.cbfs_pairwise):
-
-            # Iterate over all other vehicles
-            for ii, zo in enumerate(zr):
-                idx = ii + (ii >= ego)
-
-                h0 = cbf.h0(ze, zo)
-                h = cbf.h(ze, zo)
-                dhdx = cbf.dhdx(ze, zo)
-
-                # Stochastic Term -- 0 for deterministic systems
-                if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
-                    d2hdx2 = cbf.d2hdx2(ze, zo)
-                    stoch = 0.5 * (
-                        np.trace(sigma(ze).T @ d2hdx2[:ns, :ns] @ sigma(ze))
-                        + np.trace(sigma(zo).T @ d2hdx2[ns:, ns:] @ sigma(zo))
-                    )
-                else:
-                    stoch = 0.0
-
-                # Get CBF Lie Derivatives
-                Lfh = dhdx[:ns] @ f(ze) + dhdx[ns:] @ f(zo) + stoch
-                Lgh = np.zeros((self.n_controls * na,))
-                Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx[:ns] @ g(ze)
-                if cascade:
-                    Lgh[self.n_controls * ego] = 0.0
-                # Lgh[self.n_controls * idx:(idx + 1) * self.n_controls] = dhdx[ns:] @ g(zo)  # Only allow ego to compensate for safety
-
-                if h0 < 0:
-                    print(
-                        "{} SAFETY VIOLATION: {:.2f}".format(
-                            str(self.__class__).split(".")[-1], -h0
-                        )
-                    )
-                    self.safety = False
-
-                update_idx = lci + cc * zr.shape[0] + ii
-                Ai[update_idx, :], bi[update_idx] = self.generate_cbf_condition(
-                    cbf, h, Lfh, Lgh, update_idx, adaptive=True
-                )
-                self.cbf_vals[update_idx] = h
 
         A = np.vstack([Au, Ai])
         b = np.hstack([bu, bi])

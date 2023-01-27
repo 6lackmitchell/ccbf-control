@@ -29,6 +29,14 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
 
     if vehicle == "bicycle":
         from models.bicycle import nAgents, nStates, z0, centralized_agents, decentralized_agents
+    elif vehicle == "double_integrator":
+        from models.double_integrator import (
+            nAgents,
+            nStates,
+            z0,
+            centralized_agents,
+            decentralized_agents,
+        )
 
     nTimesteps = int((tf - 0.0) / dt) + 1
 
