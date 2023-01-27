@@ -29,6 +29,13 @@ global integrated_error
 integrated_error = np.zeros((25,))
 
 
+def linear_class_k(k):
+    def alpha(h):
+        return k * h
+
+    return alpha
+
+
 class CbfQpController(Controller):
 
     _stochastic = False
@@ -63,7 +70,7 @@ class CbfQpController(Controller):
         self.max_class_k = 1e6
 
         self.cbf_vals = np.zeros(
-            (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
+            (len(cbfs_individual) + 1 + (self.n_agents - 1) * len(cbfs_pairwise)),
         )
         self.dhdx = np.zeros((self.cbf_vals.shape[0], 4))
         # self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
@@ -181,9 +188,9 @@ class CbfQpController(Controller):
             bu = np.array(na * [self.bu]).flatten()
 
         # Initialize inequality constraints
-        lci = 5
-        Ai = np.zeros((lci + len(zr), self.n_controls * na + self.n_dec_vars))
-        bi = np.zeros((lci + len(zr),))
+        lci = 6
+        Ai = np.zeros((lci, self.n_controls * na + self.n_dec_vars))
+        bi = np.zeros((lci,))
 
         # Iterate over individual CBF constraints
         R = [0.5, 0.5, 0.5]
@@ -191,12 +198,13 @@ class CbfQpController(Controller):
         cy = [1.0, 2.25, 1.5]
         l1 = [1.0, 2.0, 5.0, 10.0]
         l0 = [0.25, 0.5, 1.25, 2.5]
-        for cc, cbf in enumerate(self.cbfs_individual):
+        for cc, cbf in enumerate(
+            self.cbfs_individual + [Cbf(None, None, None, linear_class_k(1.0), None)]
+        ):
             if cc < 3:
                 dx = ze[0] - cx[cc]
                 dy = ze[1] - cy[cc]
                 h = dx**2 + dy**2 - R[cc] ** 2
-                h0 = dx**2 + dy**2 - R[cc] ** 2
                 hdot = 2 * (dx * ze[2] + dy * ze[3])
                 Lf2h = 2 * (ze[2] ** 2 + ze[3] ** 2)
                 LgLfh = 2 * np.array([dx, dy])
@@ -206,13 +214,34 @@ class CbfQpController(Controller):
                 LfH = Lf2h
                 LgH = LgLfh
 
-            else:
+            elif cc < 5:
                 H = (1 - ze[cc - 1]) * (ze[cc - 1] + 1)
                 LfH = 0.0
                 if cc == 3:
                     LgH = -2 * ze[cc - 1] * np.array([1, 0])
                 else:
                     LgH = -2 * ze[cc - 1] * np.array([0, 1])
+
+            else:
+                T = 10
+                stop_time = 2.0
+                dx = ze[0] - 2
+                dy = ze[1] - 2
+                if t < T - stop_time:
+                    h = ((T - t) ** 2) / 4 - dx**2 - dy**2
+                    hdot = (t - T) / 2 - 2 * (ze[2] * dx + ze[3] * dy)
+                    Lf2h = 1 / 2 - 2 * (ze[2] ** 2 + ze[3] ** 2)
+                    LgLfh = -2 * np.array([dx, dy])
+                else:
+                    h = ((T - stop_time) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+                    hdot = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
+                    Lf2h = -2 * (ze[2] ** 2 + ze[3] ** 2)
+                    LgLfh = -2 * np.array([dx, dy])
+
+                # Exponential CBF Condition
+                H = l1[self.ego_id - 2] * hdot + l1[self.ego_id - 2] * l0[self.ego_id - 2] * h
+                LfH = Lf2h
+                LgH = LgLfh
 
             h = H
             Lfh = LfH
@@ -221,7 +250,8 @@ class CbfQpController(Controller):
 
             Ai[cc, :], bi[cc] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, cc)
             self.cbf_vals[cc] = h
-            if h0 < 0:
+            if h < 0:
+                # print(f"CONSTRAINT VIOLATED: {self.ego_id, t}")
                 self.safety = False
 
         A = np.vstack([Au, Ai])

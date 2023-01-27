@@ -2,16 +2,10 @@ import numpy as np
 from cvxopt import matrix, solvers
 
 # Silence the solver output
-solvers.options['show_progress'] = False
+solvers.options["show_progress"] = False
 
 
-def solve_qp_cvxopt(Q0,
-                    p0,
-                    A0=None,
-                    b0=None,
-                    G0=None,
-                    h0=None,
-                    level=0) -> dict:
+def solve_qp_cvxopt(Q0, p0, A0=None, b0=None, G0=None, h0=None, level=0) -> dict:
     """Solves a quadratic program using the cvxopt library.
 
     min 1/2 x^T Q x  +  p^T x
@@ -70,35 +64,36 @@ def solve_qp_cvxopt(Q0,
 
     try:
         sol = solvers.qp(Q, p, A, b, G, h)
-        data['x'] = sol['x']
-        data['code'] = 1
-        data['status'] = sol['status']
+        data["x"] = sol["x"]
+        data["code"] = 1
+        data["status"] = sol["status"]
 
-        if sol['status'] != 'optimal':
-            check_x = np.array(sol['x']).flatten()
+        if sol["status"] != "optimal":
+            check_x = np.array(sol["x"]).flatten()
             check_A = np.array(A)
-            check_b = np.array(b)
+            check_b = np.array(b)[:, 0]
             if np.sum((check_A @ check_x) <= check_b) < len(check_b):
-                data['code'] = 0
-                data['status'] = 'violates_constraints'
+                data["code"] = 0
+                data["status"] = "violates_constraints"
+                print("VIOLATES")
 
     except ValueError as e:  # Catch infeasibility
         if level == 0:
             return solve_qp_cvxopt(Q0, p0, A0 * 1e3, b0 * 1e3, G0, h0, level + 1)
 
         print(e)
-        data['x'] = np.zeros((n, 1))
-        data['code'] = 0
-        data['status'] = 'infeasible_or_unbounded'
+        data["x"] = np.zeros((n, 1))
+        data["code"] = 0
+        data["status"] = "infeasible_or_unbounded"
     except ZeroDivisionError as e:
-        data['x'] = np.zeros((n, 1))
-        data['code'] = 0
-        data['status'] = 'divide_by_zero'
+        data["x"] = np.zeros((n, 1))
+        data["code"] = 0
+        data["status"] = "divide_by_zero"
     except Exception as e:
         print(e)
-        data['x'] = np.zeros((n, 1))
-        data['code'] = 0
-        data['status'] = 'some_other_error'
+        data["x"] = np.zeros((n, 1))
+        data["code"] = 0
+        data["status"] = "some_other_error"
     finally:
         return data
 
@@ -150,14 +145,14 @@ def solve_convex_nonlinear_problem(F, G0=None, h0=None, A0=None, b0=None) -> dic
 
     try:
         sol = solvers.cp(F, G=G, h=h, A=A, b=b)
-        data['x'] = sol['x']
-        data['code'] = 1
-        data['status'] = sol['status']
+        data["x"] = sol["x"]
+        data["code"] = 1
+        data["status"] = sol["status"]
     except ValueError as e:  # Catch infeasibility
         print(e)
-        data['x'] = np.zeros((n, 1))
-        data['code'] = 0
-        data['status'] = 'infeasible_or_unbounded'
+        data["x"] = np.zeros((n, 1))
+        data["code"] = 0
+        data["status"] = "infeasible_or_unbounded"
     except Exception as e:
         print(e)
     finally:
@@ -189,7 +184,6 @@ if __name__ == "__main__":
 
     from cvxopt import solvers, matrix, spdiag, log
 
-
     def acent(A, b):
         m, n = A.size
 
@@ -201,16 +195,16 @@ if __name__ == "__main__":
                 return None
 
             f = -sum(log(x))
-            Df = -(x ** -1).T
+            Df = -(x**-1).T
 
             if z is None:
                 return f, Df
 
-            H = spdiag(z[0] * x ** -2)
+            H = spdiag(z[0] * x**-2)
 
             return f, Df, H
 
-        return solvers.cp(F, A=A, b=b)['x']
+        return solvers.cp(F, A=A, b=b)["x"]
 
     def qcqp(Q, p, G, h):
         m, n = G.size
@@ -220,13 +214,13 @@ if __name__ == "__main__":
             if x is None:
                 return 1, matrix(1.0, (n, 1))
 
-            f0 = 1/2 * x.T * Q * x + p.T * x
+            f0 = 1 / 2 * x.T * Q * x + p.T * x
             Df0 = x.T * Q + p.T
 
             def cbf(tt):
                 print("tt: {}".format(tt))
-                print("Sum: {:.2f}".format(sum(tt**2 + 2*tt) + 3))
-                return sum(tt**2 + 2*tt) + 3
+                print("Sum: {:.2f}".format(sum(tt**2 + 2 * tt) + 3))
+                return sum(tt**2 + 2 * tt) + 3
 
             def dcbf(tt):
                 print("dcbf: {}".format((2 * tt + 2).T))
@@ -256,4 +250,3 @@ if __name__ == "__main__":
     h = matrix(np.array([2.0, 1.0]))
 
     print(qcqp(Q, p, G, h))
-

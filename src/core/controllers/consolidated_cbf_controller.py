@@ -245,6 +245,24 @@ class ConsolidatedCbfController(CbfQpController):
                 self.dhdx[idx] = dhdx_array[idx][:ns]
                 self.d2hdx2[idx] = d2hdx2_array[idx][:ns, :ns]
 
+        # Add time-dependent goal-reaching constraint
+        T = 10
+        stop_time = 2.0
+        if t < T - stop_time:
+            V = ((T - t) / 2) ** 2 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+            LfV = (t - T) / 2 - 2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
+            LgV = np.zeros((self.n_controls * na,))
+        else:
+            V = ((T - stop_time) / 2) ** 2 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+            LfV = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
+            LgV = np.zeros((self.n_controls * na,))
+
+        gain = 10.0
+        h_array[-1] = V * gain
+        Lfh_array[-1] = LfV * gain
+        Lgh_array[-1, :] = LgV * gain
+        self.cbf_vals[-1] = h_array[-1]
+
         # Format inequality constraints
         # Ai, bi = self.generate_consolidated_cbf_condition(ego, h_array, Lfh_array, Lgh_array)
         Ai, bi = self.generate_consolidated_cbf_condition(t, ze, h_array, Lfh_array, Lgh_array, ego)

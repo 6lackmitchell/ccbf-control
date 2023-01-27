@@ -63,7 +63,7 @@ class CbfQpController(Controller):
         self.max_class_k = 1e6
 
         self.cbf_vals = np.zeros(
-            (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
+            (len(cbfs_individual) + 1 + (self.n_agents - 1) * len(cbfs_pairwise)),
         )
         self.dhdx = np.zeros((self.cbf_vals.shape[0], 4))
         # self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
@@ -207,13 +207,38 @@ class CbfQpController(Controller):
                     H = h + hdot**2 / (2 * a_max)
                     LfH = hdot * (1 + Lf2h / a_max)
                     LgH = hdot * LgLfh / a_max
-            else:
+            elif cc < 6:
                 H = (1 - ze[cc - 1]) * (ze[cc - 1] + 1)
                 LfH = 0.0
                 if cc == 3:
                     LgH = -2 * ze[cc - 1] * np.array([1, 0])
                 else:
                     LgH = -2 * ze[cc - 1] * np.array([0, 1])
+
+            else:
+                T = 10
+                stop_time = 2.0
+                dx = ze[0] - 2
+                dy = ze[1] - 2
+                if t < T - stop_time:
+                    h = ((T - t) / 2) ** 2 - dx**2 - dy**2
+                    hdot = (t - T) / 2 - 2 * (ze[2] * dx + ze[3] * dy)
+                    Lf2h = 1 / 2 - 2 * (ze[2] ** 2 + ze[3] ** 2)
+                    LgLfh = -2 * np.array([dx, dy])
+                else:
+                    h = ((T - stop_time) / 2) ** 2 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+                    hdot = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
+                    Lf2h = -2 * (ze[2] ** 2 + ze[3] ** 2)
+                    LgLfh = -2 * np.array([dx, dy])
+
+                if hdot > 0:
+                    H = h
+                    LfH = hdot
+                    LgH = np.array([0, 0])
+                else:
+                    H = h + hdot**2 / (2 * a_max)
+                    LfH = hdot * (1 + Lf2h / a_max)
+                    LgH = hdot * LgLfh / a_max
 
             h = H
             Lfh = LfH
