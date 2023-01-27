@@ -18,7 +18,6 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
         None
 
     """
-    broken = False
     # Program-wide specifications
     builtins.PROBLEM_CONFIG = {
         "vehicle": vehicle,
@@ -41,10 +40,11 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
     nTimesteps = int((tf - 0.0) / dt) + 1
 
     # Simulation setup
+    broken = np.zeros((nAgents,))
     z = np.zeros((nTimesteps, nAgents, nStates))
     z[0, :, :] = z0
     complete = np.zeros((nAgents,))
-    complete[3:] = 1
+    # complete[3:] = 1
     # centralized_agents = deepcopy(centralized_agents_list)
     # decentralized_agents = deepcopy(decentralized_agents_list)
 
@@ -65,23 +65,28 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
 
         # Iterate over all agents in the system
         for aa, agent in enumerate(decentralized_agents):
-            code, status = agent.compute_control(z[ii])
+            if not broken[aa]:
+                code, status = agent.compute_control(z[ii])
 
             if not code:
-                broken = True
+                broken[aa] = 1
                 print("Error in Agent {}".format(aa + 1))
-                break
+                # break
+
             if hasattr(agent, "complete"):
                 if agent.complete and not complete[aa]:
                     complete[aa] = True
                     print("Agent {} Completed!".format(aa))
 
             # Step dynamics forward
-            z[ii + 1, aa, :] = agent.step_dynamics()
+            if not broken[aa]:
+                z[ii + 1, aa, :] = agent.step_dynamics()
+            else:
+                z[ii + 1, aa, :] = agent.x
 
-        if not code:
-            broken = True
-            break
+        # if not code:
+        #     broken = True
+        #     break
 
         if np.sum(complete) == nAgents:
             break

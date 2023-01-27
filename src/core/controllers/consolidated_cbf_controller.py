@@ -249,11 +249,11 @@ class ConsolidatedCbfController(CbfQpController):
         T = 10
         stop_time = 2.0
         if t < T - stop_time:
-            V = ((T - t) / 2) ** 2 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+            V = ((T - t) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
             LfV = (t - T) / 2 - 2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
             LgV = np.zeros((self.n_controls * na,))
         else:
-            V = ((T - stop_time) / 2) ** 2 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+            V = ((T - stop_time) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
             LfV = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
             LgV = np.zeros((self.n_controls * na,))
 

@@ -25,17 +25,17 @@ def linear_class_k(k):
 # Define linear class k weights
 k_default = 0.1
 
-# # Breeden comparison
-# k_default1 = 0.1
-# k_default2 = 0.2
-# k_default3 = 0.5
-# k_default4 = 0.8
+# Breeden comparison
+k_default1 = 0.1
+k_default2 = 0.2
+k_default3 = 0.5
+k_default4 = 0.8
 
-# Exponential CBF Comparison
-k_default1 = 1.0
-k_default2 = 1.0
-k_default3 = 1.0
-k_default4 = 1.0
+# # Exponential CBF Comparison
+# k_default1 = 1.0
+# k_default2 = 1.0
+# k_default3 = 1.0
+# k_default4 = 1.0
 
 # Collision Avoidance
 k_collision = 1.0

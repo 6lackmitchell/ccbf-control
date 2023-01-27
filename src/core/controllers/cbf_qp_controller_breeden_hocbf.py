@@ -190,7 +190,7 @@ class CbfQpController(Controller):
         cx = [1.0, 1.5, 2.4]
         cy = [1.0, 2.25, 1.5]
         a_max = -4.0
-        for cc, cbf in enumerate(self.cbfs_individual):
+        for cc, cbf in enumerate(self.cbfs_individual + [self.cbfs_individual[0]]):
             if cc < 3:
                 dx = ze[0] - cx[cc]
                 dy = ze[1] - cy[cc]
@@ -207,7 +207,7 @@ class CbfQpController(Controller):
                     H = h + hdot**2 / (2 * a_max)
                     LfH = hdot * (1 + Lf2h / a_max)
                     LgH = hdot * LgLfh / a_max
-            elif cc < 6:
+            elif cc < 5:
                 H = (1 - ze[cc - 1]) * (ze[cc - 1] + 1)
                 LfH = 0.0
                 if cc == 3:

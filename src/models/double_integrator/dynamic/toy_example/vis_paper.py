@@ -28,9 +28,10 @@ elif platform == "win32":
 
 # Specify files
 filepath = pre_path + "Documents/git/ccbf-control/data/double_integrator/dynamic/toy_example/paper/"
-fname_ccbf = filepath + "test.pkl"
+fname_ccbf = filepath + "ccbf.pkl"
 fname_hocbf = filepath + "hocbf.pkl"
 fname_ecbf = filepath + "ecbf.pkl"
+fname_test = filepath + "test.pkl"
 
 # ### Define Recording Variables ###
 t = np.linspace(dt, tf, int(tf / dt))
@@ -269,7 +270,6 @@ plt.tight_layout(pad=2.0)
 # ax_cbfs.grid(True, linestyle='dotted', color='white')
 
 # plt.tight_layout(pad=2.0)
-
 
 
 ############################################

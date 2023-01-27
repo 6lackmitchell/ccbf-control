@@ -12,8 +12,9 @@ from core.cbfs import (
     cbf0,
 )
 
-# from core.controllers.cbf_qp_controller_breeden_hocbf import CbfQpController
-from core.controllers.cbf_qp_controller_exponential_hocbf import CbfQpController
+from core.controllers.cbf_qp_controller_breeden_hocbf import CbfQpController
+
+# from core.controllers.cbf_qp_controller_exponential_hocbf import CbfQpController
 from core.controllers.consolidated_cbf_controller import ConsolidatedCbfController
 from ..models import f, g, nControls
 from .timing_params import *
