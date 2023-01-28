@@ -23,7 +23,7 @@ except ModuleNotFoundError as e:
     raise e
 
 # Defining Physical Params
-R = 0.5
+R = 0.5  # Warehouse and Swarm
 
 # Define new symbols -- necessary for pairwise interactions case
 sso = se.symbols(["{}o".format(n) for n in ss], real=True)
@@ -100,7 +100,7 @@ relaxation = 0.25  # for warehouse simulation (worked)
 relaxation = 0.1  # for warehouse simulation
 relaxation = 0.5  # for warehouse simulation
 relaxation = 0.25  # for warehouse simulation
-# relaxation = 1.0  # for warehouse simulation
+relaxation = 1.0  # for warehouse simulation
 # relaxation = 0.5  # for experiment
 
 

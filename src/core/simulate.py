@@ -44,9 +44,6 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
     z = np.zeros((nTimesteps, nAgents, nStates))
     z[0, :, :] = z0
     complete = np.zeros((nAgents,))
-    # complete[3:] = 1
-    # centralized_agents = deepcopy(centralized_agents_list)
-    # decentralized_agents = deepcopy(decentralized_agents_list)
 
     # Simulate program
     for ii, tt in enumerate(np.linspace(0, tf, nTimesteps - 1)):
@@ -71,7 +68,6 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
             if not code:
                 broken[aa] = 1
                 print("Error in Agent {}".format(aa + 1))
-                # break
 
             if hasattr(agent, "complete"):
                 if agent.complete and not complete[aa]:
@@ -84,9 +80,9 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
             else:
                 z[ii + 1, aa, :] = agent.x
 
-        # if not code:
-        #     broken = True
-        #     break
+        # Comment out this block if you want to continue with broken agents
+        if np.sum(broken) > 0:
+            break
 
         if np.sum(complete) == nAgents:
             break
@@ -95,6 +91,6 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
     for aa, agent in enumerate(decentralized_agents):
         agent.save_data(aa)
 
-    success = not broken
+    success = np.sum(broken) == 0
 
     return success

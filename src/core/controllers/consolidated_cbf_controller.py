@@ -76,7 +76,7 @@ class ConsolidatedCbfController(CbfQpController):
             cbfs_pairwise,
             ignore,
         )
-        kZero = 0.5
+        kZero = 0.25
         nCBF = len(self.cbf_vals)
         self.c_cbf = 100
         self.n_agents = nAgents
@@ -127,7 +127,7 @@ class ConsolidatedCbfController(CbfQpController):
         na = 1 + len(zr)
         ns = len(ze)
         self.safety = True
-        discretization_error = 1e-2
+        discretization_error = 10e-2
 
         # Initialize inequality constraints
         lci = len(self.cbfs_individual)
@@ -245,23 +245,23 @@ class ConsolidatedCbfController(CbfQpController):
                 self.dhdx[idx] = dhdx_array[idx][:ns]
                 self.d2hdx2[idx] = d2hdx2_array[idx][:ns, :ns]
 
-        # Add time-dependent goal-reaching constraint
-        T = 10
-        stop_time = 2.0
-        if t < T - stop_time:
-            V = ((T - t) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
-            LfV = (t - T) / 2 - 2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
-            LgV = np.zeros((self.n_controls * na,))
-        else:
-            V = ((T - stop_time) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
-            LfV = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
-            LgV = np.zeros((self.n_controls * na,))
+        # # Add time-dependent goal-reaching constraint: toy example only!!!
+        # T = 10
+        # stop_time = 2.0
+        # if t < T - stop_time:
+        #     V = ((T - t) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+        #     LfV = (t - T) / 2 - 2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
+        #     LgV = np.zeros((self.n_controls * na,))
+        # else:
+        #     V = ((T - stop_time) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+        #     LfV = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
+        #     LgV = np.zeros((self.n_controls * na,))
 
-        gain = 10.0
-        h_array[-1] = V * gain
-        Lfh_array[-1] = LfV * gain
-        Lgh_array[-1, :] = LgV * gain
-        self.cbf_vals[-1] = h_array[-1]
+        # gain = 10.0
+        # h_array[-1] = V * gain
+        # Lfh_array[-1] = LfV * gain
+        # Lgh_array[-1, :] = LgV * gain
+        # self.cbf_vals[-1] = h_array[-1]
 
         # Format inequality constraints
         # Ai, bi = self.generate_consolidated_cbf_condition(ego, h_array, Lfh_array, Lgh_array)
@@ -489,13 +489,24 @@ class AdaptationLaw:
         self.dhdx = np.zeros((nWeights, nStates))
         self.d2hdx2 = np.zeros((nStates, nWeights, nStates))
 
-        # Gains and Parameters
-        self.k_dot_gain = 0.5
+        # # Gains and Parameters -- Toy Example!
+        # self.k_dot_gain = 0.5
+        # self.cost_gain_mat = 1.0 * np.eye(nWeights)
+        # self.k_des_gain = 3.0
+        # self.k_min = 0.1
+        # self.k_max = 10.0
+        # self.czero_gain = 0.02
+        # self.ci_gain = self.czero_gain
+        # self.cost_gain_mat *= 50.0
+
+        # Gains and Parameters -- Rearrangement!!
+        self.wn = 10.0
+        self.k_dot_gain = 1.0
         self.cost_gain_mat = 1.0 * np.eye(nWeights)
         self.k_des_gain = 3.0
         self.k_min = 0.1
         self.k_max = 10.0
-        self.czero_gain = 0.02
+        self.czero_gain = 0.1
         self.ci_gain = self.czero_gain
         self.cost_gain_mat *= 50.0
 
@@ -514,7 +525,10 @@ class AdaptationLaw:
             k_weights: weights on constituent candidate cbfs
 
         """
-        self._k_weights = self._k_weights + self.compute_kdot(u, dt) * dt
+        k_weights = self._k_weights + self.compute_kdot(u, dt) * dt
+
+        # Account for numerical instability
+        self._k_weights = np.clip(k_weights, self.k_min + 0.1, self.k_max)
 
         return self._k_weights, self._k_dot, self.k_dot_drift_f
 
@@ -791,12 +805,6 @@ class AdaptationLaw:
 
         """
         czero = self.q @ Lg @ self.U @ Lg.T @ self.q.T - self.delta(x, h, Lf) ** 2
-
-        # # Adjust for numerical stability
-        # if abs(czero) < 1e-3:
-        #     czero = 1e-3
-        # elif abs(czero) > 1e9:
-        #     czero = 1e9
 
         self.czero_val1 = czero * self.czero_gain
         self.czero_val2 = ((abs(self.q @ Lg) @ self.u_max) - self.delta(x, h, Lf)) * self.czero_gain

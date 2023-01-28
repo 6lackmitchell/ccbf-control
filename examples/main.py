@@ -2,7 +2,7 @@ from core.simulate import simulate
 
 vehicle = "bicycle"
 level = "dynamic"
-situation = "warehouse"
+situation = "swarm"
 
 end_time = 50.0
 timestep = 0.01

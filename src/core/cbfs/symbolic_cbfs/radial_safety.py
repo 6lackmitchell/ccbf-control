@@ -6,7 +6,7 @@ from core.cbfs.cbf_wrappers import symbolic_cbf_wrapper_singleagent
 
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]
-mod = vehicle + "." + control_level + ".models"
+mod = "models." + vehicle + "." + control_level + ".models"
 
 # Programmatic import
 try:
