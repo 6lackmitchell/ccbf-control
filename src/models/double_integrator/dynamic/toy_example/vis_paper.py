@@ -62,6 +62,15 @@ with open(fname_ecbf, "rb") as f:
     u_ecbf = np.array([data[a]["u"] for a in data.keys()])
     # h_ecbf = np.array([data[a]["cbf"] for a in data.keys()][1:])
 
+# Remove zero elements from infeasibility
+for aa, xx in enumerate(x_hocbf):
+    first_zero = np.where(xx == np.zeros(x_hocbf.shape[2]))[0][0]
+    x_hocbf[aa, first_zero:] = x_hocbf[aa, first_zero - 1]
+for aa, xx in enumerate(x_ecbf):
+    first_zero = np.where(xx == np.zeros(x_ecbf.shape[2]))[0][0]
+    x_ecbf[aa, first_zero:] = x_ecbf[aa, first_zero - 1]
+
+
 x = np.concatenate([x_ccbf[np.newaxis, 0], x_hocbf[3:6], x_ecbf[3:6]])
 u = np.concatenate([u_ccbf[np.newaxis, 0], u_hocbf[3:6], u_ecbf[3:6]])
 names = ["C-CBF", "HO-CBF-1", "HO-CBF-2", "HO-CBF-3", "E-CBF-1", "E-CBF-2", "E-CBF-3"]
@@ -96,46 +105,51 @@ ax_cont_b = fig_control.add_subplot(212)
 set_edges_black(ax_cont_a)
 set_edges_black(ax_cont_b)
 
+ii_u = int(10 / 0.01)
+
 # Angular Control Inputs
-ax_cont_a.plot(t[1:ii], 1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-ax_cont_a.plot(t[1:ii], -1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(t[1:ii_u], 1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
 for aa in range(1, nAgents):
     ax_cont_a.plot(
-        t[:ii],
-        u[aa, :ii, 0],
+        t[:ii_u],
+        u[aa, :ii_u, 0],
         label=f"{names[aa]}",
         linewidth=lwidth,
         color=colors[aa],
     )
 ax_cont_a.plot(
-    t[:ii], u[0, :ii, 0], label=f"{names[0]}", linewidth=lwidth, color=colors[0], dashes=dash
+    t[:ii_u], u[0, :ii_u, 0], label=f"{names[0]}", linewidth=lwidth, color=colors[0], dashes=dash
 )
 ax_cont_a.set(
     ylabel=r"$a_x$",
-    ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
-    xlim=[-0.1, 27],
-    title="Control Inputs",
+    ylim=[np.min(u[:ii_u, :, 0]) - 0.1, np.max(u[:ii_u, :, 0]) + 0.1],
+    xlim=[-0.1, 13.2],
+    # title="Control Inputs",
 )
 ax_cont_a.set_xticks([])
 ax_cont_a.set_yticks([-1, 0, 1])
 ax_cont_a.legend(fancybox=True, fontsize=20)
 
 # Acceleration Inputs
-ax_cont_b.plot(t[1:ii], 1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-ax_cont_b.plot(t[1:ii], -1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_b.plot(t[1:ii_u], 1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
+ax_cont_b.plot(t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
 for aa in range(1, nAgents):
     ax_cont_b.plot(
-        t[:ii],
-        u[aa, :ii, 1],
+        t[:ii_u],
+        u[aa, :ii_u, 1],
         label=f"{names[aa]}",
         linewidth=lwidth,
         color=colors[aa],
     )
 ax_cont_b.plot(
-    t[:ii], u[0, :ii, 1], label=f"{names[0]}", linewidth=lwidth, color=colors[0], dashes=dash
+    t[:ii_u], u[0, :ii_u, 1], label=f"{names[0]}", linewidth=lwidth, color=colors[0], dashes=dash
 )
 ax_cont_b.set(
-    ylabel=r"$a_y$", ylim=[np.min(u[:ii, :, 1]) - 0.1, np.max(u[:ii, :, 1]) + 0.1], xlim=[-0.1, 27]
+    xlabel=r"$t$ (sec)",
+    ylabel=r"$a_y$",
+    ylim=[np.min(u[:ii_u, :, 1]) - 0.1, np.max(u[:ii_u, :, 1]) + 0.1],
+    xlim=[-0.1, 13.2],
 )
 
 # Plot Settings
@@ -154,7 +168,7 @@ for item in (
 ):
     item.set_fontsize(25)
 ax_cont_b.grid(True, linestyle="dotted", color="white")
-ax_cont_b.set_xticks([0, 4, 8, 12, 16, 20])
+ax_cont_b.set_xticks([0, 2, 4, 6, 8, 10])
 ax_cont_b.set_yticks([-1, 0, 1])
 # ax_cont_b.legend(fancybox=True, fontsize=20)
 
@@ -245,41 +259,77 @@ ax_cz.grid(True, linestyle="dotted", color="white")
 
 plt.tight_layout(pad=2.0)
 
-# ############################################
-# ### CBF Trajectories ###
-# fig_cbfs = plt.figure(figsize=(8, 8))
-# ax_cbfs = fig_cbfs.add_subplot(111)
-# set_edges_black(ax_cbfs)
-
-# # NN-CBF Values
-# ax_cbfs.plot(t[1:ii], np.zeros(t[1:ii].shape), linewidth=lwidth+1, color='k')
-# for aa in range(cbf.shape[0]):
-#     ax_cbfs.plot(t[:ii], cbf[aa, :ii, 0], label='h_{}'.format(aa), linewidth=lwidth,
-#                    color=colors[color_idx[aa, 0]])
-#     # ax_cbfs.plot(t[:ii], cbf[aa, :ii, 1], label='h_{}^0'.format(aa), linewidth=lwidth,
-#     #                color=colors[color_idx[aa, 1]], dashes=dash)
-# ax_cbfs.set(ylabel='h',
-#             ylim=[-0.1, 250],
-#             title='CBF Trajectories')
-
-# # Plot Settings
-# for item in ([ax_cbfs.title, ax_cbfs.xaxis.label, ax_cbfs.yaxis.label] +
-#              ax_cbfs.get_xticklabels() + ax_cbfs.get_yticklabels()):
-#     item.set_fontsize(25)
-# ax_cbfs.legend(fancybox=True)
-# ax_cbfs.grid(True, linestyle='dotted', color='white')
-
-# plt.tight_layout(pad=2.0)
-
 
 ############################################
-### Velocity Trajectories ###
-fig_vel = plt.figure(figsize=(10, 7.5))
-ax_vel = fig_vel.add_subplot(111)
-set_edges_black(ax_vel)
+### CBF Trajectories ###
+fig_cbf = plt.figure(figsize=(10, 6))
+ax_cbf = fig_cbf.add_subplot(111)
+set_edges_black(ax_cbf)
 
-ax_vel.plot(t[:ii], x[0, :ii, 2], linewidth=lwidth + 1, color="b")
-ax_vel.plot(t[:ii], x[0, :ii, 3], linewidth=lwidth + 1, color="r")
+gain1 = 2.0
+gain2 = 2.0
+gain3 = 2.0
+R1 = 0.5
+cx1 = 1.0
+cy1 = 1.0
+R2 = 0.5
+cx2 = 1.5
+cy2 = 2.25
+R3 = 0.5
+cx3 = 2.4
+cy3 = 1.5
+gain4 = 5.0
+gain5 = 5.0
+gain6 = 10.0
+
+ii_h6 = int(8 / 0.01)
+h1 = gain1 * ((x_ccbf[0, 1:ii_u, 0] - cx1) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy1) ** 2 - R1**2)
+h2 = gain2 * ((x_ccbf[0, 1:ii_u, 0] - cx2) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy2) ** 2 - R2**2)
+h3 = gain3 * ((x_ccbf[0, 1:ii_u, 0] - cx3) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy3) ** 2 - R2**2)
+h4 = gain4 * (1 - x_ccbf[0, 1:ii_u, 2] ** 2)
+h5 = gain5 * (1 - x_ccbf[0, 1:ii_u, 3] ** 2)
+# h6_a = gain6 * (
+#     (((2) ** 2) / 4 + (10 - t[1:ii_h6]) ** 2) / 4
+#     - (x_ccbf[0, 1:ii_h6, 0] - 2) ** 2
+#     - (x_ccbf[0, 1:ii_h6, 1] - 2) ** 2
+# )
+# h6_b = gain6 * (
+#     ((2) ** 2) / 4 - (x_ccbf[0, ii_h6:ii_u, 0] - 2) ** 2 - (x_ccbf[0, ii_h6:ii_u, 1] - 2) ** 2
+# )
+h6 = gain6 * (
+    (1 + (10 - t[1:ii_u]) ** 2) / 4
+    - (x_ccbf[0, 1:ii_u, 0] - 2) ** 2
+    - (x_ccbf[0, 1:ii_u, 1] - 2) ** 2
+)
+# h6 = np.concatenate([h6_a, h6_b])
+hh = np.array([h1, h2, h3, h4, h5, h6])
+summer = np.array([np.exp(-k[0, 1:ii_u, cc] * hh[cc]) for cc in range(6)])
+H_ccbf = 1 - np.sum(summer, axis=0)
+
+
+ax_cbf.plot(t[1:ii_u], np.zeros((ii_u - 1,)), ":", linewidth=lwidth, color="k", label="Barrier")
+ax_cbf.plot(t[1:ii_u], h1, linewidth=lwidth, color=colors[1], label=r"$h_1$")
+ax_cbf.plot(t[1:ii_u], h2, linewidth=lwidth, color=colors[2], label=r"$h_2$")
+ax_cbf.plot(t[1:ii_u], h3, linewidth=lwidth, color=colors[3], label=r"$h_3$")
+ax_cbf.plot(t[1:ii_u], h4, linewidth=lwidth, color=colors[4], label=r"$h_4$")
+ax_cbf.plot(t[1:ii_u], h5, linewidth=lwidth, color=colors[5], label=r"$h_5$")
+ax_cbf.plot(t[1:ii_u], h6, linewidth=lwidth, color=colors[6], label=r"$h_6$")
+ax_cbf.plot(t[1:ii_u], H_ccbf, linewidth=lwidth, color=colors[0], dashes=dash, label=r"$H$")
+ax_cbf.set(
+    ylabel="Constraint Function Value", xlabel=r"$t$ (sec)", xlim=[-0.25, 13.25], ylim=[-0.1, 5.25]
+)
+
+# Plot Settings
+for item in (
+    [ax_cbf.title, ax_cbf.xaxis.label, ax_cbf.yaxis.label]
+    + ax_cbf.get_xticklabels()
+    + ax_cbf.get_yticklabels()
+):
+    item.set_fontsize(25)
+ax_cbf.legend(fancybox=True, fontsize=20)
+ax_cbf.grid(True, linestyle="dotted", color="white")
+
+plt.tight_layout(pad=2.0)
 
 
 ############################################
@@ -291,12 +341,14 @@ set_edges_black(ax_map)
 
 
 d_points = 100
+xtar, ytar = get_circle(np.array([2, 2]), 0.1, d_points)
 xc1, yc1 = get_circle(np.array([1, 1]), 0.5, d_points)
 xc2, yc2 = get_circle(np.array([1.5, 2.25]), 0.5, d_points)
 xc3, yc3 = get_circle(np.array([2.4, 1.5]), 0.5, d_points)
 ax_map.plot(xc1, yc1, linewidth=lwidth + 1, color="k")
 ax_map.plot(xc2, yc2, linewidth=lwidth + 1, color="k")
 ax_map.plot(xc3, yc3, linewidth=lwidth + 1, color="k")
+ax_map.plot(xtar, ytar, ":", linewidth=lwidth + 1, color="g")
 
 for aaa in range(1, nAgents):
     ax_map.plot(
