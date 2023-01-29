@@ -58,7 +58,7 @@ class LqrController(Controller):
 
         gain = np.min([1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 1.0])
         Q = gain * np.eye(4)
-        R = np.eye(2)
+        R = 5 * np.eye(2)
 
         # Compute LQR control input for double integrator model
         K, _, _ = lqr(A_di, B_di, Q, R)

@@ -349,7 +349,7 @@ class ConsolidatedCbfController(CbfQpController):
             kdot: array of time-derivatives of k_gains
         """
         # Introduce parameters
-        discretization_error = 1e-2
+        discretization_error = 10e-2
         k_ccbf = 0.1
         # k_ccbf = 1.0
 
@@ -469,6 +469,9 @@ class AdaptationLaw:
         self._k_dot_drift_f = np.zeros((nWeights,))
         self._k_2dot_drift_f = np.zeros((nWeights,))
         self._k_3dot_drift_f = np.zeros((nWeights,))
+        self._k_dot_cont_f = np.zeros((nWeights, len(uMax)))
+        self._k_2dot_cont_f = np.zeros((nWeights, len(uMax)))
+        self._k_3dot_cont_f = np.zeros((nWeights, len(uMax)))
 
         # logging variables
         self.czero_val1 = 0.0
@@ -552,6 +555,13 @@ class AdaptationLaw:
         )
         self._k_2dot_drift_f += self._k_3dot_drift_f * dt
         self._k_dot_drift_f += self._k_2dot_drift_f * dt
+
+        self._k_3dot_cont_f = (
+            self.wn**2 * (self._k_dot_controlled - self._k_dot_cont_f)
+            - 2 * self.zeta * self.wn * self._k_2dot_cont_f
+        )
+        self._k_2dot_cont_f += self._k_3dot_cont_f * dt
+        self._k_dot_cont_f += self._k_2dot_cont_f * dt
 
         return self._k_dot
 
@@ -804,7 +814,9 @@ class AdaptationLaw:
         c0: viability constraint function evaluated at x and k
 
         """
-        czero = self.q @ Lg @ self.U @ Lg.T @ self.q.T - self.delta(x, h, Lf) ** 2
+        dhdk = h * np.exp(-self._k_weights * h)
+        vector = self.q @ Lg + dhdk @ self._k_dot_cont_f
+        czero = vector @ self.U @ vector.T - self.delta(x, h, Lf) ** 2
 
         self.czero_val1 = czero * self.czero_gain
         self.czero_val2 = ((abs(self.q @ Lg) @ self.u_max) - self.delta(x, h, Lf)) * self.czero_gain

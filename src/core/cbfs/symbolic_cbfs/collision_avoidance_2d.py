@@ -100,7 +100,7 @@ relaxation = 0.25  # for warehouse simulation (worked)
 relaxation = 0.1  # for warehouse simulation
 relaxation = 0.5  # for warehouse simulation
 relaxation = 0.25  # for warehouse simulation
-relaxation = 1.0  # for warehouse simulation
+# relaxation = 1.0  # for warehouse simulation
 # relaxation = 0.5  # for experiment
 
 

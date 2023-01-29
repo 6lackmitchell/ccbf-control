@@ -18,7 +18,7 @@ except ModuleNotFoundError as e:
     raise e
 
 # Defining Physical Params
-speed_limit = 1.0
+speed_limit = 2.0
 gain = 100.0
 
 # Speed CBF Symbolic
