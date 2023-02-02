@@ -48,10 +48,10 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
     # Simulate program
     for ii, tt in enumerate(np.linspace(0, tf, nTimesteps - 1)):
         code = 0
-        if round(tt, 4) % 1 < dt:
+        if round(tt, 4) % 1 < dt or ii == 1:
             print("Time: {:.1f} sec".format(tt))
 
-        if round(tt, 4) % 5 < dt and tt > 0:
+        if round(tt, 4) % 5 < dt:
             for aa, agent in enumerate(decentralized_agents):
                 agent.save_data(aa)
             print("Time: {:.1f} sec: Intermediate Save".format(tt))
@@ -72,7 +72,7 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
             if hasattr(agent, "complete"):
                 if agent.complete and not complete[aa]:
                     complete[aa] = True
-                    print("Agent {} Completed!".format(aa))
+                    print("Agent {} Completed!".format(aa + 1))
 
             # Step dynamics forward
             if not broken[aa]:
@@ -91,6 +91,6 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
     for aa, agent in enumerate(decentralized_agents):
         agent.save_data(aa)
 
-    success = np.sum(broken) == 0
+    success = np.sum(complete) == nAgents
 
     return success

@@ -60,6 +60,9 @@ with open(filename, "rb") as f:
         x = np.array([data[a]["x"] for a in data.keys()])
         u = np.array([data[a]["u"] for a in data.keys()])
         u0 = np.array([data[a]["u0"] for a in data.keys()])
+        k = np.array([data[a]["kgains"] if a < 1 else None for a in data.keys()][:1])
+        kdot = np.array([data[a]["kdot"] if a < 1 else None for a in data.keys()][:1])
+        kdotf = np.array([data[a]["kdotf"] if a < 1 else None for a in data.keys()][:1])
         ii = int(data[0]["ii"] / dt)
         # cbf = np.array([data[a]['cbf'] for a in data.keys()])
     except:
@@ -153,6 +156,45 @@ ax_cont_b.grid(True, linestyle="dotted", color="white")
 plt.tight_layout(pad=2.0)
 
 
+############################################
+### Kdot Trajectories ###
+fig_kdot = plt.figure(figsize=(8, 8))
+ax_kdot = fig_kdot.add_subplot(111)
+set_edges_black(ax_kdot)
+
+lbl = ["c1", "c2", "c3"]
+
+for cbf in range(k.shape[2])[:3]:
+    ax_kdot.plot(
+        t[1:ii],
+        kdot[0, 1:ii, cbf],
+        linewidth=lwidth,
+        color=colors[color_idx[3*cbf, 0]],
+        label=lbl[cbf],
+    )
+    ax_kdot.plot(
+        t[1:ii],
+        kdotf[0, 1:ii, cbf],
+        "-.",
+        linewidth=lwidth,
+        color=colors[color_idx[3*cbf, 0]],
+        label=lbl[cbf],
+    )
+ax_kdot.set(ylabel=r"$\dot{w}$", title="Weight Derivatives")
+
+# Plot Settings
+for item in (
+    [ax_kdot.title, ax_kdot.xaxis.label, ax_kdot.yaxis.label]
+    + ax_kdot.get_xticklabels()
+    + ax_kdot.get_yticklabels()
+):
+    item.set_fontsize(25)
+ax_kdot.legend(fancybox=True)
+ax_kdot.grid(True, linestyle="dotted", color="white")
+
+plt.tight_layout(pad=2.0)
+
+
 # ############################################
 # ### CBF Trajectories ###
 # fig_cbfs = plt.figure(figsize=(8, 8))
@@ -212,7 +254,9 @@ d_points = 30
 # plt.show()
 
 center = 2 * box_width + box_width / 2
-x_c, y_c = get_circle(np.array([center, center]), 2 * box_width * np.sqrt(2) + box_width / 2, 100)
+x_c, y_c = get_circle(
+    np.array([center, center]), 2 * box_width * np.sqrt(2) + box_width / 2 + 0.5, 100
+)
 ax_pos.plot(x_c, y_c)
 
 for aaa in range(nAgents):
@@ -238,7 +282,7 @@ txt_list = [
     for aa in range(nAgents)
 ]
 
-ax_pos.set(ylim=[-1.0, 25.0], xlim=[-1.0, 25.0])
+ax_pos.set(ylim=[np.min(y_c) - 1, np.max(y_c) + 1], xlim=[np.min(x_c) - 1, np.max(x_c) + 1])
 
 # Plot Settings
 for item in (
@@ -295,7 +339,7 @@ def animate(jj):
 
     # ax_pos.set_xlim([zero_point, end_point])
     # ax_pos.set_ylim([zero_point_y - 1.0, 6.0])
-    ax_pos.set(ylim=[-1.0, 25.0], xlim=[-1.0, 25.0])
+    ax_pos.set(ylim=[np.min(y_c) - 1, np.max(y_c) + 1], xlim=[np.min(x_c) - 1, np.max(x_c) + 1])
     txt.set_text("{:.1f} sec".format(jj * dt))
     txt.set_position((zero_point + 40.0, 6.2))
 
@@ -327,7 +371,7 @@ def animate_ego(jj):
 
     # ax_pos.set_xlim([x[0, jj, 0] - 45, x[0, jj, 0] + 15])
     # ax_pos.set_ylim([x[0, jj, 1] - 6, x[0, jj, 1] + 6])
-    ax_pos.set(ylim=[-1.0, 25.0], xlim=[-1.0, 25.0])
+    ax_pos.set(ylim=[np.min(y_c) - 1, np.max(y_c) + 1], xlim=[np.min(x_c) - 1, np.max(x_c) + 1])
     txt.set_text("{:.1f} sec".format(jj * dt))
     for ee, agent_txt in enumerate(txt_list):
         agent_txt.set_position((x[ee, jj, 0], x[ee, jj, 1]))

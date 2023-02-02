@@ -3,7 +3,7 @@ from .physical_params import u_max
 
 q0 = 1.0 / u_max[0] ** 2
 q1 = 100.0 / u_max[1] ** 2
-q2 = 2 * q0
+q2 = 4 * q0
 
 
 def objective_accel_and_steering(u_nom, x):

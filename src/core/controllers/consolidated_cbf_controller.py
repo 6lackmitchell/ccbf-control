@@ -29,6 +29,8 @@ try:
     globals().update({"f": getattr(module, "f")})
     globals().update({"dfdx": getattr(module, "dfdx")})
     globals().update({"g": getattr(module, "g")})
+    globals().update({"xg": getattr(module, "xg")})
+    globals().update({"yg": getattr(module, "yg")})
     globals().update({"sigma": getattr(module, "sigma_{}".format(system_model))})
 except ModuleNotFoundError as e:
     print("No module named '{}' -- exiting.".format(mod))
@@ -76,7 +78,7 @@ class ConsolidatedCbfController(CbfQpController):
             cbfs_pairwise,
             ignore,
         )
-        kZero = 0.25
+        kZero = 0.5
         nCBF = len(self.cbf_vals)
         self.c_cbf = 100
         self.n_agents = nAgents
@@ -85,10 +87,11 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_weights = kZero * np.ones((nCBF,))
         self.k_dot = np.zeros((nCBF,))
         self.k_dot_f = np.zeros((nCBF,))
+        self.alpha = self.desired_class_k
         self.czero1 = 0
         self.czero2 = 0
 
-        self.adapter = AdaptationLaw(nCBF, u_max, kZero=kZero)
+        self.adapter = AdaptationLaw(nCBF, u_max, kZero=kZero, alpha=self.alpha)
 
     def _compute_control(self, t: float, z: NDArray, cascaded: bool = False) -> (NDArray, int, str):
         self.u, code, status = super()._compute_control(t, z, cascaded)
@@ -127,7 +130,7 @@ class ConsolidatedCbfController(CbfQpController):
         na = 1 + len(zr)
         ns = len(ze)
         self.safety = True
-        discretization_error = 10e-2
+        discretization_error = 1e-2
 
         # Initialize inequality constraints
         lci = len(self.cbfs_individual)
@@ -245,11 +248,25 @@ class ConsolidatedCbfController(CbfQpController):
                 self.dhdx[idx] = dhdx_array[idx][:ns]
                 self.d2hdx2[idx] = d2hdx2_array[idx][:ns, :ns]
 
-        # # Add time-dependent goal-reaching constraint: toy example only!!!
-        # T = 10
-        # stop_time = 2.0
+        # Add time-dependent goal-reaching constraint: toy example only!!!
+        T = 20
+        dx = ze[0] - xg[self.ego_id]
+        dy = ze[1] - yg[self.ego_id]
+        vx = ze[3] * (np.cos(ze[2]) - np.sin(ze[2]) * np.tan(ze[4]))
+        vy = ze[3] * (np.sin(ze[2]) + np.cos(ze[2]) * np.tan(ze[4]))
+        R = 0.25
+        Ri = 26
+
+        LgV = np.zeros((self.n_controls * na,))
+        if t < T:
+            V = R**2 + Ri**2 * (1 - t / T) ** 2 - dx**2 - dy**2
+            LfV = -2 * Ri**2 / T * (1 - t / T) - 2 * dx * vx - 2 * dy * vy
+        else:
+            V = R**2 - dx**2 - dy**2
+            LfV = -2 * dx * vx - 2 * dy * vy
+
         # if t < T - stop_time:
-        #     V = ((T - t) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+        #     V = R**2 + ((T - t) ** 2) / 4 -  dx** 2 - dy ** 2
         #     LfV = (t - T) / 2 - 2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
         #     LgV = np.zeros((self.n_controls * na,))
         # else:
@@ -257,11 +274,11 @@ class ConsolidatedCbfController(CbfQpController):
         #     LfV = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
         #     LgV = np.zeros((self.n_controls * na,))
 
-        # gain = 10.0
-        # h_array[-1] = V * gain
-        # Lfh_array[-1] = LfV * gain
-        # Lgh_array[-1, :] = LgV * gain
-        # self.cbf_vals[-1] = h_array[-1]
+        gain = 1.0
+        h_array[-1] = V * gain
+        Lfh_array[-1] = LfV * gain
+        Lgh_array[-1, :] = LgV * gain
+        self.cbf_vals[-1] = h_array[-1]
 
         # Format inequality constraints
         # Ai, bi = self.generate_consolidated_cbf_condition(ego, h_array, Lfh_array, Lgh_array)
@@ -349,13 +366,14 @@ class ConsolidatedCbfController(CbfQpController):
             kdot: array of time-derivatives of k_gains
         """
         # Introduce parameters
-        discretization_error = 10e-2
         k_ccbf = 0.1
+        # k_ccbf = 0.25
         # k_ccbf = 1.0
 
         # Get C-CBF Value
         H = self.consolidated_cbf()
         self.c_cbf = H
+        discretization_error = 5e-1 * np.exp(-1 * H)
 
         # Non-centralized agents CBF dynamics become drifts
         Lgh_uncontrolled = np.copy(Lgh_array[:, :])
@@ -446,7 +464,13 @@ class AdaptationLaw:
         kWeights (NDArray): values of current c-cbf weights k
     """
 
-    def __init__(self, nWeights: int, uMax: NDArray, kZero: Optional[float] = 0.5):
+    def __init__(
+        self,
+        nWeights: int,
+        uMax: NDArray,
+        kZero: Optional[float] = 0.5,
+        alpha: Optional[float] = 0.1,
+    ):
         """Initializes class attributes.
 
         Arguments:
@@ -456,6 +480,9 @@ class AdaptationLaw:
 
         """
         nStates = 5  # placeholder
+
+        # time
+        self.t = 0.0
 
         # k weights and derivatives
         self._k_weights = kZero * np.ones((nWeights,))
@@ -472,6 +499,9 @@ class AdaptationLaw:
         self._k_dot_cont_f = np.zeros((nWeights, len(uMax)))
         self._k_2dot_cont_f = np.zeros((nWeights, len(uMax)))
         self._k_3dot_cont_f = np.zeros((nWeights, len(uMax)))
+
+        # s relaxation function switch variable
+        self.s_on = 0  # 1 if on, 0 if off
 
         # logging variables
         self.czero_val1 = 0.0
@@ -502,11 +532,12 @@ class AdaptationLaw:
         # self.ci_gain = self.czero_gain
         # self.cost_gain_mat *= 50.0
 
-        # Gains and Parameters -- Rearrangement!!
+        # Gains and Parameters -- Swarm!!
+        self.alpha = alpha
         self.wn = 10.0
         self.k_dot_gain = 1.0
         self.cost_gain_mat = 1.0 * np.eye(nWeights)
-        self.k_des_gain = 3.0
+        self.k_des_gain = 2.0
         self.k_min = 0.1
         self.k_max = 10.0
         self.czero_gain = 0.1
@@ -528,6 +559,7 @@ class AdaptationLaw:
             k_weights: weights on constituent candidate cbfs
 
         """
+        self.t += dt
         k_weights = self._k_weights + self.compute_kdot(u, dt) * dt
 
         # Account for numerical instability
@@ -817,11 +849,17 @@ class AdaptationLaw:
         dhdk = h * np.exp(-self._k_weights * h)
         vector = self.q @ Lg + dhdk @ self._k_dot_cont_f
         czero = vector @ self.U @ vector.T - self.delta(x, h, Lf) ** 2
+        if self.t == 0:
+            while czero < 0:
+                self.alpha += 0.01
+                czero = vector @ self.U @ vector.T - self.delta(x, h, Lf) ** 2
 
-        self.czero_val1 = czero * self.czero_gain
-        self.czero_val2 = ((abs(self.q @ Lg) @ self.u_max) - self.delta(x, h, Lf)) * self.czero_gain
+        s_func = 0  # -czero / 2 * (1 - np.sqrt(czero**2 + 0.001**2) / czero)
 
-        return czero * self.czero_gain
+        self.czero_val1 = czero
+        self.czero_val2 = (abs(self.q @ Lg) @ self.u_max) - self.delta(x, h, Lf)
+
+        return (czero + s_func * self.s_on) * self.czero_gain
 
     def grad_czero_k(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
@@ -843,7 +881,11 @@ class AdaptationLaw:
             x, h, Lf
         ) * self.grad_delta_k(x, h, Lf)
 
-        return grad_c0_k * self.czero_gain
+        grad_sfunc_k = grad_c0_k * 0  # (
+        # 1 / 2 * grad_c0_k * (self.czero_val1 / np.sqrt(self.czero_val1**2 + 0.001**2))
+        # )
+
+        return (grad_c0_k + grad_sfunc_k * self.s_on) * self.czero_gain
 
     def grad_czero_x(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
@@ -870,7 +912,12 @@ class AdaptationLaw:
             - 2 * self.delta(x, h, Lf) * self.grad_delta_x(x, h)
         )
 
-        return grad_c0_x * self.czero_gain
+        grad_sfunc_x = 0 * grad_c0_x
+        # (
+        #   1 / 2 * grad_c0_x * (self.czero_val1 / np.sqrt(self.czero_val1**2 + 0.001**2))
+        # )
+
+        return (grad_c0_x + grad_sfunc_x * self.s_on) * self.czero_gain
 
     def grad_czero_kk(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
@@ -904,6 +951,8 @@ class AdaptationLaw:
                 2 * self.d2qdk2 @ Lg @ self.U @ Lg.T @ self.q.T
                 + 2 * self.dqdk @ Lg @ self.U @ Lg.T @ self.dqdk.T
             )
+
+        # grad_sfunc_kk = grad_c0_kk * (self.czero_val1 / np.sqrt(self.czero_val1**2 + 0.001**2) - 1) +
 
         return grad_c0_kk * self.czero_gain
 
@@ -1030,10 +1079,9 @@ class AdaptationLaw:
         """
         dhdk = h * np.exp(-self._k_weights * h)
 
-        alpha = 0.1
         epsilon = 0.0  # Filter very accurate
 
-        delta = -Lf - alpha * self.H(h) - (dhdk @ self._k_dot_drift_f - epsilon)
+        delta = -Lf - self.alpha * self.H(h) - (dhdk @ self._k_dot_drift_f - epsilon)
 
         return delta if delta > 0 else 0.0
 

@@ -16,6 +16,8 @@ ar_max = getattr(__import__(mod + ".physical_params", fromlist=["ar_max"]), "ar_
 w_max = getattr(__import__(mod + ".physical_params", fromlist=["w_max"]), "w_max")
 Lr = getattr(__import__(mod + ".physical_params", fromlist=["Lr"]), "Lr")
 dt = getattr(__import__(mod + ".timing_params", fromlist=["dt"]), "dt")
+xg = getattr(__import__(mod + ".initial_conditions", fromlist=["xg"]), "xg")
+yg = getattr(__import__(mod + ".initial_conditions", fromlist=["yg"]), "yg")
 
 # from .physical_params import ar_max, w_max
 # from .physical_params import Lr

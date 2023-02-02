@@ -59,15 +59,15 @@ class CbfQpController(Controller):
         self.n_controls = len(u_max)
         self.n_agents = nAgents
         self.n_dec_vars = 1
-        self.desired_class_k = 0.1
+        self.desired_class_k = 0.01
         self.max_class_k = 1e6
 
-        # self.cbf_vals = np.zeros(
-        #     (len(cbfs_individual) + 1 + (self.n_agents - 1) * len(cbfs_pairwise)),
-        # )
         self.cbf_vals = np.zeros(
-            (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
+            (len(cbfs_individual) + 1 + (self.n_agents - 1) * len(cbfs_pairwise)),
         )
+        # self.cbf_vals = np.zeros(
+        #     (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
+        # )
         # self.dhdx = np.zeros((self.cbf_vals.shape[0], 4))
         self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
         # self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 4, 4))

@@ -19,18 +19,13 @@ except ModuleNotFoundError as e:
 
 # Defining Physical Params
 l0 = 1.0
-th = 15.0 * np.pi / 180.0
-relax = 0.05
 box_width = 4
 R = 2 * box_width * np.sqrt(2) + box_width / 2
 Cxy = np.array([2 * box_width + box_width / 2, 2 * box_width + box_width / 2])
-LW = 3.0
-tau = 1.0
-vx = f(np.zeros((len(ss),)), True)[0]
-vy = f(np.zeros((len(ss),)), True)[1]
+gain = 10.0
 
 # Circular Region CBF Symbolic
-h_radial_symbolic = R**2 - (ss[0] - Cxy[0]) ** 2 - (ss[1] - Cxy[1]) ** 2
+h_radial_symbolic = gain * (R**2 - (ss[0] - Cxy[0]) ** 2 - (ss[1] - Cxy[1]) ** 2)
 dhdx_radial_symbolic = (se.DenseMatrix([h_radial_symbolic]).jacobian(se.DenseMatrix(ss))).T
 d2hdx2_radial_symbolic = dhdx_radial_symbolic.jacobian(se.DenseMatrix(ss))
 f_radial_symbolic = f(np.zeros((len(ss),)), True)

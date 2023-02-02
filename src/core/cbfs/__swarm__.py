@@ -12,6 +12,7 @@ from .symbolic_cbfs.collision_avoidance_2d import (
 # from .symbolic_cbfs.road_safety import h0_road, h_road, dhdx_road, d2hdx2_road
 from .symbolic_cbfs.radial_safety import h_radial, dhdx_radial, d2hdx2_radial
 from .symbolic_cbfs.speed_safety import h_speed, dhdx_speed, d2hdx2_speed
+from .symbolic_cbfs.beta_safety import h_beta, dhdx_beta, d2hdx2_beta
 
 # from .symbolic_cbfs.stochastic_ho_cbf import C as h_ho, dCdx as dhdx_ho, d2Cdx2 as d2hdx2_ho
 
@@ -24,7 +25,7 @@ def linear_class_k(k):
 
 
 # Define linear class k weights
-k_default = 5.0
+k_default = 1.0
 k_collision = 1.0
 
 # Define cbf lists
@@ -34,6 +35,7 @@ k_collision = 1.0
 cbfs_individual = [
     Cbf(h_radial, dhdx_radial, d2hdx2_radial, linear_class_k(k_default), h_radial),
     Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default), h_speed),
+    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default), h_beta),
 ]
 cbfs_pairwise = [
     Cbf(
