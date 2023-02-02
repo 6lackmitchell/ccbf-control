@@ -51,7 +51,7 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
         if round(tt, 4) % 1 < dt or ii == 1:
             print("Time: {:.1f} sec".format(tt))
 
-        if round(tt, 4) % 5 < dt:
+        if round(tt, 4) % 5 < dt and tt > 0:
             for aa, agent in enumerate(decentralized_agents):
                 agent.save_data(aa)
             print("Time: {:.1f} sec: Intermediate Save".format(tt))

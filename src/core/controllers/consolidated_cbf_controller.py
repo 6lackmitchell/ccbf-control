@@ -581,8 +581,8 @@ class AdaptationLaw:
         self.wn = 10.0
         self.k_dot_gain = 1.0
         self.cost_gain_mat = 1.0 * np.eye(nWeights)
-        self.k_des_gain = 0.5
-        self.k_min = 0.1
+        self.k_des_gain = 0.25
+        self.k_min = 0.01
         self.k_max = 10.0
         self.czero_gain = 1.0
         self.ci_gain = 1.0

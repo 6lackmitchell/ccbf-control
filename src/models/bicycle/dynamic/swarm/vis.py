@@ -157,6 +157,37 @@ plt.tight_layout(pad=2.0)
 
 
 ############################################
+### K Trajectories ###
+fig_k = plt.figure(figsize=(8, 8))
+ax_k = fig_k.add_subplot(111)
+set_edges_black(ax_k)
+
+lbl = ["c1", "c2", "c3"]
+
+for cbf in range(k.shape[2]):
+    ax_k.plot(
+        t[1:ii],
+        k[0, 1:ii, cbf],
+        linewidth=lwidth,
+        # color=colors[color_idx[3*cbf, 0]],
+        # label=lbl[cbf],
+    )
+ax_k.set(ylabel=r"$w$", title="Weights")
+
+# Plot Settings
+for item in (
+    [ax_k.title, ax_k.xaxis.label, ax_k.yaxis.label]
+    + ax_k.get_xticklabels()
+    + ax_k.get_yticklabels()
+):
+    item.set_fontsize(25)
+ax_k.legend(fancybox=True)
+ax_k.grid(True, linestyle="dotted", color="white")
+
+plt.tight_layout(pad=2.0)
+
+
+############################################
 ### Kdot Trajectories ###
 fig_kdot = plt.figure(figsize=(8, 8))
 ax_kdot = fig_kdot.add_subplot(111)
@@ -169,7 +200,7 @@ for cbf in range(k.shape[2])[:3]:
         t[1:ii],
         kdot[0, 1:ii, cbf],
         linewidth=lwidth,
-        color=colors[color_idx[3*cbf, 0]],
+        color=colors[color_idx[3 * cbf, 0]],
         label=lbl[cbf],
     )
     ax_kdot.plot(
@@ -177,7 +208,7 @@ for cbf in range(k.shape[2])[:3]:
         kdotf[0, 1:ii, cbf],
         "-.",
         linewidth=lwidth,
-        color=colors[color_idx[3*cbf, 0]],
+        color=colors[color_idx[3 * cbf, 0]],
         label=lbl[cbf],
     )
 ax_kdot.set(ylabel=r"$\dot{w}$", title="Weight Derivatives")

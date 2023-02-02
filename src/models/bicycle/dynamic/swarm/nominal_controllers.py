@@ -36,7 +36,7 @@ class LqrController(Controller):
         xd = xg[self.ego_id]
         yd = yg[self.ego_id]
 
-        speed_d = 0.25
+        speed_d = 0.5
         vd = speed_d * np.min([1, 1 / 2 * np.linalg.norm([ze[0] - xd, ze[1] - yd])])
         th = np.arctan2(yd - ze[1], xd - ze[0])
         vxd = vd * np.cos(th)
