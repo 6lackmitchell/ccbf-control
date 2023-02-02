@@ -1404,6 +1404,49 @@ class AdaptationLaw:
 
     #     return grad_k_desired_x
 
+    # def k_des(self, h: NDArray) -> NDArray:
+    #     """Computes the desired gains k for the constituent cbfs. This can be
+    #     thought of as the nominal adaptation law (unconstrained).
+
+    #     Arguments:
+    #         h (NDArray): array of constituent cbf values
+
+    #     Returns:
+    #         k_des (NDArray)
+
+    #     """
+    #     h = np.clip(h, 0.01, np.inf)
+    #     k_des = self.k_des_gain / h
+
+    #     return np.clip(k_des, self.k_min, self.k_max)
+
+    # def grad_k_des_x(self, x: NDArray, h: NDArray) -> NDArray:
+    #     """Computes the desired gains k for the constituent cbfs. This can be
+    #     thought of as the nominal adaptation law (unconstrained).
+
+    #     Arguments
+    #     ---------
+    #     h: array of constituent cbf values
+    #     x: state vector
+
+    #     Returns
+    #     -------
+    #     grad_k_desired_x
+
+    #     """
+    #     h = np.clip(h, 0.01, np.inf)
+    #     k_des = self.k_des_gain / h
+
+    #     over_k_max = np.where(k_des > self.k_max)[0]
+    #     under_k_min = np.where(k_des < self.k_min)[0]
+
+    #     grad_k_desired_x = -self.k_des_gain / h[:, np.newaxis] ** 2 * self.dhdx
+
+    #     grad_k_desired_x[over_k_max] = 0
+    #     grad_k_desired_x[under_k_min] = 0
+
+    #     return grad_k_desired_x
+
     def k_des(self, h: NDArray) -> NDArray:
         """Computes the desired gains k for the constituent cbfs. This can be
         thought of as the nominal adaptation law (unconstrained).
@@ -1415,8 +1458,9 @@ class AdaptationLaw:
             k_des (NDArray)
 
         """
-        h = np.clip(h, 0.01, np.inf)
-        k_des = self.k_des_gain / h
+        k_des = self.k_des_gain * np.ones(
+            len(h),
+        )
 
         return np.clip(k_des, self.k_min, self.k_max)
 
@@ -1434,16 +1478,7 @@ class AdaptationLaw:
         grad_k_desired_x
 
         """
-        h = np.clip(h, 0.01, np.inf)
-        k_des = self.k_des_gain / h
-
-        over_k_max = np.where(k_des > self.k_max)[0]
-        under_k_min = np.where(k_des < self.k_min)[0]
-
-        grad_k_desired_x = -self.k_des_gain / h[:, np.newaxis] ** 2 * self.dhdx
-
-        grad_k_desired_x[over_k_max] = 0
-        grad_k_desired_x[under_k_min] = 0
+        grad_k_desired_x = np.zeros((len(h),))
 
         return grad_k_desired_x
 
