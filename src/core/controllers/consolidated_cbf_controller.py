@@ -1478,7 +1478,7 @@ class AdaptationLaw:
         grad_k_desired_x
 
         """
-        grad_k_desired_x = np.zeros((len(h),))
+        grad_k_desired_x = np.zeros((self.dhdx.shape))
 
         return grad_k_desired_x
 
