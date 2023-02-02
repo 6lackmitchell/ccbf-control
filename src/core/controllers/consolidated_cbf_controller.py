@@ -1458,9 +1458,7 @@ class AdaptationLaw:
             k_des (NDArray)
 
         """
-        k_des = self.k_des_gain * np.ones(
-            len(h),
-        )
+        k_des = self.k_des_gain * np.ones((len(h),))
 
         return np.clip(k_des, self.k_min, self.k_max)
 
