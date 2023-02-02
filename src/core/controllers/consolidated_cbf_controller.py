@@ -525,6 +525,35 @@ class AdaptationLaw:
         self.dhdx = np.zeros((nWeights, nStates))
         self.d2hdx2 = np.zeros((nStates, nWeights, nStates))
 
+        # delta terms
+        self._delta = None
+        self._grad_delta_k = None
+        self._grad_delta_x = None
+        self._grad_delta_kk = None
+        self._grad_delta_kx = None
+
+        # ci terms
+        self._ci = None
+        self._grad_ci_k = None
+        self._grad_ci_x = None
+        self._grad_ci_kk = None
+        self._grad_ci_kx = None
+
+        # czero terms
+        self._czero = None
+        self._grad_czero_k = None
+        self._grad_czero_x = None
+        self._grad_czero_kk = None
+        self._grad_czero_kx = None
+
+        # cost terms
+        self._grad_cost_kk = None
+
+        # phi terms
+        self._grad_phi_k = None
+        self._grad_phi_kk = None
+        self._grad_phi_kx = None
+
         # # Gains and Parameters -- Toy Example!
         # self.k_dot_gain = 0.5
         # self.cost_gain_mat = 1.0 * np.eye(nWeights)
@@ -552,7 +581,7 @@ class AdaptationLaw:
         self.wn = 10.0
         self.k_dot_gain = 1.0
         self.cost_gain_mat = 1.0 * np.eye(nWeights)
-        self.k_des_gain = 2.0
+        self.k_des_gain = 0.5
         self.k_min = 0.1
         self.k_max = 10.0
         self.czero_gain = 1.0
@@ -899,10 +928,14 @@ class AdaptationLaw:
         if self.t == 0:
             print("iterating")
             print(vector @ self.U @ vector.T)
-            print(self.delta(x, h, Lf))
-            while czero < vector @ self.U @ vector.T:
-                self.alpha += 0.01
-                czero = vector @ self.U @ vector.T - self.delta(x, h, Lf) ** 2
+            print(2 * self.delta(x, h, Lf) ** 2)
+            count = 0
+            while (
+                czero < 2 * self.delta(x, h, Lf) ** 2 and count < 10
+            ):  # vector @ self.U @ vector.T:
+
+                czero = self.k_gradient_descent(x, h, Lf, Lg)
+                count += 1
 
         s_func = 0  # -czero / 2 * (1 - np.sqrt(czero**2 + 0.001**2) / czero)
 
@@ -1479,6 +1512,44 @@ class AdaptationLaw:
         grad_k_desired_x = np.zeros((self.dhdx.shape))
 
         return grad_k_desired_x
+
+    def k_gradient_descent(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> float:
+        """Runs gradient descent on the k_weights in order to increase the
+        control authority at t=0.
+
+        Arguments
+        ---------
+        x: state vector
+        h: constituent cbf vector
+        Lf: C-CBF drift term (includes filtered kdot)
+        Lg: matrix of constituent cbf Lgh vectors
+
+        Returns
+        -------
+        new_czero: updated czero value based on new k_weights
+
+        """
+        # line search parameter
+        beta = 0.1
+
+        # compute gradient
+        grad_c0_k = 2 * self.dqdk @ Lg @ self.U @ Lg.T @ self.q.T - 2 * self.delta(
+            x, h, Lf
+        ) * self.grad_delta_k(x, h, Lf)
+
+        # gradient descent
+        self._k_weights = np.clip(self._k_weights + grad_c0_k * beta, self.k_min, self.k_max)
+
+        # compute new quantities
+        self.q = self._k_weights * np.exp(-self._k_weights * h)
+        self.dqdk = np.diag((1 - self._k_weights * h) * np.exp(-self._k_weights * h))
+        dhdk = h * np.exp(-self._k_weights * h)
+        vector = self.q @ Lg + dhdk @ self._k_dot_cont_f
+
+        # comput new czero
+        czero = vector @ self.U @ vector.T - self.delta(x, h, Lf) ** 2
+
+        return czero
 
     @property
     def k_weights(self) -> NDArray:
