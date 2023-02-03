@@ -36,6 +36,14 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
             centralized_agents,
             decentralized_agents,
         )
+    elif vehicle == "nonlinear_1d":
+        from models.nonlinear_1d import (
+            nAgents,
+            nStates,
+            z0,
+            centralized_agents,
+            decentralized_agents,
+        )
 
     nTimesteps = int((tf - 0.0) / dt) + 1
 
@@ -79,6 +87,8 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
                 z[ii + 1, aa, :] = agent.step_dynamics()
             else:
                 z[ii + 1, aa, :] = agent.x
+
+            print(z[ii + 1, aa, :])
 
         # Comment out this block if you want to continue with broken agents
         if np.sum(broken) > 0:

@@ -59,25 +59,26 @@ class CbfQpController(Controller):
         self.n_controls = len(u_max)
         self.n_agents = nAgents
         self.n_dec_vars = 1
-        self.desired_class_k = 0.01
+        self.desired_class_k = 1.0
         self.max_class_k = 1e6
 
-        self.cbf_vals = np.zeros(
-            (len(cbfs_individual) + 1 + (self.n_agents - 1) * len(cbfs_pairwise)),
-        )
         # self.cbf_vals = np.zeros(
-        #     (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
+        #     (len(cbfs_individual) + 1 + (self.n_agents - 1) * len(cbfs_pairwise)),
         # )
+        self.cbf_vals = np.zeros(
+            (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
+        )
+        self.dhdt = np.zeros((self.cbf_vals.shape[0],))
+        self.dhdx = np.zeros((self.cbf_vals.shape[0], 1))
         # self.dhdx = np.zeros((self.cbf_vals.shape[0], 4))
-        self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
+        # self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
+        self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 1, 1))
         # self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 4, 4))
-        self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 5, 5))
+        # self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 5, 5))
 
         # Define individual input constraints
         self.au = block_diag(*self.n_controls * [np.array([[1, -1]]).T])
-        self.bu = np.tile(
-            np.array(self.u_max).reshape(self.n_controls, 1), self.n_controls
-        ).flatten()
+        self.bu = np.tile(np.array(self.u_max).reshape(self.n_controls, 1), 2).flatten()
 
     def _compute_control(
         self, t: float, z: NDArray, cascaded: bool = False
@@ -120,7 +121,8 @@ class CbfQpController(Controller):
         # Compute nominal control input for ego only -- assume others are zero
         z_copy_nom = z.copy()
         z_copy_nom[self.ego_id] = z[ego]
-        u_nom = np.zeros((len(z), 2))
+        # u_nom = np.zeros((len(z), 2))
+        u_nom = np.zeros((len(z), 1))
         u_nom[ego, :], code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
         u_nom[ego, :] = u_nom[ego, :] + integrated_error[ego]
         self.u_nom = u_nom[ego, :]

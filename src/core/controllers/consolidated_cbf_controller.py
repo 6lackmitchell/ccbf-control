@@ -29,8 +29,9 @@ try:
     globals().update({"f": getattr(module, "f")})
     globals().update({"dfdx": getattr(module, "dfdx")})
     globals().update({"g": getattr(module, "g")})
-    globals().update({"xg": getattr(module, "xg")})
-    globals().update({"yg": getattr(module, "yg")})
+    globals().update({"dgdx": getattr(module, "dgdx")})
+    # globals().update({"xg": getattr(module, "xg")})
+    # globals().update({"yg": getattr(module, "yg")})
     globals().update({"sigma": getattr(module, "sigma_{}".format(system_model))})
 except ModuleNotFoundError as e:
     print("No module named '{}' -- exiting.".format(mod))
@@ -174,12 +175,13 @@ class ConsolidatedCbfController(CbfQpController):
             dhdx_array[cc, :ns] = cbf.dhdx(ze)
             d2hdx2_array[cc, :ns, :ns] = cbf.d2hdx2(ze)
 
-            # Stochastic Term -- 0 for deterministic systems
-            if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
-                d2hdx2 = cbf.d2hdx2(ze)
-                stoch = 0.5 * np.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
-            else:
-                stoch = 0.0
+            # # Stochastic Term -- 0 for deterministic systems
+            # if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
+            #     d2hdx2 = cbf.d2hdx2(ze)
+            #     stoch = 0.5 * np.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
+            # else:
+            #     stoch = 0.0
+            stoch = 0.0
 
             # Get CBF Lie Derivatives
             Lfh_array[cc] = dhdx_array[cc][:ns] @ f(ze) + stoch - discretization_error
@@ -248,23 +250,24 @@ class ConsolidatedCbfController(CbfQpController):
                 self.dhdx[idx] = dhdx_array[idx][:ns]
                 self.d2hdx2[idx] = d2hdx2_array[idx][:ns, :ns]
 
-        # Add time-dependent goal-reaching constraint: toy example only!!!
-        T = 20
-        dx = ze[0] - xg[self.ego_id]
-        dy = ze[1] - yg[self.ego_id]
-        vx = ze[3] * (np.cos(ze[2]) - np.sin(ze[2]) * np.tan(ze[4]))
-        vy = ze[3] * (np.sin(ze[2]) + np.cos(ze[2]) * np.tan(ze[4]))
-        R = 0.25
-        Ri = 26
+        # # Add time-dependent goal-reaching constraint: swarm example only!!!
+        # T = 20
+        # dx = ze[0] - xg[self.ego_id]
+        # dy = ze[1] - yg[self.ego_id]
+        # vx = ze[3] * (np.cos(ze[2]) - np.sin(ze[2]) * np.tan(ze[4]))
+        # vy = ze[3] * (np.sin(ze[2]) + np.cos(ze[2]) * np.tan(ze[4]))
+        # R = 0.25
+        # Ri = 26
 
-        LgV = np.zeros((self.n_controls * na,))
-        if t < T:
-            V = R**2 + Ri**2 * (1 - t / T) ** 2 - dx**2 - dy**2
-            LfV = -2 * Ri**2 / T * (1 - t / T) - 2 * dx * vx - 2 * dy * vy
-        else:
-            V = R**2 - dx**2 - dy**2
-            LfV = -2 * dx * vx - 2 * dy * vy
+        # LgV = np.zeros((self.n_controls * na,))
+        # if t < T:
+        #     V = R**2 + Ri**2 * (1 - t / T) ** 2 - dx**2 - dy**2
+        #     LfV = -2 * Ri**2 / T * (1 - t / T) - 2 * dx * vx - 2 * dy * vy
+        # else:
+        #     V = R**2 - dx**2 - dy**2
+        #     LfV = -2 * dx * vx - 2 * dy * vy
 
+        # # Add time-dependent goal-reaching constraint: toy example only!!!
         # if t < T - stop_time:
         #     V = R**2 + ((T - t) ** 2) / 4 -  dx** 2 - dy ** 2
         #     LfV = (t - T) / 2 - 2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
@@ -274,11 +277,11 @@ class ConsolidatedCbfController(CbfQpController):
         #     LfV = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
         #     LgV = np.zeros((self.n_controls * na,))
 
-        gain = 1.0
-        h_array[-1] = V * gain
-        Lfh_array[-1] = LfV * gain
-        Lgh_array[-1, :] = LgV * gain
-        self.cbf_vals[-1] = h_array[-1]
+        # gain = 1.0
+        # h_array[-1] = V * gain
+        # Lfh_array[-1] = LfV * gain
+        # Lgh_array[-1, :] = LgV * gain
+        # self.cbf_vals[-1] = h_array[-1]
 
         # Format inequality constraints
         # Ai, bi = self.generate_consolidated_cbf_condition(ego, h_array, Lfh_array, Lgh_array)
@@ -987,7 +990,7 @@ class AdaptationLaw:
         grad_c0_x: gradient of viability constraint function with respect to x
 
         """
-        dLgdx = self.d2hdx2 @ g(x)
+        dLgdx = self.d2hdx2 @ g(x) + self.dhdx @ dgdx(x)
 
         grad_c0_x = (
             2 * self.dqdx.T @ Lg @ self.U @ Lg.T @ self.q.T
@@ -1053,7 +1056,7 @@ class AdaptationLaw:
         grad_c0_kx: gradient of viability constraint function with respect to k then x
 
         """
-        dLgdx = self.d2hdx2 @ g(x)
+        dLgdx = self.d2hdx2 @ g(x) + self.dhdx @ dgdx(x)
 
         grad_c0_kx = (
             2 * self.d2qdkdx @ Lg @ self.U @ Lg.T @ self.q.T
