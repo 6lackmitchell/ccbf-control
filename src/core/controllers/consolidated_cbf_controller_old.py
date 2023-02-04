@@ -3,7 +3,6 @@
 Provides interface to the ConsolidatedCbfController class.
 
 """
-import time
 import numpy as np
 import numdifftools as nd
 import builtins
@@ -18,8 +17,6 @@ from core.controllers.cbf_qp_controller import CbfQpController
 from core.controllers.controller import Controller
 
 # from core.solve_cvxopt import solve_qp_cvxopt
-
-np.random.seed(42)
 
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]
@@ -82,7 +79,7 @@ class ConsolidatedCbfController(CbfQpController):
             cbfs_pairwise,
             ignore,
         )
-        kZero = 0.5
+        kZero = 0.15
         nCBF = len(self.cbf_vals)
         self.c_cbf = 100
         self.n_agents = nAgents
@@ -91,7 +88,7 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_weights = kZero * np.ones((nCBF,))
         self.k_dot = np.zeros((nCBF,))
         self.k_dot_f = np.zeros((nCBF,))
-        self.alpha = self.desired_class_k * 1.0
+        self.alpha = self.desired_class_k
         self.czero1 = 0
         self.czero2 = 0
 
@@ -145,7 +142,6 @@ class ConsolidatedCbfController(CbfQpController):
                 )
             )
         )
-        dhdt_array = np.zeros((len(self.cbf_vals),))
         dhdx_array = np.zeros(
             (
                 len(
@@ -176,21 +172,27 @@ class ConsolidatedCbfController(CbfQpController):
         for cc, cbf in enumerate(self.cbfs_individual):
             h0 = cbf.h0(ze)
             h_array[cc] = cbf.h(ze)
-            dhdx_array[cc] = 0
             dhdx_array[cc, :ns] = cbf.dhdx(ze)
             d2hdx2_array[cc, :ns, :ns] = cbf.d2hdx2(ze)
 
+            # # Stochastic Term -- 0 for deterministic systems
+            # if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
+            #     d2hdx2 = cbf.d2hdx2(ze)
+            #     stoch = 0.5 * np.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
+            # else:
+            #     stoch = 0.0
+            stoch = 0.0
+
             # Get CBF Lie Derivatives
-            Lfh_array[cc] = dhdx_array[cc][:ns] * f(ze) - discretization_error
+            Lfh_array[cc] = dhdx_array[cc][:ns] @ f(ze) + stoch - discretization_error
             Lgh_array[cc, self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx_array[cc][
                 :ns
-            ] * g(
+            ] @ g(
                 ze
             )  # Only assign ego control
             if cascade:
                 Lgh_array[cc, self.n_controls * ego] = 0.0
 
-            self.dhdt[cc] = dhdt_array[cc]
             self.dhdx[cc] = dhdx_array[cc][:ns]
             self.d2hdx2[cc] = d2hdx2_array[cc][:ns, :ns]
             self.cbf_vals[cc] = h_array[cc]
@@ -210,10 +212,21 @@ class ConsolidatedCbfController(CbfQpController):
                 dhdx_array[idx] = cbf.dhdx(ze, zo)
                 d2hdx2_array[idx] = cbf.d2hdx2(ze, zo)
 
+                # Stochastic Term -- 0 for deterministic systems
+                if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
+                    d2hdx2 = cbf.d2hdx2(ze, zo)
+                    stoch = 0.5 * (
+                        np.trace(sigma(ze).T @ d2hdx2[:ns, :ns] @ sigma(ze))
+                        + np.trace(sigma(zo).T @ d2hdx2[ns:, ns:] @ sigma(zo))
+                    )
+                else:
+                    stoch = 0.0
+
                 # Get CBF Lie Derivatives
                 Lfh_array[idx] = (
                     dhdx_array[idx][:ns] @ f(ze)
                     + dhdx_array[idx][ns:] @ f(zo)
+                    + stoch
                     - discretization_error
                 )
                 Lgh_array[idx, self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx_array[
@@ -237,7 +250,41 @@ class ConsolidatedCbfController(CbfQpController):
                 self.dhdx[idx] = dhdx_array[idx][:ns]
                 self.d2hdx2[idx] = d2hdx2_array[idx][:ns, :ns]
 
+        # # Add time-dependent goal-reaching constraint: swarm example only!!!
+        # T = 20
+        # dx = ze[0] - xg[self.ego_id]
+        # dy = ze[1] - yg[self.ego_id]
+        # vx = ze[3] * (np.cos(ze[2]) - np.sin(ze[2]) * np.tan(ze[4]))
+        # vy = ze[3] * (np.sin(ze[2]) + np.cos(ze[2]) * np.tan(ze[4]))
+        # R = 0.25
+        # Ri = 26
+
+        # LgV = np.zeros((self.n_controls * na,))
+        # if t < T:
+        #     V = R**2 + Ri**2 * (1 - t / T) ** 2 - dx**2 - dy**2
+        #     LfV = -2 * Ri**2 / T * (1 - t / T) - 2 * dx * vx - 2 * dy * vy
+        # else:
+        #     V = R**2 - dx**2 - dy**2
+        #     LfV = -2 * dx * vx - 2 * dy * vy
+
+        # # Add time-dependent goal-reaching constraint: toy example only!!!
+        # if t < T - stop_time:
+        #     V = R**2 + ((T - t) ** 2) / 4 -  dx** 2 - dy ** 2
+        #     LfV = (t - T) / 2 - 2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
+        #     LgV = np.zeros((self.n_controls * na,))
+        # else:
+        #     V = ((T - stop_time) ** 2) / 4 - (ze[0] - 2) ** 2 - (ze[1] - 2) ** 2
+        #     LfV = -2 * ze[2] * (ze[0] - 2) - 2 * ze[3] * (ze[1] - 2)
+        #     LgV = np.zeros((self.n_controls * na,))
+
+        # gain = 1.0
+        # h_array[-1] = V * gain
+        # Lfh_array[-1] = LfV * gain
+        # Lgh_array[-1, :] = LgV * gain
+        # self.cbf_vals[-1] = h_array[-1]
+
         # Format inequality constraints
+        # Ai, bi = self.generate_consolidated_cbf_condition(ego, h_array, Lfh_array, Lgh_array)
         Ai, bi = self.generate_consolidated_cbf_condition(t, ze, h_array, Lfh_array, Lgh_array, ego)
 
         A = np.vstack([Au, Ai])
@@ -288,7 +335,7 @@ class ConsolidatedCbfController(CbfQpController):
 
         """
         if self.n_dec_vars > 0:
-            Au = block_diag(*(self.n_agents + self.n_dec_vars) * [self.au])
+            Au = block_diag(*(self.n_agents + self.n_dec_vars) * [self.au])[:-2, :-1]
             bu = np.append(
                 np.array(self.n_agents * [self.bu]).flatten(),
                 self.n_dec_vars * [self.max_class_k, 0],
@@ -321,121 +368,49 @@ class ConsolidatedCbfController(CbfQpController):
         RETURNS
             kdot: array of time-derivatives of k_gains
         """
-        # # Introduce parameters
-        # k_ccbf = 0.1
-        # # k_ccbf = 0.25
-        # # k_ccbf = 1.0
-
-        # # Get C-CBF Value
-        # H = self.consolidated_cbf()
-        # self.c_cbf = H
-        # discretization_error = 5e-1 * np.exp(-1 * H)
-
-        # # Non-centralized agents CBF dynamics become drifts
-        # Lgh_uncontrolled = np.copy(Lgh_array[:, :])
-        # Lgh_uncontrolled[:, ego * self.n_controls : (ego + 1) * self.n_controls] = 0
-
-        # # Set all Lgh terms other than ego to zero
-        # indices_before_ego = np.s_[: ego * self.n_controls]
-        # indices_after_ego = np.s_[(ego + 1) * self.n_controls :]
-        # Lgh_array[:, indices_before_ego] = 0
-        # Lgh_array[:, indices_after_ego] = 0
-
-        # # # Get time-derivatives of gains
-        # # dphidh = self.adapter.k_weights * np.exp(-self.adapter.k_weights * self.cbf_vals)
-        # # dphidk = self.cbf_vals * np.exp(-self.adapter.k_weights * self.cbf_vals)
-
-        # # Compute C-CBF Dynamics
-        # LfH = dphidh @ Lfh_array
-        # LgH = dphidh @ Lgh_array
-        # LgH_uncontrolled = dphidh @ Lgh_uncontrolled
-
-        # # Tunable CBF Addition
-        # Phi = 0.0
-        # LfH = LfH + Phi - discretization_error
-        # Lf_for_kdot = LfH + dphidk @ self.adapter.k_dot_drift_f
-        # Lg_for_kdot = Lgh_array[:, self.n_controls * ego : self.n_controls * (ego + 1)]
-
-        # # Update adapter
-        # self.adapter.dhdx = self.dhdx
-        # self.adapter.d2hdx2 = self.d2hdx2.swapaxes(0, 2).swapaxes(1, 2)
-        # self.adapter.q = dphidh
-        # self.adapter.dqdk = np.diag(
-        #     (1 - self.k_weights * self.cbf_vals) * np.exp(-self.k_weights * self.cbf_vals)
-        # )
-        # self.adapter.dqdx = (
-        #     self.dhdx.T @ np.diag(-(self.k_weights**2) * np.exp(-self.k_weights * self.cbf_vals))
-        # ).T
-        # d2qdk2_vals = (self.k_weights * self.cbf_vals**2 - 2 * self.cbf_vals) * np.exp(
-        #     -self.k_weights * self.cbf_vals
-        # )
-        # np.fill_diagonal(self.adapter.d2qdk2, d2qdk2_vals)
-        # triple_diag = np.zeros((len(self.k_weights), len(self.k_weights), len(self.k_weights)))
-        # np.fill_diagonal(
-        #     triple_diag,
-        #     (self.k_weights**2 * self.cbf_vals - 2 * self.k_weights)
-        #     * np.exp(-self.k_weights * self.cbf_vals),
-        # )
-        # d2qdkdx = triple_diag @ self.dhdx
-        # self.adapter.d2qdkdx = d2qdkdx.swapaxes(0, 1).swapaxes(1, 2)
-
-        # # Prepare Adapter to compute adaptation law
-        # self.adapter.precompute(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
-
-        # # Compute drift k_dot
-        # k_dot_drift = self.adapter.k_dot_drift(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
-
-        # # Compute controlled k_dot
-        # k_dot_contr = self.adapter.k_dot_controlled(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
-
-        ##########################
-        ##########################
-        # New function starts here
-        ##########################
-        ##########################
-
         # Introduce parameters
         k_ccbf = 0.1
-        discretization_error = 1e-2
+        # k_ccbf = 0.25
+        # k_ccbf = 1.0
 
-        # consolidated cbf H(t, w, x)
-        self.c_cbf = H = self.consolidated_cbf()
-        discretization_error *= np.exp(-k_ccbf * H)
+        # Get C-CBF Value
+        H = self.consolidated_cbf()
+        self.c_cbf = H
+        discretization_error = 5e-1 * np.exp(-1 * H)
 
-        # # Non-centralized agents CBF dynamics become drifts
-        # Lgh_uncontrolled = np.copy(Lgh_array[:, :])
-        # Lgh_uncontrolled[:, ego * self.n_controls : (ego + 1) * self.n_controls] = 0
+        # Non-centralized agents CBF dynamics become drifts
+        Lgh_uncontrolled = np.copy(Lgh_array[:, :])
+        Lgh_uncontrolled[:, ego * self.n_controls : (ego + 1) * self.n_controls] = 0
 
-        # # Set all Lgh terms other than ego to zero
-        # indices_before_ego = np.s_[: ego * self.n_controls]
-        # indices_after_ego = np.s_[(ego + 1) * self.n_controls :]
-        # Lgh_array[:, indices_before_ego] = 0
-        # Lgh_array[:, indices_after_ego] = 0
+        # Set all Lgh terms other than ego to zero
+        indices_before_ego = np.s_[: ego * self.n_controls]
+        indices_after_ego = np.s_[(ego + 1) * self.n_controls :]
+        Lgh_array[:, indices_before_ego] = 0
+        Lgh_array[:, indices_after_ego] = 0
 
-        # c-cbf partial derivatives (NOT TOTAL)
-        dHdh = self.adapter.k_weights * np.exp(-self.adapter.k_weights * self.cbf_vals)
-        dHdw = self.cbf_vals * np.exp(-self.adapter.k_weights * self.cbf_vals)
-        dHdt = dHdh @ self.dhdt
-        dHdx = dHdh @ self.dhdx
+        # Get time-derivatives of gains
+        dphidh = self.adapter.k_weights * np.exp(-self.adapter.k_weights * self.cbf_vals)
+        dphidk = self.cbf_vals * np.exp(-self.adapter.k_weights * self.cbf_vals)
 
-        # c-cbf derivative elements
-        Hdot_drift = dHdx @ f(x)
-        Hdot_contr = dHdx @ g(x)
-        if len(Hdot_contr.shape) == 1:
-            Hdot_contr = Hdot_contr[:, np.newaxis]
+        # Compute C-CBF Dynamics
+        LfH = dphidh @ Lfh_array
+        LgH = dphidh @ Lgh_array
+        LgH_uncontrolled = dphidh @ Lgh_uncontrolled
 
-        # tunable CBF addition
-        Phi = 0.0 * np.exp(-k_ccbf * H)
-        Hdot_drift += Phi - discretization_error
-        Lf_for_kdot = Hdot_drift + dHdw @ self.adapter.k_dot_drift_f
-        Lg_for_kdot = self.dhdx @ g(x)
-        if len(Lg_for_kdot.shape) == 1:
-            Lg_for_kdot = Lg_for_kdot[:, np.newaxis]
+        # Tunable CBF Addition
+        Phi = (
+            np.tile(-np.array(self.u_max), int(LgH_uncontrolled.shape[0] / len(self.u_max)))
+            @ abs(LgH_uncontrolled)
+            * np.exp(-k_ccbf * H)
+        )
+        LfH = LfH + Phi - discretization_error
+        Lf_for_kdot = LfH + dphidk @ self.adapter.k_dot_drift_f
+        Lg_for_kdot = Lgh_array[:, self.n_controls * ego : self.n_controls * (ego + 1)]
 
         # Update adapter
         self.adapter.dhdx = self.dhdx
         self.adapter.d2hdx2 = self.d2hdx2.swapaxes(0, 2).swapaxes(1, 2)
-        self.adapter.q = dHdh
+        self.adapter.q = dphidh
         self.adapter.dqdk = np.diag(
             (1 - self.k_weights * self.cbf_vals) * np.exp(-self.k_weights * self.cbf_vals)
         )
@@ -462,42 +437,29 @@ class ConsolidatedCbfController(CbfQpController):
         k_dot_drift = self.adapter.k_dot_drift(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
 
         # Compute controlled k_dot
-        k_dot_contr = self.adapter.k_dot_controlled(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
+        k_dot_cont = self.adapter.k_dot_controlled(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
 
-        # augmented consolidated cbf B(t, w, x) = b * H
-        B = self.augmented_consolidated_cbf()
+        # Augment LfH and LgH from kdot
+        LfH += dphidk @ k_dot_drift
+        LgH[self.n_controls * ego : self.n_controls * (ego + 1)] += dphidk @ k_dot_cont
 
-        # partial (NOT TOTAL) derivatives
-        dBdt = self.adapter.dbdt * H + self.adapter.b * dHdt
-        dBdw = self.adapter.dbdw * H + self.adapter.b * dHdw
-        dBdx = self.adapter.dbdx * H + self.adapter.b * dHdx
-
-        Bdot_drift = dBdt + dBdw @ k_dot_drift + dBdx @ f(x)
-        Bdot_contr = dBdw @ k_dot_contr + dBdx @ g(x)
-
-        if B < 0:
+        if H < 0:
             print(f"Time: {t}")
             print(f"h_array: {h_array}")
+            # print(f"LfH: {LfH}")
+            # print(f"LgH: {LgH}")
+            # print(f"H:   {H}")
+            # print(self.k_gains)
             print(H)
 
-        # # CBF Condition (class K decision variable)
-        # a_mat = np.append(-Bdot_contr, -B)
-        # b_vec = np.array([Bdot_drift]).flatten()
-
-        # CBF Condition (fixed class K)
-        a_mat = np.append(-Bdot_contr, 0)
-        b_vec = np.array([Bdot_drift + self.alpha * B**3]).flatten()
+        # Finish constructing CBF here
+        a_mat = np.append(-LgH, -H)
+        b_vec = np.array([LfH])
 
         return a_mat[:, np.newaxis].T, b_vec
 
     def consolidated_cbf(self):
-        """Computes the value of the consolidated CBF."""
         return 1 - np.sum(np.exp(-self.adapter.k_weights * self.cbf_vals))
-
-    def augmented_consolidated_cbf(self):
-        """Computes the value of the consolidated CBF augmented by
-        the input constraint function."""
-        return self.consolidated_cbf() * self.adapter.b
 
 
 class AdaptationLaw:
@@ -523,7 +485,7 @@ class AdaptationLaw:
             kZero (float, Opt)
 
         """
-        nStates = 1  # placeholder
+        nStates = 5  # placeholder
 
         # time
         self.t = 0.0
@@ -595,19 +557,39 @@ class AdaptationLaw:
         self._grad_phi_kk = None
         self._grad_phi_kx = None
 
-        # Gains and Parameters -- Nonlinear 1D alpha!!
+        # # Gains and Parameters -- Toy Example!
+        # self.k_dot_gain = 0.5
+        # self.cost_gain_mat = 1.0 * np.eye(nWeights)
+        # self.k_des_gain = 3.0
+        # self.k_min = 0.1
+        # self.k_max = 10.0
+        # self.czero_gain = 0.02
+        # self.ci_gain = self.czero_gain
+        # self.cost_gain_mat *= 50.0
+
+        # Gains and Parameters -- Swarm!!
         self.alpha = alpha
-        self.epsilon = 0.0
         self.wn = 10.0
         self.k_dot_gain = 1.0
         self.cost_gain_mat = 1.0 * np.eye(nWeights)
-        self.k_des_gain = 1.0
+        self.k_des_gain = 2.0
+        self.k_min = 0.1
+        self.k_max = 10.0
+        self.czero_gain = 0.1
+        self.ci_gain = self.czero_gain
+        self.cost_gain_mat *= 50.0
+
+        # Gains and Parameters -- Swarm!!
+        self.alpha = alpha
+        self.wn = 10.0
+        self.k_dot_gain = 1.0
+        self.cost_gain_mat = 1.0 * np.eye(nWeights)
+        self.k_des_gain = 0.25
         self.k_min = 0.01
         self.k_max = 10.0
-        self.czero_gain = 5.0
+        self.czero_gain = 1.0
         self.ci_gain = 1.0
-        self.cost_gain_mat *= 10.0
-        # self.cost_gain_mat *= 100.0
+        self.cost_gain_mat *= 50.0
 
     def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
         """Updates the adaptation gains and returns the new k weights.
@@ -769,10 +751,7 @@ class AdaptationLaw:
 
         k_dot_controlled = -self.k_dot_gain * np.linalg.inv(M) @ X @ g(x)
 
-        if len(k_dot_controlled.shape) > 1:
-            self._k_dot_controlled = k_dot_controlled
-        else:
-            self._k_dot_controlled = k_dot_controlled[:, np.newaxis]
+        self._k_dot_controlled = k_dot_controlled
 
         return self._k_dot_controlled
 
@@ -950,11 +929,16 @@ class AdaptationLaw:
         vector = self.q @ Lg + dhdk @ self._k_dot_cont_f
         czero = vector @ self.U @ vector.T - self._delta**2
         if self.t == 0:
-            start = time.time()
-            while czero <= self._delta**2 and (time.time() - start) < 5:
+            print("iterating")
+            print(vector @ self.U @ vector.T)
+            print(2 * self.delta(x, h, Lf) ** 2)
+            count = 0
+            while (
+                czero < 2 * self.delta(x, h, Lf) ** 2 and count < 10
+            ):  # vector @ self.U @ vector.T:
 
                 czero = self.k_gradient_descent(x, h, Lf, Lg)
-                self._delta = self.delta(x, h, Lf)
+                count += 1
 
         s_func = 0  # -czero / 2 * (1 - np.sqrt(czero**2 + 0.001**2) / czero)
 
@@ -1006,7 +990,7 @@ class AdaptationLaw:
         grad_c0_x: gradient of viability constraint function with respect to x
 
         """
-        dLgdx = (self.d2hdx2 @ g(x) + self.dhdx @ dgdx(x)).T
+        dLgdx = self.d2hdx2 @ g(x) + self.dhdx @ dgdx(x)
 
         grad_c0_x = (
             2 * self.dqdx.T @ Lg @ self.U @ Lg.T @ self.q.T
@@ -1072,12 +1056,12 @@ class AdaptationLaw:
         grad_c0_kx: gradient of viability constraint function with respect to k then x
 
         """
-        dLgdx = (self.d2hdx2 @ g(x) + self.dhdx @ dgdx(x)).T
+        dLgdx = self.d2hdx2 @ g(x) + self.dhdx @ dgdx(x)
 
         grad_c0_kx = (
             2 * self.d2qdkdx @ Lg @ self.U @ Lg.T @ self.q.T
             + 2 * self.dqdk @ Lg @ self.U @ Lg.T @ self.dqdx
-            + 4 * self.dqdk @ dLgdx @ self.U @ Lg.T @ self.q[:, np.newaxis]
+            + 4 * (self.dqdk @ dLgdx @ self.U @ Lg.T @ self.q.T).T
             - 2
             * (
                 self._grad_delta_k[:, np.newaxis] @ self._grad_delta_x[np.newaxis, :]
@@ -1157,6 +1141,7 @@ class AdaptationLaw:
         """
         return np.zeros((len(self._k_weights), len(self._grad_delta_x))) * self.ci_gain
 
+    #! TO DO: fix epsilon robustness
     def delta(self, x: NDArray, h: NDArray, Lf: float) -> float:
         """Computes the threshold above which the product LgH*u_max must remain for control viability.
         In other words, in order to be able to satisfy:
@@ -1176,7 +1161,11 @@ class AdaptationLaw:
         delta = LfH + alpha(H) + LkH
 
         """
-        delta = -Lf - self.alpha * self.H(h) + self.epsilon
+        dhdk = h * np.exp(-self._k_weights * h)
+
+        epsilon = 0.0  # Filter very accurate
+
+        delta = -Lf - self.alpha * self.H(h) - (dhdk @ self._k_dot_drift_f - epsilon)
 
         return delta if delta > 0 else 0.0
 
@@ -1403,53 +1392,53 @@ class AdaptationLaw:
 
         return grad_H_kkx
 
-    def k_des(self, h: NDArray) -> NDArray:
-        """Computes the desired gains k for the constituent cbfs. This can be
-        thought of as the nominal adaptation law (unconstrained).
+    # def k_des(self, h: NDArray) -> NDArray:
+    #     """Computes the desired gains k for the constituent cbfs. This can be
+    #     thought of as the nominal adaptation law (unconstrained).
 
-        Arguments:
-            h (NDArray): array of constituent cbf values
+    #     Arguments:
+    #         h (NDArray): array of constituent cbf values
 
-        Returns:
-            k_des (NDArray)
+    #     Returns:
+    #         k_des (NDArray)
 
-        """
-        k_des = self.k_des_gain * h / np.min([np.min(h), 1.0])
+    #     """
+    #     k_des = self.k_des_gain * h / np.min([np.min(h), 1.0])
 
-        return np.clip(k_des, self.k_min, self.k_max)
+    #     return np.clip(k_des, self.k_min, self.k_max)
 
-    def grad_k_des_x(self, x: NDArray, h: NDArray) -> NDArray:
-        """Computes the desired gains k for the constituent cbfs. This can be
-        thought of as the nominal adaptation law (unconstrained).
+    # def grad_k_des_x(self, x: NDArray, h: NDArray) -> NDArray:
+    #     """Computes the desired gains k for the constituent cbfs. This can be
+    #     thought of as the nominal adaptation law (unconstrained).
 
-        Arguments
-        ---------
-        h: array of constituent cbf values
-        x: state vector
+    #     Arguments
+    #     ---------
+    #     h: array of constituent cbf values
+    #     x: state vector
 
-        Returns
-        -------
-        grad_k_desired_x
+    #     Returns
+    #     -------
+    #     grad_k_desired_x
 
-        """
-        min_h_idx = np.where(h == np.min(h))[0][0]
+    #     """
+    #     min_h_idx = np.where(h == np.min(h))[0][0]
 
-        k_des = self.k_des_gain * h / np.min([h[min_h_idx], 2.0])
-        over_k_max = np.where(k_des > self.k_max)[0]
-        under_k_min = np.where(k_des < self.k_min)[0]
+    #     k_des = self.k_des_gain * h / np.min([h[min_h_idx], 2.0])
+    #     over_k_max = np.where(k_des > self.k_max)[0]
+    #     under_k_min = np.where(k_des < self.k_min)[0]
 
-        if h[min_h_idx] > 2.0:
-            grad_k_desired_x = self.k_des_gain * self.dhdx / 2.0
-        else:
-            # Deal with cases when dhdx very close to zero
-            dhdx = self.dhdx
-            dhdx[abs(dhdx) <= 1e-9] = 1
-            grad_k_desired_x = self.k_des_gain * self.dhdx / dhdx[min_h_idx, :]
+    #     if h[min_h_idx] > 2.0:
+    #         grad_k_desired_x = self.k_des_gain * self.dhdx / 2.0
+    #     else:
+    #         # Deal with cases when dhdx very close to zero
+    #         dhdx = self.dhdx
+    #         dhdx[abs(dhdx) <= 1e-9] = 1
+    #         grad_k_desired_x = self.k_des_gain * self.dhdx / dhdx[min_h_idx, :]
 
-        grad_k_desired_x[over_k_max] = 0
-        grad_k_desired_x[under_k_min] = 0
+    #     grad_k_desired_x[over_k_max] = 0
+    #     grad_k_desired_x[under_k_min] = 0
 
-        return grad_k_desired_x
+    #     return grad_k_desired_x
 
     # def k_des(self, h: NDArray) -> NDArray:
     #     """Computes the desired gains k for the constituent cbfs. This can be
@@ -1494,38 +1483,38 @@ class AdaptationLaw:
 
     #     return grad_k_desired_x
 
-    # def k_des(self, h: NDArray) -> NDArray:
-    #     """Computes the desired gains k for the constituent cbfs. This can be
-    #     thought of as the nominal adaptation law (unconstrained).
+    def k_des(self, h: NDArray) -> NDArray:
+        """Computes the desired gains k for the constituent cbfs. This can be
+        thought of as the nominal adaptation law (unconstrained).
 
-    #     Arguments:
-    #         h (NDArray): array of constituent cbf values
+        Arguments:
+            h (NDArray): array of constituent cbf values
 
-    #     Returns:
-    #         k_des (NDArray)
+        Returns:
+            k_des (NDArray)
 
-    #     """
-    #     k_des = self.k_des_gain * np.ones((len(h),))
+        """
+        k_des = self.k_des_gain * np.ones((len(h),))
 
-    #     return np.clip(k_des, self.k_min, self.k_max)
+        return np.clip(k_des, self.k_min, self.k_max)
 
-    # def grad_k_des_x(self, x: NDArray, h: NDArray) -> NDArray:
-    #     """Computes the desired gains k for the constituent cbfs. This can be
-    #     thought of as the nominal adaptation law (unconstrained).
+    def grad_k_des_x(self, x: NDArray, h: NDArray) -> NDArray:
+        """Computes the desired gains k for the constituent cbfs. This can be
+        thought of as the nominal adaptation law (unconstrained).
 
-    #     Arguments
-    #     ---------
-    #     h: array of constituent cbf values
-    #     x: state vector
+        Arguments
+        ---------
+        h: array of constituent cbf values
+        x: state vector
 
-    #     Returns
-    #     -------
-    #     grad_k_desired_x
+        Returns
+        -------
+        grad_k_desired_x
 
-    #     """
-    #     grad_k_desired_x = np.zeros((self.dhdx.shape))
+        """
+        grad_k_desired_x = np.zeros((self.dhdx.shape))
 
-    #     return grad_k_desired_x
+        return grad_k_desired_x
 
     def k_gradient_descent(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> float:
         """Runs gradient descent on the k_weights in order to increase the
@@ -1544,14 +1533,12 @@ class AdaptationLaw:
 
         """
         # line search parameter
-        beta = 1.0
+        beta = 0.1
 
         # compute gradient
-        grad_c0_k = 2 * self.dqdk @ Lg @ self.U @ Lg.T @ self.q - 2 * self.delta(
+        grad_c0_k = 2 * self.dqdk @ Lg @ self.U @ Lg.T @ self.q.T - 2 * self.delta(
             x, h, Lf
         ) * self.grad_delta_k(x, h, Lf)
-        if np.sum(abs(grad_c0_k)) == 0:
-            grad_c0_k = np.flip(np.random.random(grad_c0_k.shape))
 
         # gradient descent
         self._k_weights = np.clip(self._k_weights + grad_c0_k * beta, self.k_min, self.k_max)
@@ -1597,26 +1584,6 @@ class AdaptationLaw:
     def k_dot_drift_f(self) -> NDArray:
         """Getter for _k_dot_drift_f."""
         return self._k_dot_drift_f
-
-    @property
-    def b(self) -> NDArray:
-        """Getter for input_constraint_function."""
-        return self._czero
-
-    @property
-    def dbdt(self) -> NDArray:
-        """Getter for input_constraint_function."""
-        return 0.0
-
-    @property
-    def dbdw(self) -> NDArray:
-        """Getter for input_constraint_function."""
-        return self._grad_czero_k
-
-    @property
-    def dbdx(self) -> NDArray:
-        """Getter for input_constraint_function."""
-        return self._grad_czero_x
 
 
 if __name__ == "__main__":

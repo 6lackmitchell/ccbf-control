@@ -18,8 +18,8 @@ dt = getattr(__import__(mod + ".timing_params", fromlist=["dt"]), "dt")
 sym_state = se.symbols(["x"], real=True)
 
 # Define symbolic system dynamics
-f_symbolic = se.DenseMatrix([[-sym_state[0]]])
-g_symbolic = se.DenseMatrix([[(1 - sym_state[0]) ** 3]])
+f_symbolic = se.DenseMatrix([[1 / 2 * sym_state[0]]])
+g_symbolic = se.DenseMatrix([[(2 - sym_state[0]) * (sym_state[0] + 2)]])
 
 # Need to be fixed
 s_symbolic_deterministic = se.Matrix(

@@ -1,9 +1,12 @@
 import numpy as np
 from .cbf import Cbf
 from .symbolic_cbfs.nonlinear_1d_safety import (
-    h,
-    dhdx,
-    d2hdx2,
+    h1,
+    dh1dx,
+    d2h1dx2,
+    h2,
+    dh2dx,
+    d2h2dx2,
 )
 
 
@@ -19,7 +22,8 @@ k_default = 0.1
 
 # Define cbf lists
 cbfs_individual = [
-    Cbf(h, dhdx, d2hdx2, linear_class_k(k_default), h),
+    Cbf(h1, dh1dx, d2h1dx2, linear_class_k(k_default), h1),
+    Cbf(h2, dh2dx, d2h2dx2, linear_class_k(k_default), h2),
 ]
 cbfs_pairwise = []
 

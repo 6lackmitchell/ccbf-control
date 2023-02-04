@@ -6,7 +6,7 @@ level = "default"
 situation = "academic_example"
 
 end_time = 10.0
-timestep = 0.01
+timestep = 1e-3
 
 root_dir = "/Documents/git/ccbf-control/data"
 

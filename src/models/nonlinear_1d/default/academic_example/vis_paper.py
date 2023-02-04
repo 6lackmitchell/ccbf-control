@@ -27,11 +27,11 @@ elif platform == "win32":
 
 # Specify files
 filepath = pre_path + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/paper/"
-fname1 = filepath + "alpha_0p1.pkl"
-fname2 = filepath + "alpha_0p5.pkl"
-fname3 = filepath + "alpha_1.pkl"
-fname4 = filepath + "alpha_2.pkl"
-fname5 = filepath + "alpha_5.pkl"
+fname1 = filepath + "alpha_0p1_pos.pkl"
+fname2 = filepath + "alpha_0p5_pos.pkl"
+fname3 = filepath + "alpha_1_pos.pkl"
+fname4 = filepath + "alpha_5_pos.pkl"
+fname5 = filepath + "alpha_10_pos.pkl"
 
 # ### Define Recording Variables ###
 t = np.linspace(dt, tf, int(tf / dt))
@@ -45,11 +45,11 @@ with open(fname1, "rb") as f:
     u01 = np.array([data[a]["u0"] for a in data.keys()])
     czero11 = np.array([data[a]["czero1"] for a in data.keys()])
     czero21 = np.array([data[a]["czero2"] for a in data.keys()])
-    k = np.array([data[a]["kgains"] if a < 1 else None for a in data.keys()][:1])
+    k1 = np.array([data[a]["kgains"] if a < 1 else None for a in data.keys()][:1])
     kdot1 = np.array([data[a]["kdot"] if a < 1 else None for a in data.keys()][:1])
     kdotf1 = np.array([data[a]["kdotf"] if a < 1 else None for a in data.keys()][:1])
     ii = int(data[0]["ii"] / dt)
-with open(fname1, "rb") as f:
+with open(fname2, "rb") as f:
     data = pickle.load(f)
 
     x2 = np.array([data[a]["x"] for a in data.keys()])
@@ -60,7 +60,7 @@ with open(fname1, "rb") as f:
     k2 = np.array([data[a]["kgains"] if a < 1 else None for a in data.keys()][:1])
     kdot2 = np.array([data[a]["kdot"] if a < 1 else None for a in data.keys()][:1])
     kdotf2 = np.array([data[a]["kdotf"] if a < 1 else None for a in data.keys()][:1])
-with open(fname1, "rb") as f:
+with open(fname3, "rb") as f:
     data = pickle.load(f)
 
     x3 = np.array([data[a]["x"] for a in data.keys()])
@@ -71,7 +71,7 @@ with open(fname1, "rb") as f:
     k3 = np.array([data[a]["kgains"] if a < 1 else None for a in data.keys()][:1])
     kdot3 = np.array([data[a]["kdot"] if a < 1 else None for a in data.keys()][:1])
     kdotf3 = np.array([data[a]["kdotf"] if a < 1 else None for a in data.keys()][:1])
-with open(fname1, "rb") as f:
+with open(fname4, "rb") as f:
     data = pickle.load(f)
 
     x4 = np.array([data[a]["x"] for a in data.keys()])
@@ -82,7 +82,7 @@ with open(fname1, "rb") as f:
     k4 = np.array([data[a]["kgains"] if a < 1 else None for a in data.keys()][:1])
     kdot4 = np.array([data[a]["kdot"] if a < 1 else None for a in data.keys()][:1])
     kdotf4 = np.array([data[a]["kdotf"] if a < 1 else None for a in data.keys()][:1])
-with open(fname1, "rb") as f:
+with open(fname5, "rb") as f:
     data = pickle.load(f)
 
     x5 = np.array([data[a]["x"] for a in data.keys()])
@@ -131,15 +131,15 @@ czero = np.concatenate(
         czero15[np.newaxis, 0],
     ]
 )
-# x = np.concatenate(
-#     [
-#         x1[np.newaxis, 0],
-#         x2[np.newaxis, 0],
-#         x3[np.newaxis, 0],
-#         x4[np.newaxis, 0],
-#         x5[np.newaxis, 0],
-#     ]
-# )
+k = np.concatenate(
+    [
+        k1[np.newaxis, 0],
+        k2[np.newaxis, 0],
+        k3[np.newaxis, 0],
+        k4[np.newaxis, 0],
+        k5[np.newaxis, 0],
+    ]
+)
 # x = np.concatenate(
 #     [
 #         x1[np.newaxis, 0],
@@ -210,23 +210,24 @@ ii_u = ii
 # Angular Control Inputs
 ax_cont.plot(t[1:ii_u], 1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
 ax_cont.plot(t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
-for aa in range(0, 5):
-    ax_cont.plot(
-        t[:ii_u],
-        u[aa, :ii_u, 0],
-        label=f"u: {names[aa]}",
-        linewidth=lwidth,
-        color=colors[aa],
-    )
-for aa in range(0, 5):
+for aa in [0]:
     ax_cont.plot(
         t[:ii_u],
         u0[aa, :ii_u, 0],
-        label=f"u0: {names[aa]}",
+        label=r"$u_0$",
         linewidth=lwidth,
         color=colors[aa],
         dashes=dash,
     )
+for aa in [0, 1, 2, 3, 4]:
+    ax_cont.plot(
+        t[:ii_u],
+        u[aa, :ii_u, 0],
+        label=rf"$u$: {names[aa]}",
+        linewidth=lwidth,
+        color=colors[aa],
+    )
+
 # ax_cont.plot(
 #     t[:ii_u], u[0, :ii_u, 0], label=names[0], linewidth=lwidth, color=colors[0], dashes=dash
 # )
@@ -234,7 +235,7 @@ for aa in range(0, 5):
 ax_cont.set(
     xlabel=r"$t$",
     ylabel=r"$u$",
-    ylim=[np.min(u[:ii_u, :, 0]) - 0.1, np.max(u[:ii_u, :, 0]) + 0.1],
+    # ylim=[np.min(u[:ii_u, :, 0]) - 0.1, np.max(u[:ii_u, :, 0]) + 0.1],
     # xlim=[-0.1, 13.2],
     # title="Control Inputs",
 )
@@ -262,16 +263,17 @@ set_edges_black(ax_k)
 
 # Angular Control Inputs
 lbl = [
-    "O1",
-    "O2",
-    "O3",
-    "S1",
-    "S2",
+    [r"$w_1: \alpha = 0.1$", r"$w_2: \alpha = 0.1$"],
+    [r"$w_1: \alpha = 0.5$", r"$w_2: \alpha = 0.5$"],
+    [r"$w_1: \alpha = 1.0$", r"$w_2: \alpha = 1.0$"],
+    [r"$w_1: \alpha = 2.0$", r"$w_2: \alpha = 2.0$"],
+    [r"$w_1: \alpha = 5.0$", r"$w_2: \alpha = 5.0$"],
 ]
 clr = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 clr.reverse()
-for cbf in range(k.shape[2]):
-    ax_k.plot(t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth, color=clr[cbf], label=lbl[cbf])
+for aa in [0, 1, 2, 3, 4]:
+    ax_k.plot(t[1:ii], k[aa, 1:ii, 0], linewidth=lwidth, color=clr[aa], label=lbl[aa][0])
+    ax_k.plot(t[1:ii], k[aa, 1:ii, 1], linewidth=lwidth, color=clr[aa], label=lbl[aa][1])
 ax_k.set(ylabel=r"$w$", title="C-CBF Weights")
 
 # Plot Settings
@@ -419,12 +421,12 @@ fig_state = plt.figure(figsize=(10, 7.5))
 ax_state = fig_state.add_subplot(111)
 set_edges_black(ax_state)
 
-for aa in range(1, nAgents):
+for aa in [0, 1, 2, 3, 4]:
     ax_state.plot(
         t[1:ii],
         x[aa, 1:ii, 0],
-        label=names[0],
-        color=colors[0],
+        label=names[aa],
+        color=colors[aa],
         linewidth=lwidth,
     )
 # ax_state.plot(xi[0], yi[0], "o", markersize=10, label=r"$z_0$", color="r")

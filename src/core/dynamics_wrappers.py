@@ -29,9 +29,14 @@ def dyn_wrapper(d_sym: sp.Matrix, state_sym: sp.Matrix):
 
         else:
             # return np.squeeze(np.array(d_sym.subs([(sym, zz) for sym, zz in zip(state_sym, z)])).astype(np.float64))
-            return np.squeeze(
+            func = np.squeeze(
                 np.array(d_sym.subs({sym: zz for sym, zz in zip(state_sym, z)})).astype(np.float32)
             )
+
+            if len(func.shape) > 0:
+                return func
+            else:
+                return func[np.newaxis]
 
     return ret
 

@@ -19,27 +19,51 @@ except ModuleNotFoundError as e:
 
 # Defining Physical Params
 gain = 1.0
+obstacle = 2.25
 
 # beta CBF Symbolic
-h_symbolic = gain * ss[0]
-dhdx_symbolic = (se.DenseMatrix([h_symbolic]).jacobian(se.DenseMatrix(ss))).T
-d2hdx2_symbolic = dhdx_symbolic.jacobian(se.DenseMatrix(ss))
-h_func = symbolic_cbf_wrapper_singleagent(h_symbolic, ss)
-dhdx_func = symbolic_cbf_wrapper_singleagent(dhdx_symbolic, ss)
-d2hdx2_func = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic, ss)
+h_symbolic_1 = gain * (obstacle - ss[0])
+dhdx_symbolic_1 = (se.DenseMatrix([h_symbolic_1]).jacobian(se.DenseMatrix(ss))).T
+d2hdx2_symbolic_1 = dhdx_symbolic_1.jacobian(se.DenseMatrix(ss))
+h_func_1 = symbolic_cbf_wrapper_singleagent(h_symbolic_1, ss)
+dhdx_func_1 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic_1, ss)
+d2hdx2_func_1 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic_1, ss)
+
+h_symbolic_2 = gain * (obstacle + ss[0])
+dhdx_symbolic_2 = (se.DenseMatrix([h_symbolic_2]).jacobian(se.DenseMatrix(ss))).T
+d2hdx2_symbolic_2 = dhdx_symbolic_2.jacobian(se.DenseMatrix(ss))
+h_func_2 = symbolic_cbf_wrapper_singleagent(h_symbolic_2, ss)
+dhdx_func_2 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic_2, ss)
+d2hdx2_func_2 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic_2, ss)
 
 
-def h(ego):
-    return h_func(ego)
+def h1(ego):
+    return h_func_1(ego)
 
 
-def dhdx(ego):
-    ret = dhdx_func(ego)
+def dh1dx(ego):
+    ret = dhdx_func_1(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def d2hdx2(ego):
-    ret = d2hdx2_func(ego)
+def d2h1dx2(ego):
+    ret = d2hdx2_func_1(ego)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def h2(ego):
+    return h_func_2(ego)
+
+
+def dh2dx(ego):
+    ret = dhdx_func_2(ego)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def d2h2dx2(ego):
+    ret = d2hdx2_func_2(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))

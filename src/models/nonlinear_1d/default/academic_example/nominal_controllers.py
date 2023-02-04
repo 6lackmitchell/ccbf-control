@@ -30,8 +30,13 @@ class ProportionalController(Controller):
         Returns:
             Tuple[int, str]: _description_
         """
-        kv = 1.0
-        vdes = -kv * (xg[self.ego_id] - z[self.ego_id, 0])
+        kv = 2.0
+
+        period = 5.0
+        xdes = -4 * np.sin(2 * np.pi * t / period)
+        vdes = (kv * (xdes - z[self.ego_id, 0]) - 1 / 2 * z[self.ego_id, 0]) / (
+            (2 - z[self.ego_id, 0]) * (z[self.ego_id, 0] + 2)
+        )
 
         self.u = np.array([vdes])
 

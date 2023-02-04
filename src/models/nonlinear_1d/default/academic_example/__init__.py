@@ -8,7 +8,7 @@ from core.cbfs import (
     cbf0,
 )
 
-from core.controllers.consolidated_cbf_controller_1d import ConsolidatedCbfController
+from core.controllers.consolidated_cbf_controller import ConsolidatedCbfController
 
 # from core.controllers.consolidated_cbf_controller import ConsolidatedCbfController
 from ..models import f, g, nControls
