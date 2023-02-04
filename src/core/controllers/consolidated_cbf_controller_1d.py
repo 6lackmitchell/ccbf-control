@@ -88,7 +88,7 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_weights = kZero * np.ones((nCBF,))
         self.k_dot = np.zeros((nCBF,))
         self.k_dot_f = np.zeros((nCBF,))
-        self.alpha = self.desired_class_k
+        self.alpha = self.desired_class_k * 0.5
         self.czero1 = 0
         self.czero2 = 0
 
@@ -1169,7 +1169,11 @@ class AdaptationLaw:
         """
         # dhdk = h * np.exp(-self._k_weights * h)
 
-        epsilon = 0.2  # Filter very accurate
+        # epsilon = 1.1  # Filter very accurate
+        # epsilon = 1.1 * (2 / 5)
+        # epsilon = 1.1 * (1 / 5)
+        # epsilon = 1.1 * (0.5 / 5)
+        epsilon = 1.1 * (0.1 / 5)
 
         delta = -Lf - self.alpha * self.H(h) + epsilon
 

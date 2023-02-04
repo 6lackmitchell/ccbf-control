@@ -42,6 +42,7 @@ with open(fname, "rb") as f:
 
     x = np.array([data[a]["x"] for a in data.keys()])
     u = np.array([data[a]["u"] for a in data.keys()])
+    u0 = np.array([data[a]["u0"] for a in data.keys()])
     czero1 = np.array([data[a]["czero1"] for a in data.keys()])
     czero2 = np.array([data[a]["czero2"] for a in data.keys()])
     k = np.array([data[a]["kgains"] if a < 1 else None for a in data.keys()][:1])
@@ -49,7 +50,7 @@ with open(fname, "rb") as f:
     kdotf = np.array([data[a]["kdotf"] if a < 1 else None for a in data.keys()][:1])
     ii = int(data[0]["ii"] / dt)
 
-names = ["C-CBF", "HO-CBF-1", "HO-CBF-2", "HO-CBF-3", "E-CBF-1", "E-CBF-2", "E-CBF-3"]
+names = [r"$u$", r"$u_0$", "HO-CBF-2", "HO-CBF-3", "E-CBF-1", "E-CBF-2", "E-CBF-3"]
 
 # Plot Settings
 nAgents = 4
@@ -94,8 +95,9 @@ ax_cont.plot(t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, col
 #         color=colors[aa],
 #     )
 ax_cont.plot(
-    t[:ii_u], u[0, :ii_u, 0], label=f"{names[0]}", linewidth=lwidth, color=colors[0], dashes=dash
+    t[:ii_u], u[0, :ii_u, 0], label=names[0], linewidth=lwidth, color=colors[0], dashes=dash
 )
+ax_cont.plot(t[:ii_u], u0[0, :ii_u, 0], label=names[1], linewidth=lwidth, color=colors[1])
 ax_cont.set(
     xlabel=r"$t$",
     ylabel=r"$u$",
