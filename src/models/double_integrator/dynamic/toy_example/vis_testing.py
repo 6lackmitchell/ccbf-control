@@ -17,7 +17,7 @@ from visualizing.helpers import get_circle
 
 matplotlib.rcParams.update({"figure.autolayout": True})
 
-N = 1 * nAgents
+N = 10 * nAgents
 # plt.style.use(['Solarize_Light2'])
 plt.style.use(["ggplot"])
 plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.viridis(np.linspace(0, 1, N)))
@@ -92,102 +92,104 @@ def set_edges_black(ax):
 plt.close("all")
 
 
-# ############################################
-# ### Control Trajectories ###
-# fig_control = plt.figure(figsize=(8, 8))
-# ax_cont_a = fig_control.add_subplot(211)
-# ax_cont_b = fig_control.add_subplot(212)
-# set_edges_black(ax_cont_a)
-# set_edges_black(ax_cont_b)
+############################################
+### Control Trajectories ###
+fig_control = plt.figure(figsize=(8, 8))
+ax_cont_a = fig_control.add_subplot(211)
+ax_cont_b = fig_control.add_subplot(212)
+set_edges_black(ax_cont_a)
+set_edges_black(ax_cont_b)
 
-# # Angular Control Inputs
-# ax_cont_a.plot(t[1:ii], 1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-# ax_cont_a.plot(t[1:ii], -1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-# for aa in range(nAgents):
-#     ax_cont_a.plot(
-#         t[:ii],
-#         u[aa, :ii, 0],
-#         label="ax_{}".format(aa),
-#         linewidth=lwidth,
-#         color=colors[aa],
-#     )
-#     # ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
-#     #                color=colors[color_idx[aa, 1]], dashes=dash)
-# ax_cont_a.set(
-#     ylabel="ax",  # ylabel=r'$\omega$',
-#     ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
-#     title="Control Inputs",
-# )
+# Angular Control Inputs
+ax_cont_a.plot(t[1:ii], 1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(t[1:ii], -1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+for aa in range(nAgents):
+    ax_cont_a.plot(
+        t[:ii],
+        u[aa, :ii, 0],
+        label="ax_{}".format(aa),
+        linewidth=lwidth,
+        color=colors[aa],
+    )
+    # ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
+    #                color=colors[color_idx[aa, 1]], dashes=dash)
+ax_cont_a.set(
+    ylabel="ax",  # ylabel=r'$\omega$',
+    ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
+    title="Control Inputs",
+)
 
-# # Acceleration Inputs
-# ax_cont_b.plot(t[1:ii], 1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-# ax_cont_b.plot(t[1:ii], -1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-# for aa in range(nAgents):
-#     ax_cont_b.plot(
-#         t[:ii],
-#         u[aa, :ii, 1],
-#         label="ay_{}".format(aa),
-#         linewidth=lwidth,
-#         color=colors[aa],
-#     )
-#     # ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
-#     #                color=colors[color_idx[aa, 1]], dashes=dash)
-# ax_cont_b.set(
-#     ylabel="ay", ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5]  # ylabel=r'$a_r$',
-# )
+# Acceleration Inputs
+ax_cont_b.plot(t[1:ii], 1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_b.plot(t[1:ii], -1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+for aa in range(nAgents):
+    ax_cont_b.plot(
+        t[:ii],
+        u[aa, :ii, 1],
+        label="ay_{}".format(aa),
+        linewidth=lwidth,
+        color=colors[aa],
+    )
+    # ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
+    #                color=colors[color_idx[aa, 1]], dashes=dash)
+ax_cont_b.set(
+    ylabel="ay", ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5]  # ylabel=r'$a_r$',
+)
 
-# # Plot Settings
-# for item in (
-#     [ax_cont_a.title, ax_cont_a.xaxis.label, ax_cont_a.yaxis.label]
-#     + ax_cont_a.get_xticklabels()
-#     + ax_cont_a.get_yticklabels()
-# ):
-#     item.set_fontsize(25)
-# # ax_cont_a.legend(fancybox=True)
-# ax_cont_a.grid(True, linestyle="dotted", color="white")
+# Plot Settings
+for item in (
+    [ax_cont_a.title, ax_cont_a.xaxis.label, ax_cont_a.yaxis.label]
+    + ax_cont_a.get_xticklabels()
+    + ax_cont_a.get_yticklabels()
+):
+    item.set_fontsize(25)
+# ax_cont_a.legend(fancybox=True)
+ax_cont_a.grid(True, linestyle="dotted", color="white")
 
-# for item in (
-#     [ax_cont_b.title, ax_cont_b.xaxis.label, ax_cont_b.yaxis.label]
-#     + ax_cont_b.get_xticklabels()
-#     + ax_cont_b.get_yticklabels()
-# ):
-#     item.set_fontsize(25)
-# # ax_cont_b.legend(fancybox=True)
-# ax_cont_b.grid(True, linestyle="dotted", color="white")
+for item in (
+    [ax_cont_b.title, ax_cont_b.xaxis.label, ax_cont_b.yaxis.label]
+    + ax_cont_b.get_xticklabels()
+    + ax_cont_b.get_yticklabels()
+):
+    item.set_fontsize(25)
+# ax_cont_b.legend(fancybox=True)
+ax_cont_b.grid(True, linestyle="dotted", color="white")
 
-# plt.tight_layout(pad=2.0)
+plt.tight_layout(pad=2.0)
 
-# ############################################
-# ### Gain Trajectories ###
-# fig_k = plt.figure(figsize=(8, 8))
-# ax_k = fig_k.add_subplot(111)
-# set_edges_black(ax_k)
+############################################
+### Gain Trajectories ###
+fig_k = plt.figure(figsize=(8, 8))
+ax_k = fig_k.add_subplot(111)
+set_edges_black(ax_k)
 
-# # Angular Control Inputs
-# lbl = [
-#     "Obstacle1",
-#     "Obstacle2",
-#     "Obstacle3",
-#     "Speed1",
-#     "Speed2",
-# ]
-# clr = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-# clr.reverse()
-# for cbf in range(k.shape[2]):
-#     ax_k.plot(t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[cbf], label=lbl[cbf])
-# ax_k.set(ylabel="k", title="Adaptation Gains")
+# Angular Control Inputs
+lbl = [
+    "Obstacle1",
+    "Obstacle2",
+    "Obstacle3",
+    "Obstacle4",
+    "Obstacle5",
+    "Speed1",
+    "Speed2",
+]
+clr = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+clr.reverse()
+for cbf in range(k.shape[2]):
+    ax_k.plot(t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[cbf], label=lbl[cbf])
+ax_k.set(ylabel="k", title="Adaptation Gains")
 
-# # Plot Settings
-# for item in (
-#     [ax_k.title, ax_k.xaxis.label, ax_k.yaxis.label]
-#     + ax_k.get_xticklabels()
-#     + ax_k.get_yticklabels()
-# ):
-#     item.set_fontsize(25)
-# ax_k.legend(fancybox=True)
-# ax_k.grid(True, linestyle="dotted", color="white")
+# Plot Settings
+for item in (
+    [ax_k.title, ax_k.xaxis.label, ax_k.yaxis.label]
+    + ax_k.get_xticklabels()
+    + ax_k.get_yticklabels()
+):
+    item.set_fontsize(25)
+ax_k.legend(fancybox=True)
+ax_k.grid(True, linestyle="dotted", color="white")
 
-# plt.tight_layout(pad=2.0)
+plt.tight_layout(pad=2.0)
 
 
 # ############################################
@@ -220,27 +222,27 @@ plt.close("all")
 
 # plt.tight_layout(pad=2.0)
 
-# ############################################
-# ### CZero Trajectories ###
-# fig_cz = plt.figure(figsize=(8, 8))
-# ax_cz = fig_cz.add_subplot(111)
-# set_edges_black(ax_cz)
+############################################
+### CZero Trajectories ###
+fig_cz = plt.figure(figsize=(8, 8))
+ax_cz = fig_cz.add_subplot(111)
+set_edges_black(ax_cz)
 
-# ax_cz.plot(t[1:ii], czero1[0, 1:ii], linewidth=lwidth + 1, color=clr[1], label="C_01")
-# ax_cz.plot(t[1:ii], czero2[0, 1:ii], linewidth=lwidth + 1, color=clr[2], label="C_02")
-# ax_cz.set(ylabel="C_0", title="CZero Trajectory")
+ax_cz.plot(t[1:ii], czero1[0, 1:ii], linewidth=lwidth + 1, color=clr[1], label="C_01")
+ax_cz.plot(t[1:ii], czero2[0, 1:ii], linewidth=lwidth + 1, color=clr[2], label="C_02")
+ax_cz.set(ylabel="C_0", title="CZero Trajectory")
 
-# # Plot Settings
-# for item in (
-#     [ax_cz.title, ax_cz.xaxis.label, ax_cz.yaxis.label]
-#     + ax_cz.get_xticklabels()
-#     + ax_cz.get_yticklabels()
-# ):
-#     item.set_fontsize(25)
-# ax_cz.legend(fancybox=True)
-# ax_cz.grid(True, linestyle="dotted", color="white")
+# Plot Settings
+for item in (
+    [ax_cz.title, ax_cz.xaxis.label, ax_cz.yaxis.label]
+    + ax_cz.get_xticklabels()
+    + ax_cz.get_yticklabels()
+):
+    item.set_fontsize(25)
+ax_cz.legend(fancybox=True)
+ax_cz.grid(True, linestyle="dotted", color="white")
 
-# plt.tight_layout(pad=2.0)
+plt.tight_layout(pad=2.0)
 
 # # ############################################
 # # ### CBF Trajectories ###
@@ -320,14 +322,35 @@ fig_map = plt.figure(figsize=(10, 10))
 ax_pos = fig_map.add_subplot(111)
 set_edges_black(ax_pos)
 
+gain = 2.0
+R1 = 0.5
+cx1 = 0.9
+cy1 = 1.1
+R2 = 0.5
+cx2 = 1.5
+cy2 = 2.25
+R3 = 0.5
+cx3 = 2.4
+cy3 = 1.5
+R4 = 0.5
+cx4 = 2.0
+cy4 = 0.35
+R5 = 0.5
+cx5 = 0.8
+cy5 = -0.2
+
 # # Set Up Road
 d_points = 100
-xc1, yc1 = get_circle(np.array([1, 1]), 0.5, d_points)
-xc2, yc2 = get_circle(np.array([1.5, 2.25]), 0.5, d_points)
-xc3, yc3 = get_circle(np.array([2.4, 1.5]), 0.5, d_points)
+xc1, yc1 = get_circle(np.array([cx1, cy1]), 0.47, d_points)
+xc2, yc2 = get_circle(np.array([cx2, cy2]), 0.47, d_points)
+xc3, yc3 = get_circle(np.array([cx3, cy3]), 0.47, d_points)
+xc4, yc4 = get_circle(np.array([cx4, cy4]), 0.47, d_points)
+xc5, yc5 = get_circle(np.array([cx5, cy5]), 0.47, d_points)
 ax_pos.plot(xc1, yc1, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc2, yc2, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc3, yc3, linewidth=lwidth + 1, color="k")
+ax_pos.plot(xc4, yc4, linewidth=lwidth + 1, color="k")
+ax_pos.plot(xc5, yc5, linewidth=lwidth + 1, color="k")
 
 for aaa in range(nAgents):
     if aaa == 0:
@@ -375,7 +398,7 @@ ax_pos.set_yticks([])
 ax_pos.legend(fancybox=True, fontsize=15)
 ax_pos.grid(False)
 
-time_scale_factor = 10
+time_scale_factor = 100
 
 
 def animate_ego(jj):
@@ -390,7 +413,7 @@ def animate_ego(jj):
 
         x_circ, y_circ = get_circle(x[idx, jj], 0.025, d_points)
         map_vid[aa].set_data(x_circ, y_circ)
-        map_vid[aa].set_color(colors[idx])
+        map_vid[aa].set_color("b")
 
     txt.set_text("{:.1f} sec".format(jj * dt))
     ax_pos.set(ylim=[-1.0, 3.0], xlim=[-1.0, 3.0])
@@ -400,8 +423,8 @@ def animate_ego(jj):
 ani = animation.FuncAnimation(
     fig=fig_map, func=animate_ego, frames=int(ii / time_scale_factor), interval=10, repeat=False
 )
-# writer = animation.writers["ffmpeg"]
-# ani.save(filename[:-4] + ".mp4", writer=writer(fps=15))
+writer = animation.writers["ffmpeg"]
+ani.save(filename[:-4] + ".mp4", writer=writer(fps=15))
 
 plt.tight_layout(pad=2.0)
 plt.show()

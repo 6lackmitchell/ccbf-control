@@ -88,7 +88,7 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
             else:
                 z[ii + 1, aa, :] = agent.x
 
-            print(z[ii + 1, aa, :])
+            # print(z[ii + 1, aa, :])
 
         # Comment out this block if you want to continue with broken agents
         if np.sum(broken) > 0:

@@ -59,7 +59,7 @@ class CbfQpController(Controller):
         self.n_controls = len(u_max)
         self.n_agents = nAgents
         self.n_dec_vars = 1
-        self.desired_class_k = 0.1
+        self.desired_class_k = 0.01
         self.max_class_k = 1e6
 
         # self.cbf_vals = np.zeros(
@@ -69,11 +69,11 @@ class CbfQpController(Controller):
             (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
         )
         self.dhdt = np.zeros((self.cbf_vals.shape[0],))
-        self.dhdx = np.zeros((self.cbf_vals.shape[0], 1))
-        # self.dhdx = np.zeros((self.cbf_vals.shape[0], 4))
+        # self.dhdx = np.zeros((self.cbf_vals.shape[0], 1))
+        self.dhdx = np.zeros((self.cbf_vals.shape[0], 4))
         # self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
-        self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 1, 1))
-        # self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 4, 4))
+        # self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 1, 1))
+        self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 4, 4))
         # self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 5, 5))
 
         # Define individual input constraints
@@ -121,8 +121,8 @@ class CbfQpController(Controller):
         # Compute nominal control input for ego only -- assume others are zero
         z_copy_nom = z.copy()
         z_copy_nom[self.ego_id] = z[ego]
-        # u_nom = np.zeros((len(z), 2))
-        u_nom = np.zeros((len(z), 1))
+        u_nom = np.zeros((len(z), 2))
+        # u_nom = np.zeros((len(z), 1))
         u_nom[ego, :], code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
         u_nom[ego, :] = u_nom[ego, :] + integrated_error[ego]
         self.u_nom = u_nom[ego, :]

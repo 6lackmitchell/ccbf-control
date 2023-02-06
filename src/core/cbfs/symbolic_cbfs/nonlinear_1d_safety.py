@@ -19,17 +19,17 @@ except ModuleNotFoundError as e:
 
 # Defining Physical Params
 gain = 1.0
-obstacle = 2.25
+obstacle = 2.0
 
 # beta CBF Symbolic
-h_symbolic_1 = gain * (obstacle - ss[0])
+h_symbolic_1 = gain * (obstacle - ss[0]) ** 3
 dhdx_symbolic_1 = (se.DenseMatrix([h_symbolic_1]).jacobian(se.DenseMatrix(ss))).T
 d2hdx2_symbolic_1 = dhdx_symbolic_1.jacobian(se.DenseMatrix(ss))
 h_func_1 = symbolic_cbf_wrapper_singleagent(h_symbolic_1, ss)
 dhdx_func_1 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic_1, ss)
 d2hdx2_func_1 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic_1, ss)
 
-h_symbolic_2 = gain * (obstacle + ss[0])
+h_symbolic_2 = gain * (obstacle + ss[0]) ** 3
 dhdx_symbolic_2 = (se.DenseMatrix([h_symbolic_2]).jacobian(se.DenseMatrix(ss))).T
 d2hdx2_symbolic_2 = dhdx_symbolic_2.jacobian(se.DenseMatrix(ss))
 h_func_2 = symbolic_cbf_wrapper_singleagent(h_symbolic_2, ss)

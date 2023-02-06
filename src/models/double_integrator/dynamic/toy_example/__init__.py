@@ -114,11 +114,11 @@ def cbf_controller4(idx: int) -> CbfQpController:
 # Define CBF Controlled Agents
 cbf_controlled_agents = [
     Agent(0, z0[0, :], u0, cbf0, time, step_dynamics, consolidated_cbf_controller(0), save_path),
-    Agent(1, z0[1, :], u0, cbf0, time, step_dynamics, ProportionalController(1), save_path),
-    Agent(2, z0[2, :], u0, cbf0, time, step_dynamics, cbf_controller1(2), save_path),
-    Agent(3, z0[3, :], u0, cbf0, time, step_dynamics, cbf_controller2(3), save_path),
-    Agent(4, z0[4, :], u0, cbf0, time, step_dynamics, cbf_controller3(4), save_path),
-    Agent(5, z0[5, :], u0, cbf0, time, step_dynamics, cbf_controller4(5), save_path),
+    # Agent(1, z0[1, :], u0, cbf0, time, step_dynamics, ProportionalController(1), save_path),
+    # Agent(2, z0[2, :], u0, cbf0, time, step_dynamics, cbf_controller1(2), save_path),
+    # Agent(3, z0[3, :], u0, cbf0, time, step_dynamics, cbf_controller2(3), save_path),
+    # Agent(4, z0[4, :], u0, cbf0, time, step_dynamics, cbf_controller3(4), save_path),
+    # Agent(5, z0[5, :], u0, cbf0, time, step_dynamics, cbf_controller4(5), save_path),
 ]
 # human_agents = [
 #     Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, ZeroController(i), save_path)

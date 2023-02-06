@@ -33,7 +33,7 @@ class ProportionalController(Controller):
         kv = 2.0
 
         period = 5.0
-        xdes = -4 * np.sin(2 * np.pi * t / period)
+        xdes = 4 * np.sin(2 * np.pi * t / period)
         vdes = (kv * (xdes - z[self.ego_id, 0]) - 1 / 2 * z[self.ego_id, 0]) / (
             (2 - z[self.ego_id, 0]) * (z[self.ego_id, 0] + 2)
         )

@@ -32,11 +32,7 @@ class ProportionalController(Controller):
         Returns:
             Tuple[int, str]: _description_
         """
-        kv = 2.0
-        ka = 4.0
-
         kv = 1.0
-        ka = 10.0
         ka = 20.0
         vdes = kv * np.array(
             [xg[self.ego_id] - z[self.ego_id, 0], yg[self.ego_id] - z[self.ego_id, 1]]

@@ -7,16 +7,19 @@ from .physical_params import u_max
 
 q0 = 100
 q1 = 100
-q2 = 2 * np.max([q0, q1])
+q2 = 10 * np.max([q0, q1])
 
 
 def objective_accel_and_steering(u_nom, x=None):
 
     if len(u_nom) % 2 == 0:
-        Q = np.diag(int(len(u_nom) / 2) * [np.max([1, 75 * (2 - x[0])]), np.max([1, 110 * x[1]])])
+        Q = np.diag(
+            int(len(u_nom) / 2)
+            * [np.max([1, 100 * (2 - x[0]) ** 3]), np.max([1, (100 * x[1]) ** 3])]
+        )
     else:
         Q = np.diag(
-            int(len(u_nom) / 2) * [np.max([1, 75 * (2 - x[0])]), np.max([1, 110 * x[1]])] + [q2]
+            int(len(u_nom) / 2) * [np.max([1, 100 * (2 - x[0])]), np.max([1, 100 * x[1]])] + [q2]
         )
 
     # if len(u_nom) % 2 == 0:
