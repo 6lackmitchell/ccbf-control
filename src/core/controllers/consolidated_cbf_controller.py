@@ -108,7 +108,7 @@ class ConsolidatedCbfController(CbfQpController):
         self.czero1 = 0
         self.czero2 = 0
 
-        kZero = 0.25
+        kZero = 1.0
         self.k_weights = kZero * np.ones((nCBF,))
         self.adapter = AdaptationLaw(nCBF, u_max, kZero=kZero, alpha=self.alpha)
 
@@ -122,7 +122,7 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_dot_f = k_dot_f
         self.czero1 = self.adapter.czero_val1
         self.czero2 = self.adapter.czero_val2
-        self.adapter.k_dot_gain = np.max([0.0, self.consolidated_cbf() - 0.1])
+        self.adapter.k_dot_gain = np.max([0.1, self.consolidated_cbf() - 0.1]) ** (1 / 2)
 
         return self.u, code, status
 
@@ -718,7 +718,7 @@ class AdaptationLaw:
 
         # Gains and Parameters -- Double Integrator!!
         self.alpha = alpha
-        self.epsilon = 0.25
+        self.epsilon = 0.01
         self.wn = 50.0
         self.k_dot_gain = 1
         self.cost_gain_mat = 1e6 * np.eye(nWeights)
@@ -937,12 +937,15 @@ class AdaptationLaw:
             / self._czero**2
         )
 
+        limit = 100
         grad_phi_kk = self.grad_cost_kk() - 1 / self.s * non_convex_term
-        while np.min(np.linalg.eig(grad_phi_kk)[0]) < 10:
-            self.s *= 2
-            grad_phi_kk = self.grad_cost_kk() - 1 / self.s * non_convex_term
-
-            print(s)
+        lamba = np.min(np.linalg.eig(grad_phi_kk)[0])
+        if lamba > limit:
+            self.s = lamba / (lamba - limit)
+        else:
+            while np.min(np.linalg.eig(grad_phi_kk)[0]) < lamba:
+                self.s *= 2
+                grad_phi_kk = self.grad_cost_kk() - 1 / self.s * non_convex_term
 
         return grad_phi_kk
 
