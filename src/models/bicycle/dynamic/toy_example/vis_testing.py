@@ -101,21 +101,25 @@ set_edges_black(ax_cont_a)
 set_edges_black(ax_cont_b)
 
 # Angular Control Inputs
-ax_cont_a.plot(t[1:ii], 1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-ax_cont_a.plot(t[1:ii], -1 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(t[1:ii], np.pi / 4 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(t[1:ii], -np.pi / 4 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
 for aa in range(nAgents):
     ax_cont_a.plot(
         t[:ii],
         u[aa, :ii, 0],
-        label="ax_{}".format(aa),
+        label=r"$\omega_{}$".format(aa),
         linewidth=lwidth,
         color=colors[aa],
     )
     # ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
     #                color=colors[color_idx[aa, 1]], dashes=dash)
 ax_cont_a.set(
-    ylabel="ax",  # ylabel=r'$\omega$',
-    ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
+    ylabel=r"$\omega$",
+    ylim=[
+        -np.pi / 4 - 0.1,
+        np.pi / 4 + 0.1,
+    ],
+    # ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
     title="Control Inputs",
 )
 
@@ -126,14 +130,18 @@ for aa in range(nAgents):
     ax_cont_b.plot(
         t[:ii],
         u[aa, :ii, 1],
-        label="ay_{}".format(aa),
+        label=r"$a_{}$".format(aa),
         linewidth=lwidth,
         color=colors[aa],
     )
     # ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
     #                color=colors[color_idx[aa, 1]], dashes=dash)
 ax_cont_b.set(
-    ylabel="ay", ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5]  # ylabel=r'$a_r$',
+    ylabel=r"$a$",
+    ylim=[
+        -1.2,
+        1.2,
+    ],  # ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5]  # ylabel=r'$a_r$',
 )
 
 # Plot Settings
@@ -193,35 +201,35 @@ ax_k.grid(True, linestyle="dotted", color="white")
 plt.tight_layout(pad=2.0)
 
 
-# ############################################
-# ### Kdot Trajectories ###
-# fig_kdot = plt.figure(figsize=(8, 8))
-# ax_kdot = fig_kdot.add_subplot(111)
-# set_edges_black(ax_kdot)
+############################################
+### Kdot Trajectories ###
+fig_kdot = plt.figure(figsize=(8, 8))
+ax_kdot = fig_kdot.add_subplot(111)
+set_edges_black(ax_kdot)
 
-# for cbf in range(k.shape[2]):
-#     ax_kdot.plot(t[1:ii], kdot[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[cbf], label=lbl[cbf])
-#     ax_kdot.plot(
-#         t[1:ii],
-#         kdotf[0, 1:ii, cbf],
-#         "-.",
-#         linewidth=lwidth + 1,
-#         color=clr[cbf],
-#         label=lbl[cbf],
-#     )
-# ax_kdot.set(ylabel="kdot", title="Adaptation Derivatives")
+for cbf in range(k.shape[2]):
+    ax_kdot.plot(t[1:ii], kdot[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[cbf], label=lbl[cbf])
+    ax_kdot.plot(
+        t[1:ii],
+        kdotf[0, 1:ii, cbf],
+        "-.",
+        linewidth=lwidth + 1,
+        color=clr[cbf],
+        label=lbl[cbf],
+    )
+ax_kdot.set(ylabel="kdot", title="Adaptation Derivatives")
 
-# # Plot Settings
-# for item in (
-#     [ax_kdot.title, ax_kdot.xaxis.label, ax_kdot.yaxis.label]
-#     + ax_kdot.get_xticklabels()
-#     + ax_kdot.get_yticklabels()
-# ):
-#     item.set_fontsize(25)
-# ax_kdot.legend(fancybox=True)
-# ax_kdot.grid(True, linestyle="dotted", color="white")
+# Plot Settings
+for item in (
+    [ax_kdot.title, ax_kdot.xaxis.label, ax_kdot.yaxis.label]
+    + ax_kdot.get_xticklabels()
+    + ax_kdot.get_yticklabels()
+):
+    item.set_fontsize(25)
+ax_kdot.legend(fancybox=True)
+ax_kdot.grid(True, linestyle="dotted", color="white")
 
-# plt.tight_layout(pad=2.0)
+plt.tight_layout(pad=2.0)
 
 ############################################
 ### CZero Trajectories ###

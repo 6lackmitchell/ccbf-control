@@ -6,7 +6,7 @@ level = "dynamic"
 situation = "toy_example"
 
 end_time = 10.0
-timestep = 0.01
+timestep = 0.001
 
 root_dir = "/Documents/git/ccbf-control/data"
 

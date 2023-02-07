@@ -41,6 +41,21 @@ except ModuleNotFoundError as e:
     raise e
 
 
+def gradient_multiply(a: NDArray, b: NDArray) -> NDArray:
+    """Multiplies gradient vectors/matrices efficiently.
+
+    Arguments
+    ---------
+    a: first array
+    b: second array
+
+    Returns
+    -------
+    c: output array
+    """
+    return np.einsum("ijk,lk->ijl", a, b)
+
+
 class ConsolidatedCbfController(CbfQpController):
     """
     Class docstrings should contain the following information:
@@ -82,19 +97,19 @@ class ConsolidatedCbfController(CbfQpController):
             cbfs_pairwise,
             ignore,
         )
-        kZero = 0.5
         nCBF = len(self.cbf_vals)
         self.c_cbf = 100
         self.n_agents = nAgents
         self.filtered_wf = np.zeros((nCBF,))
         self.filtered_wg = np.zeros((nCBF, len(self.u_max)))
-        self.k_weights = kZero * np.ones((nCBF,))
         self.k_dot = np.zeros((nCBF,))
         self.k_dot_f = np.zeros((nCBF,))
         self.alpha = self.desired_class_k * 1.0
         self.czero1 = 0
         self.czero2 = 0
 
+        kZero = 0.25
+        self.k_weights = kZero * np.ones((nCBF,))
         self.adapter = AdaptationLaw(nCBF, u_max, kZero=kZero, alpha=self.alpha)
 
     def _compute_control(self, t: float, z: NDArray, cascaded: bool = False) -> (NDArray, int, str):
@@ -107,6 +122,7 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_dot_f = k_dot_f
         self.czero1 = self.adapter.czero_val1
         self.czero2 = self.adapter.czero_val2
+        self.adapter.k_dot_gain = np.max([0.0, self.consolidated_cbf() - 0.1])
 
         return self.u, code, status
 
@@ -117,13 +133,6 @@ class ConsolidatedCbfController(CbfQpController):
         G, h for equality constraints).
 
         """
-
-        # # Update C-CBF Parameters
-        # if t > 0:
-        #     # Update estimates
-        #     k_dot = self.compute_k_dot(self.u)
-        #     self.k += self._dt * k_dot
-
         # Compute Q matrix and p vector for QP objective function
         Q, p = self.compute_objective_qp(u_nom, ze)
 
@@ -246,13 +255,38 @@ class ConsolidatedCbfController(CbfQpController):
         LgV = np.zeros((self.n_controls * na,))
         if t < T:
             V = R**2 + Ri**2 * (1 - t / T) ** 2 - dx**2 - dy**2
+            dVdt = -2 / T * Ri**2 * (1 - t / T)
+            dVdx = np.array([-2 * dx, -2 * dy, 0, 0, 0])
+            d2Vdx2 = np.array(
+                [
+                    [-2, 0, 0, 0, 0],
+                    [0, -2, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                ]
+            )
             LfV = -2 * Ri**2 / T * (1 - t / T) - 2 * dx * vx - 2 * dy * vy
         else:
             V = R**2 - dx**2 - dy**2
+            dVdt = 0
+            dVdx = np.array([-2 * dx, -2 * dy, 0, 0, 0])
+            d2Vdx2 = np.array(
+                [
+                    [-2, 0, 0, 0, 0],
+                    [0, -2, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                ]
+            )
             LfV = -2 * dx * vx - 2 * dy * vy
 
         gain = 1.0
         h_array[-1] = V * gain
+        self.dhdt[-1] = dVdt
+        self.dhdx[-1] = dVdx
+        self.d2hdx2[-1] = d2Vdx2
         Lfh_array[-1] = LfV * gain
         Lgh_array[-1, :] = LgV * gain
         self.cbf_vals[-1] = h_array[-1]
@@ -318,7 +352,7 @@ class ConsolidatedCbfController(CbfQpController):
             Au = block_diag(*(self.n_agents) * [self.au])
             bu = np.array(self.n_agents * [self.bu]).flatten()
 
-        return Au, bu
+        return 0 * Au, 1 * abs(bu)
 
     def generate_consolidated_cbf_condition(
         self,
@@ -413,6 +447,11 @@ class ConsolidatedCbfController(CbfQpController):
         ##########################
         ##########################
 
+        if t == 0:
+            kZero = -1 * np.log(1 / (2 * len(self.cbf_vals))) / self.cbf_vals
+            self.adapter.k_weights = kZero
+            self.k_weights = self.adapter.k_weights
+
         # Introduce parameters
         k_ccbf = 0.1
 
@@ -449,14 +488,14 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Update adapter
         self.adapter.dhdx = self.dhdx
-        self.adapter.d2hdx2 = self.d2hdx2.swapaxes(0, 2).swapaxes(1, 2)
+        self.adapter.d2hdx2 = self.d2hdx2
         self.adapter.q = dHdh
         self.adapter.dqdk = np.diag(
             (1 - self.k_weights * self.cbf_vals) * np.exp(-self.k_weights * self.cbf_vals)
         )
         self.adapter.dqdx = (
-            self.dhdx.T @ np.diag(-(self.k_weights**2) * np.exp(-self.k_weights * self.cbf_vals))
-        ).T
+            np.diag(-(self.k_weights**2) * np.exp(-self.k_weights * self.cbf_vals)) @ self.dhdx
+        )
         d2qdk2_vals = (self.k_weights * self.cbf_vals**2 - 2 * self.cbf_vals) * np.exp(
             -self.k_weights * self.cbf_vals
         )
@@ -468,7 +507,7 @@ class ConsolidatedCbfController(CbfQpController):
             * np.exp(-self.k_weights * self.cbf_vals),
         )
         d2qdkdx = triple_diag @ self.dhdx
-        self.adapter.d2qdkdx = d2qdkdx.swapaxes(0, 1).swapaxes(1, 2)
+        self.adapter.d2qdkdx = d2qdkdx
 
         # Prepare Adapter to compute adaptation law
         self.adapter.precompute(x, self.cbf_vals, Lf_for_kdot, Lg_for_kdot)
@@ -489,12 +528,13 @@ class ConsolidatedCbfController(CbfQpController):
         dBdw = self.adapter.dbdw * H + self.adapter.b * dHdw
         dBdx = self.adapter.dbdx * H + self.adapter.b * dHdx
 
-        # dBdt = dHdt
-        # dBdw = dHdw
-        # dBdx = dHdx
+        dBdt = dHdt
+        dBdw = dHdw
+        dBdx = dHdx
 
         Bdot_drift = dBdt + dBdw @ k_dot_drift + dBdx @ f(x)
         Bdot_contr = dBdw @ k_dot_contr + dBdx @ g(x)
+        print(Bdot_contr, B)
 
         if B < 0 or H < 0:
             # if H < 0:
@@ -509,7 +549,6 @@ class ConsolidatedCbfController(CbfQpController):
 
         # # CBF Condition (fixed class K)
         # qp_scale = 1e3
-        # h_alph = H
         # a_mat = np.append(-Bdot_contr, 0)
         # b_vec = np.array([Bdot_drift + self.alpha * h_alph]).flatten()
         # a_mat *= qp_scale
@@ -517,8 +556,11 @@ class ConsolidatedCbfController(CbfQpController):
 
         # CBF Condition (fixed class K)
         qp_scale = 1
-        h_alph = B**3
-        # h_alph = H**3
+        # h_alph = B**3
+        h_alph = H
+        margin = abs(Bdot_contr) @ np.array([np.pi / 4, 1] + Bdot_contr + self.alpha * h_alph)
+        # print(f"Margin: {margin}")
+        # h_alph = H
         # a_mat = np.append(-Bdot_contr, -h_alph)
         # b_vec = np.array([Bdot_drift]).flatten()
         # a_mat *= qp_scale
@@ -604,7 +646,7 @@ class AdaptationLaw:
         self.dqdk = np.zeros((nWeights, nWeights))
         self.dqdx = np.zeros((nWeights, nStates))
         self.d2qdk2 = np.zeros((nWeights, nWeights, nWeights))
-        self.d2qdkdx = np.zeros((nWeights, nStates, nWeights))
+        self.d2qdkdx = np.zeros((nWeights, nWeights, nStates))
 
         # control contraint matrix
         self.u_max = uMax
@@ -612,7 +654,7 @@ class AdaptationLaw:
 
         # dhdx, d2hdx2 matrices
         self.dhdx = np.zeros((nWeights, nStates))
-        self.d2hdx2 = np.zeros((nStates, nWeights, nStates))
+        self.d2hdx2 = np.zeros((nWeights, nStates, nStates))
 
         # delta terms
         self._delta = None
@@ -676,15 +718,15 @@ class AdaptationLaw:
 
         # Gains and Parameters -- Double Integrator!!
         self.alpha = alpha
-        self.epsilon = 0.0
-        self.wn = 10.0
-        self.k_dot_gain = 0.01
-        self.cost_gain_mat = 1 * np.eye(nWeights)
+        self.epsilon = 0.25
+        self.wn = 50.0
+        self.k_dot_gain = 1
+        self.cost_gain_mat = 1e6 * np.eye(nWeights)
         self.p_gain_mat = 1 * np.eye(nWeights)
-        self.k_des_gain = 1.0
+        self.k_des_gain = 0.5
         self.k_min = 0.01
         self.k_max = 10.0
-        self.czero_gain = 0.01
+        self.czero_gain = 100.0
         self.ci_gain = 1.0
 
     def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
@@ -707,6 +749,7 @@ class AdaptationLaw:
 
         # Account for numerical instability
         self._k_weights = np.clip(k_weights, 1.001 * self.k_min, 0.999 * self.k_max)
+        # self.k_dot_gain = np.min([self.t / 2, 1])
 
         return self._k_weights, self._k_dot, self.k_dot_drift_f
 
@@ -753,6 +796,9 @@ class AdaptationLaw:
             None
 
         """
+        # convexity parameter
+        self.s = 1
+
         # delta terms
         self._delta = self.delta(x, h, Lf)
         self._grad_delta_k = self.grad_delta_k(x, h, Lf)
@@ -782,8 +828,8 @@ class AdaptationLaw:
         self._grad_cost_kk = self.grad_cost_kk()
 
         # phi terms
-        self._grad_phi_k = self.grad_phi_k(x, h, Lf, Lg)
         self._grad_phi_kk = self.grad_phi_kk(x, h, Lf, Lg)
+        self._grad_phi_k = self.grad_phi_k(x, h, Lf, Lg)
         self._grad_phi_kx = self.grad_phi_kx(x, h, Lf, Lg)
         self._grad_phi_kt = self.grad_phi_kt(x, h, Lf, Lg)
 
@@ -850,10 +896,9 @@ class AdaptationLaw:
         grad_phi_k
 
         """
-        grad_phi_k = (
-            self.grad_cost_k(h)
-            - np.sum(np.multiply(1 / self._ci, self._grad_ci_k.T), axis=1)
-            - self._grad_czero_k / self._czero
+        grad_phi_k = self.grad_cost_k(h) - 1 / self.s * (
+            np.sum(np.multiply(1 / self._ci, self._grad_ci_k.T), axis=1)
+            + self._grad_czero_k / self._czero
         )
 
         return grad_phi_k.T
@@ -874,10 +919,8 @@ class AdaptationLaw:
         grad_phi_kk
 
         """
-        #! Check if ci implemented correctly
-        grad_phi_kk = (
-            self.grad_cost_kk()
-            - np.sum(
+        non_convex_term = (
+            np.sum(
                 (
                     np.multiply(self._ci, self._grad_ci_kk.T)
                     - np.matmul(
@@ -887,12 +930,19 @@ class AdaptationLaw:
                 / self._ci**2,
                 axis=2,
             )
-            - (
+            + (
                 self._grad_czero_kk * self._czero
                 - self._grad_czero_k[:, np.newaxis] @ self._grad_czero_k[np.newaxis, :]
             )
             / self._czero**2
         )
+
+        grad_phi_kk = self.grad_cost_kk() - 1 / self.s * non_convex_term
+        while np.min(np.linalg.eig(grad_phi_kk)[0]) < 10:
+            self.s *= 2
+            grad_phi_kk = self.grad_cost_kk() - 1 / self.s * non_convex_term
+
+            print(s)
 
         return grad_phi_kk
 
@@ -912,9 +962,8 @@ class AdaptationLaw:
         grad_phi_kx
 
         """
-        grad_phi_kx = (
-            self.grad_cost_kx(x, h)
-            - (
+        grad_phi_kx = self.grad_cost_kx(x, h) - 1 / self.s * (
+            (
                 self._grad_czero_kx * self._czero
                 - self._grad_czero_k[:, np.newaxis] * self._grad_czero_x[np.newaxis, :]
             )
@@ -950,7 +999,9 @@ class AdaptationLaw:
 
         """
         grad_phi_kt = (
-            -(self._grad_czero_kt * self._czero - self._grad_czero_k * self._grad_czero_t)
+            -1
+            / self.s
+            * (self._grad_czero_kt * self._czero - self._grad_czero_k * self._grad_czero_t)
             / self._czero**2
         )
 
@@ -1053,7 +1104,7 @@ class AdaptationLaw:
         s_func = 0  # -czero / 2 * (1 - np.sqrt(czero**2 + 0.001**2) / czero)
 
         self.czero_val1 = czero
-        self.czero_val2 = (abs(self.q @ Lg) @ self.u_max) - self._delta
+        self.czero_val2 = (abs(vector) @ self.u_max) - self._delta
 
         return (czero + s_func * self.s_on) * self.czero_gain
 
@@ -1076,14 +1127,14 @@ class AdaptationLaw:
         vector = self.v_vector(x, h, Lg)
         grad_v_vec_k = self.grad_v_vector_k(x, h, Lg)
         grad_c0_k = 2 * grad_v_vec_k @ self.U @ vector.T
-        if self._delta > 0:
-            grad_c0_k -= 2 * self._delta * self._grad_delta_k
+        # if self._delta > 0:
+        grad_c0_k -= 2 * self._delta * self._grad_delta_k
 
         grad_sfunc_k = grad_c0_k * 0  # (
         # 1 / 2 * grad_c0_k * (self.czero_val1 / np.sqrt(self.czero_val1**2 + 0.001**2))
         # )
 
-        return (grad_c0_k + grad_sfunc_k * self.s_on) * self.czero_gain
+        return grad_c0_k + grad_sfunc_k * self.s_on * self.czero_gain
 
     def grad_czero_x(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
@@ -1105,15 +1156,15 @@ class AdaptationLaw:
         vector = self.v_vector(x, h, Lg)
         grad_v_vec_x = self.grad_v_vector_x(x, h, Lg)
         grad_c0_x = 2 * grad_v_vec_x @ self.U @ vector.T
-        if self._delta > 0:
-            grad_c0_x -= 2 * self._delta * self._grad_delta_x
+        # if self._delta > 0:
+        grad_c0_x -= 2 * self._delta * self._grad_delta_x
 
         grad_sfunc_x = 0 * grad_c0_x
         # (
         #   1 / 2 * grad_c0_x * (self.czero_val1 / np.sqrt(self.czero_val1**2 + 0.001**2))
         # )
 
-        return (grad_c0_x + grad_sfunc_x * self.s_on) * self.czero_gain
+        return grad_c0_x + grad_sfunc_x * self.s_on * self.czero_gain
 
     def grad_czero_t(self, x: NDArray, h: NDArray, Lf: float, Lg: NDArray) -> NDArray:
         """Computes the gradient of the viability constraint function evaluated at the current
@@ -1135,8 +1186,8 @@ class AdaptationLaw:
         vector = self.v_vector(x, h, Lg)
         grad_v_vec_t = self.grad_v_vector_t(x, h, Lg)
         grad_c0_t = 2 * grad_v_vec_t @ self.U @ vector.T
-        if self._delta > 0:
-            grad_c0_t -= 2 * self._delta * self._grad_delta_t
+        # if self._delta > 0:
+        grad_c0_t -= 2 * self._delta * self._grad_delta_t
 
         return grad_c0_t * self.czero_gain
 
@@ -1160,12 +1211,11 @@ class AdaptationLaw:
         dvdk = self.grad_v_vector_k(x, h, Lg)
         d2vdk2 = self.grad_v_vector_kk(x, h, Lg)
         grad_c0_kk = 2 * d2vdk2 @ self.U @ vector.T + 2 * dvdk @ self.U @ dvdk.T
-        if self._delta > 0:
-
-            grad_c0_kk -= 2 * (
-                self._grad_delta_k[:, np.newaxis] @ self._grad_delta_k[np.newaxis, :]
-                + self._delta * self._grad_delta_kk
-            )
+        # if self._delta > 0:
+        grad_c0_kk -= 2 * (
+            self._grad_delta_k[:, np.newaxis] @ self._grad_delta_k[np.newaxis, :]
+            + self._delta * self._grad_delta_kk
+        )
 
         return grad_c0_kk * self.czero_gain
 
@@ -1189,14 +1239,14 @@ class AdaptationLaw:
         dvdk = self.grad_v_vector_k(x, h, Lg)
         dvdx = self.grad_v_vector_x(x, h, Lg)
         d2vdkdx = self.grad_v_vector_kx(x, h, Lg)
-        grad_c0_kx = 2 * (d2vdkdx @ self.U @ vector).T + 2 * dvdk @ self.U @ dvdx.T
-
-        if self._delta > 0:
-
-            grad_c0_kx -= 2 * (
-                self._grad_delta_k[:, np.newaxis] @ self._grad_delta_x[np.newaxis, :]
-                + self._delta * self._grad_delta_kx
-            )
+        grad_c0_kx = (
+            2 * np.einsum("ijk,kl->jil", d2vdkdx.T, self.U) @ vector.T + 2 * dvdk @ self.U @ dvdx.T
+        )
+        # if self._delta > 0:
+        grad_c0_kx -= 2 * (
+            self._grad_delta_k[:, np.newaxis] @ self._grad_delta_x[np.newaxis, :]
+            + self._delta * self._grad_delta_kx
+        )
 
         return grad_c0_kx * self.czero_gain
 
@@ -1221,12 +1271,10 @@ class AdaptationLaw:
         dvdt = self.grad_v_vector_t(x, h, Lg)
         d2vdkdt = self.grad_v_vector_kt(x, h, Lg)
         grad_c0_kt = 2 * (d2vdkdt @ self.U @ vector).T + 2 * dvdk @ self.U @ dvdt.T
-
-        if self._delta > 0:
-
-            grad_c0_kt -= 2 * (
-                self._grad_delta_k * self._grad_delta_t + self._delta * self._grad_delta_kt
-            )
+        # if self._delta > 0:
+        grad_c0_kt -= 2 * (
+            self._grad_delta_k * self._grad_delta_t + self._delta * self._grad_delta_kt
+        )
 
         return grad_c0_kt * self.czero_gain
 
@@ -1378,7 +1426,7 @@ class AdaptationLaw:
         """
         dLfHdx = (
             self.dqdx.T @ self.dhdx @ f(x)
-            + self.q @ self.d2hdx2 @ f(x)
+            + np.einsum("ij,jkl->kl", self.q[np.newaxis, :], self.d2hdx2) @ f(x)
             + self.q @ self.dhdx @ dfdx(x)
         )
 
@@ -1432,9 +1480,9 @@ class AdaptationLaw:
 
         """
         grad_LfH_kx = (
-            self.d2qdkdx @ self.dhdx @ f(x)
-            + (self.dqdk @ self.d2hdx2 @ f(x)).T
-            + self.dqdk @ self.dhdx @ dfdx(x)
+            (np.einsum("ijk,kl->ijl", self.d2qdkdx.T, self.dhdx) @ f(x)).T
+            + np.einsum("ij,jkl->ikl", self.dqdk.T, self.d2hdx2) @ f(x)
+            + self.dqdk.T @ self.dhdx @ dfdx(x)
         )
 
         return (
@@ -1505,9 +1553,13 @@ class AdaptationLaw:
         dvdx: viability vector
 
         """
-        dLgdx = self.d2hdx2 @ g(x) + self.dhdx @ dgdx(x)
+        dLgdx = self.d2hdx2 @ g(x) + np.einsum("ij,jkl->ilk", self.dhdx, dgdx(x))
 
-        return self.dqdx.T @ Lg + self.q @ dLgdx + self.grad_H_kx(h).T @ self._k_dot_cont_f
+        return (
+            self.dqdx.T @ Lg
+            + np.einsum("ij,jkl->kl", self.q[np.newaxis, :], dLgdx)
+            + self.grad_H_kx(h).T @ self._k_dot_cont_f
+        )
 
     def grad_v_vector_t(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
         """Returns the gradient of the viability vector v with respect to t.
@@ -1555,11 +1607,11 @@ class AdaptationLaw:
         d2vdkdx: viability vector
 
         """
-        dLgdx = self.d2hdx2 @ g(x) + self.dhdx @ dgdx(x)
+        dLgdx = self.d2hdx2 @ g(x) + np.einsum("ij,jkl->ilk", self.dhdx, dgdx(x))
         return (
-            self.d2qdkdx.swapaxes(0, 1) @ Lg
-            + self.dqdk @ dLgdx
-            + self.grad_H_kkx(h).T @ self._k_dot_cont_f
+            np.einsum("ij,jkl->ikl", Lg.T, self.d2qdkdx)
+            + np.einsum("ij,jkl->lik", self.dqdk.T, dLgdx)
+            + np.einsum("ijk,kl->lji", self.grad_H_kkx(h).T, self._k_dot_cont_f)
         )
 
     def grad_v_vector_kt(self, x: NDArray, h: NDArray, Lg: NDArray) -> NDArray:
@@ -1742,7 +1794,7 @@ class AdaptationLaw:
     #     over_k_max = np.where(k_des > self.k_max)[0]
     #     under_k_min = np.where(k_des < self.k_min)[0]
 
-    #     if h[min_h_idx] > 2.0:
+    #     if h[min_h_idx] > hmin:
     #         grad_k_desired_x = self.k_des_gain * self.dhdx / hmin
     #     else:
     #         # Deal with cases when dhdx very close to zero
@@ -1754,6 +1806,58 @@ class AdaptationLaw:
     #     grad_k_desired_x[under_k_min] = 0
 
     #     return grad_k_desired_x
+
+    def k_des(self, h: NDArray) -> NDArray:
+        """Computes the desired gains k for the constituent cbfs. This can be
+        thought of as the nominal adaptation law (unconstrained).
+
+        Arguments:
+            h (NDArray): array of constituent cbf values
+
+        Returns:
+            k_des (NDArray)
+
+        """
+        hmin = 5.0
+        k_des = self.k_des_gain * h**3 / np.min([np.min(h), hmin]) ** 3
+
+        return np.clip(k_des, self.k_min, self.k_max)
+
+    def grad_k_des_x(self, x: NDArray, h: NDArray) -> NDArray:
+        """Computes the desired gains k for the constituent cbfs. This can be
+        thought of as the nominal adaptation law (unconstrained).
+
+        Arguments
+        ---------
+        h: array of constituent cbf values
+        x: state vector
+
+        Returns
+        -------
+        grad_k_desired_x
+
+        """
+        hmin = 5.0
+        min_h_idx = np.where(h == np.min(h))[0][0]
+
+        k_des = self.k_des_gain * h**3 / np.min([h[min_h_idx], hmin]) ** 3
+        over_k_max = np.where(k_des > self.k_max)[0]
+        under_k_min = np.where(k_des < self.k_min)[0]
+
+        if h[min_h_idx] > hmin:
+            grad_k_desired_x = self.k_des_gain * 3 * np.diag(h**2) @ self.dhdx / hmin
+        else:
+            # Deal with cases when dhdx very close to zero
+            dhdx = self.dhdx
+            dhdx[abs(dhdx) <= 1e-9] = 1
+            grad_k_desired_x = (
+                self.k_des_gain * 3 * np.diag(h**2) @ self.dhdx / dhdx[min_h_idx, :]
+            )
+
+        grad_k_desired_x[over_k_max] = 0
+        grad_k_desired_x[under_k_min] = 0
+
+        return grad_k_desired_x
 
     # def k_des(self, h: NDArray) -> NDArray:
     #     """Computes the desired gains k for the constituent cbfs. This can be
@@ -1841,38 +1945,38 @@ class AdaptationLaw:
 
     #     return grad_k_desired_x
 
-    def k_des(self, h: NDArray) -> NDArray:
-        """Computes the desired gains k for the constituent cbfs. This can be
-        thought of as the nominal adaptation law (unconstrained).
+    # def k_des(self, h: NDArray) -> NDArray:
+    #     """Computes the desired gains k for the constituent cbfs. This can be
+    #     thought of as the nominal adaptation law (unconstrained).
 
-        Arguments:
-            h (NDArray): array of constituent cbf values
+    #     Arguments:
+    #         h (NDArray): array of constituent cbf values
 
-        Returns:
-            k_des (NDArray)
+    #     Returns:
+    #         k_des (NDArray)
 
-        """
-        k_des = self.k_des_gain * np.ones((len(h),))
+    #     """
+    #     k_des = self.k_des_gain * np.ones((len(h),))
 
-        return np.clip(k_des, self.k_min, self.k_max)
+    #     return np.clip(k_des, self.k_min, self.k_max)
 
-    def grad_k_des_x(self, x: NDArray, h: NDArray) -> NDArray:
-        """Computes the desired gains k for the constituent cbfs. This can be
-        thought of as the nominal adaptation law (unconstrained).
+    # def grad_k_des_x(self, x: NDArray, h: NDArray) -> NDArray:
+    #     """Computes the desired gains k for the constituent cbfs. This can be
+    #     thought of as the nominal adaptation law (unconstrained).
 
-        Arguments
-        ---------
-        h: array of constituent cbf values
-        x: state vector
+    #     Arguments
+    #     ---------
+    #     h: array of constituent cbf values
+    #     x: state vector
 
-        Returns
-        -------
-        grad_k_desired_x
+    #     Returns
+    #     -------
+    #     grad_k_desired_x
 
-        """
-        grad_k_desired_x = np.zeros((self.dhdx.shape))
+    #     """
+    #     grad_k_desired_x = np.zeros((self.dhdx.shape))
 
-        return grad_k_desired_x
+    #     return grad_k_desired_x
 
     # def k_des(self, h: NDArray) -> NDArray:
     #     """Computes the desired gains k for the constituent cbfs. This can be
@@ -1986,7 +2090,7 @@ class AdaptationLaw:
     @property
     def dbdt(self) -> NDArray:
         """Getter for input_constraint_function."""
-        return 0.0
+        return self._grad_czero_t
 
     @property
     def dbdw(self) -> NDArray:

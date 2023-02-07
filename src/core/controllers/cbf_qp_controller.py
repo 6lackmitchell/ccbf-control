@@ -59,7 +59,7 @@ class CbfQpController(Controller):
         self.n_controls = len(u_max)
         self.n_agents = nAgents
         self.n_dec_vars = 1
-        self.desired_class_k = 0.1
+        self.desired_class_k = 1
         self.max_class_k = 1e6
 
         self.cbf_vals = np.zeros(
@@ -314,7 +314,8 @@ class CbfQpController(Controller):
     def assign_control(self, solution: dict, ego: int) -> None:
         """Assigns the control solution to the appropriate agent."""
         u = np.array(solution["x"][self.n_controls * ego : self.n_controls * (ego + 1)]).flatten()
-        self.u = np.clip(u, -self.u_max, self.u_max)
+        self.u = u
+        # self.u = np.clip(u, -self.u_max, self.u_max)
         # Assign other agents' controls if this is a centralized node
         if hasattr(self, "centralized_agents"):
             for agent in self.centralized_agents:

@@ -68,7 +68,7 @@ dfdx_symbolic = (se.DenseMatrix([f_symbolic]).jacobian(se.DenseMatrix(sym_state)
 dfdx = dyn_wrapper(dfdx_symbolic, sym_state)
 # dgdx_symbolic = (se.DenseMatrix([g_symbolic]).jacobian(se.DenseMatrix(sym_state))).T
 # dgdx = dyn_wrapper(dgdx_symbolic, sym_state)
-dgdx = lambda x: np.zeros((5, 5, 2))
+dgdx = lambda x: np.zeros((5, 2, 5))
 
 # System Dynamics
 deterministic_dynamics = control_affine_system_deterministic(f, g)
