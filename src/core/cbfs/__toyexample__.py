@@ -17,8 +17,11 @@ from .symbolic_cbfs.static_obstacle_ca import (
     dhdx_ca5,
     d2hdx2_ca5,
 )
-from .symbolic_cbfs.v1_safety import h_speed1, dhdx_speed1, d2hdx2_speed1
-from .symbolic_cbfs.v2_safety import h_speed2, dhdx_speed2, d2hdx2_speed2
+from .symbolic_cbfs.speed_safety import h_speed, dhdx_speed, d2hdx2_speed
+from .symbolic_cbfs.beta_safety import h_beta, dhdx_beta, d2hdx2_beta
+
+# from .symbolic_cbfs.v1_safety import h_speed1, dhdx_speed1, d2hdx2_speed1
+# from .symbolic_cbfs.v2_safety import h_speed2, dhdx_speed2, d2hdx2_speed2
 
 
 def linear_class_k(k):
@@ -53,8 +56,10 @@ cbfs_individual1 = [
     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default1), h_ca3),
     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default1), h_speed1),
-    Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default1), h_speed2),
+    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default1), h_speed),
+    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default1), h_speed1),
+    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default1), h_speed2),
 ]
 cbfs_individual2 = [
     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default2), h_ca1),
@@ -62,8 +67,10 @@ cbfs_individual2 = [
     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default2), h_ca3),
     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default2), h_speed1),
-    Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default2), h_speed2),
+    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default2), h_speed),
+    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default2), h_speed1),
+    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default2), h_speed2),
 ]
 cbfs_individual3 = [
     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default3), h_ca1),
@@ -71,8 +78,10 @@ cbfs_individual3 = [
     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default3), h_ca3),
     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default3), h_speed1),
-    Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default3), h_speed2),
+    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default3), h_speed),
+    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default3), h_speed1),
+    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default3), h_speed2),
 ]
 cbfs_individual4 = [
     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default4), h_ca1),
@@ -80,8 +89,10 @@ cbfs_individual4 = [
     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default4), h_ca3),
     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default4), h_speed1),
-    Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default4), h_speed2),
+    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default3), h_speed),
+    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default4), h_speed1),
+    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default4), h_speed2),
 ]
 cbfs_individual = [
     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default), h_ca1),
@@ -89,8 +100,10 @@ cbfs_individual = [
     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default), h_ca3),
     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default), h_speed1),
-    Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default), h_speed2),
+    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default3), h_speed),
+    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default), h_speed1),
+    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default), h_speed2),
 ]
 cbfs_pairwise = []
 

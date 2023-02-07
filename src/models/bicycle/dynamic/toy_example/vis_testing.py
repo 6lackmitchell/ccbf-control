@@ -10,9 +10,9 @@ from sys import platform
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from models.double_integrator.dynamic import nAgents
-from models.double_integrator.dynamic.toy_example.timing_params import dt, tf
-from models.double_integrator.dynamic.toy_example.initial_conditions import xg, yg
+from models.bicycle.dynamic import nAgents
+from models.bicycle.dynamic.toy_example.timing_params import dt, tf
+from models.bicycle.dynamic.toy_example.initial_conditions import xg, yg
 from visualizing.helpers import get_circle
 
 matplotlib.rcParams.update({"figure.autolayout": True})

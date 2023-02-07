@@ -19,7 +19,7 @@ except ModuleNotFoundError as e:
 
 # Defining Physical Params
 speed_limit = 2.0
-gain = 10.0
+gain = 1.0
 
 # Speed CBF Symbolic
 h_speed_symbolic = gain * (speed_limit - ss[3]) * (ss[3] + speed_limit)

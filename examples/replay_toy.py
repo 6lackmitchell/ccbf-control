@@ -1,7 +1,7 @@
 from sys import platform
 from core.visualize import visualize
 
-vehicle = "double_integrator"
+vehicle = "bicycle"
 level = "dynamic"
 situation = "toy_example"
 

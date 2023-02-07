@@ -19,7 +19,7 @@ except ModuleNotFoundError as e:
 
 # Defining Physical Params
 beta_limit = np.pi / 4
-gain = 20.0
+gain = 1.0
 
 # beta CBF Symbolic
 h_beta_symbolic = gain * (beta_limit - ss[4]) * (ss[4] + beta_limit)

@@ -5,9 +5,9 @@ from .physical_params import u_max
 # q1 = 100.0 / u_max[1]**2
 # q2 = 2 * q0
 
-q0 = 100
+q0 = 1e-2
 q1 = 100
-q2 = 10 * np.max([q0, q1])
+q2 = 100 * np.max([q0, q1])
 
 
 def objective_accel_and_steering(u_nom, x=None):
