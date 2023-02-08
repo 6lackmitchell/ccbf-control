@@ -407,7 +407,7 @@ ax_pos.set_yticks([])
 ax_pos.legend(fancybox=True, fontsize=15)
 ax_pos.grid(False)
 
-time_scale_factor = 10
+time_scale_factor = 100
 
 
 def animate_ego(jj):

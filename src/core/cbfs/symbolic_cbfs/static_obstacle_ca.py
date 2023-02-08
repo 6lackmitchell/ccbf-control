@@ -19,7 +19,7 @@ except ModuleNotFoundError as e:
     raise e
 
 # Defining Physical Params
-gain = 1.0
+gain = 5.0
 R1 = 0.5
 cx1 = 0.8
 cy1 = 1.1
