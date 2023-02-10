@@ -883,11 +883,11 @@ class AdaptationLaw:
         self.ci_gain = 1.0
 
         # Gains and Parameters -- Testing
-        self.wn = 0.01
+        self.wn = 1e-3
         self.alpha = alpha
         self.epsilon = 0.25
-        self.k_dot_gain = 1e-6
-        self.cost_gain_mat = 1e3 * np.eye(nWeights)
+        self.k_dot_gain = 1e3
+        self.cost_gain_mat = 1e9 * np.eye(nWeights)
         self.p_gain_mat = 1 * np.eye(nWeights)
         self.k_des_gain = 2.0
         self.k_min = 0.01
@@ -1142,12 +1142,12 @@ class AdaptationLaw:
             self._k_dot_cont_f += self._k_2dot_cont_f * self.dt
 
         elif self._filter_order == 1:
-            # self._k_2dot_drift_f = 0.0 / self.dt * (self._k_dot_drift - self._k_dot_drift_f)
-            self._k_2dot_drift_f = 0.5 / self.dt * (self._k_dot_drift - self._k_dot_drift_f)
+            self._k_2dot_drift_f = 0.0 / self.dt * (self._k_dot_drift - self._k_dot_drift_f)
+            # self._k_2dot_drift_f = 0.5 / self.dt * (self._k_dot_drift - self._k_dot_drift_f)
             self._k_dot_drift_f += self._k_2dot_drift_f * self.dt
 
-            # self._k_2dot_cont_f = 0.0 / self.dt * (self._k_dot_contr - self._k_dot_cont_f)
-            self._k_2dot_cont_f = 0.5 / self.dt * (self._k_dot_contr - self._k_dot_cont_f)
+            self._k_2dot_cont_f = 0.0 / self.dt * (self._k_dot_contr - self._k_dot_cont_f)
+            # self._k_2dot_cont_f = 0.5 / self.dt * (self._k_dot_contr - self._k_dot_cont_f)
             self._k_dot_cont_f += self._k_2dot_cont_f * self.dt
 
         # Compute final filtered k_dot
@@ -1413,7 +1413,7 @@ class AdaptationLaw:
         grad_v_vec_k = self.grad_v_vector_k(x, h, Lg)
         eterm = np.exp(vector)
         grad_F_k = (2 * eterm) / (1 + eterm) * grad_v_vec_k - grad_v_vec_k
-        grad_c0_k = 2 * grad_F_k @ self.u_max @ -self._grad_delta_k
+        grad_c0_k = 2 * grad_F_k @ self.u_max - self._grad_delta_k
 
         grad_sfunc_k = grad_c0_k * 0  # (
         # 1 / 2 * grad_c0_k * (self.czero_val1 / np.sqrt(self.czero_val1**2 + 0.001**2))
@@ -1499,11 +1499,14 @@ class AdaptationLaw:
 
         #! This is where I am stuck
         grad_F_kk = (
-            (
-                ((2 * eterm * dvdk) * (1 + eterm) - (2 * eterm) * (1 + eterm * dvdk))
-                / (1 + eterm) ** 2
+            np.einsum(
+                "ij,lm->ilj",
+                (
+                    ((2 * eterm * dvdk) * (1 + eterm) - (2 * eterm) * (1 + eterm * dvdk))
+                    / (1 + eterm) ** 2
+                ),
+                dvdk,
             )
-            @ dvdk
             + (2 * eterm) / (1 + eterm) * d2vdk2
             - d2vdk2
         )
@@ -1534,16 +1537,19 @@ class AdaptationLaw:
         d2vdkdx = self.grad_v_vector_kx(x, h, Lg)
         eterm = np.exp(vector)
         grad_F_kx = (
-            (
-                ((2 * eterm * dvdx) * (1 + eterm) - (2 * eterm) * (1 + eterm * dvdx))
-                / (1 + eterm) ** 2
+            np.einsum(
+                "ij,lm->jli",
+                (
+                    ((2 * eterm * dvdx) * (1 + eterm) - (2 * eterm) * (1 + eterm * dvdx))
+                    / (1 + eterm) ** 2
+                ),
+                dvdk,
             )
-            @ dvdk
-            + (2 * eterm) / (1 + eterm) * d2vdkdx
+            + np.einsum("i,jkl->jkl", (2 * eterm) / (1 + eterm), d2vdkdx)
             - d2vdkdx
         )
 
-        grad_c0_kx = grad_F_kx @ self.u_max - self._grad_delta_kx
+        grad_c0_kx = np.einsum("i,jkl->kl", self.u_max, grad_F_kx) - self._grad_delta_kx
 
         return grad_c0_kx * self.czero_gain
 
@@ -1569,11 +1575,14 @@ class AdaptationLaw:
         d2vdkdt = self.grad_v_vector_kt(x, h, Lg)
         eterm = np.exp(vector)
         grad_F_kt = (
-            (
-                ((2 * eterm * dvdt) * (1 + eterm) - (2 * eterm) * (1 + eterm * dvdt))
-                / (1 + eterm) ** 2
+            np.einsum(
+                "i,jk->jk",
+                (
+                    ((2 * eterm * dvdt) * (1 + eterm) - (2 * eterm) * (1 + eterm * dvdt))
+                    / (1 + eterm) ** 2
+                ),
+                dvdk,
             )
-            @ dvdk
             + (2 * eterm) / (1 + eterm) * d2vdkdt
             - d2vdkdt
         )
