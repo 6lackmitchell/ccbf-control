@@ -31,7 +31,7 @@ yg = np.array([2.0])
 xi = np.array([-np.random.random()])
 yi = np.array([np.random.uniform(low=-0.5, high=2.5)])
 
-speed = 0.1
+speed = 0.25
 psii = np.arctan2(yg - yi, xg - xi)
 vi = np.array([speed])
 betai = np.array([np.random.uniform(low=-0.1, high=0.1)])

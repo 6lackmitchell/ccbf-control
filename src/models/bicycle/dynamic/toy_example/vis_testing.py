@@ -23,7 +23,7 @@ plt.style.use(["ggplot"])
 plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.viridis(np.linspace(0, 1, N)))
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 colors[0] = colors[1]
-colors.reverse()
+# colors.reverse()
 
 if platform == "linux" or platform == "linux2":
     # linux
@@ -66,11 +66,14 @@ with open(filename, "rb") as f:
         # kdot = np.array([data[a]["kdot"] if a < 3 else None for a in data.keys()][0:3])
         # kdotf = np.array([data[a]["kdotf"] if a < 3 else None for a in data.keys()][0:3])
         k = np.array([data[a]["kgains"] if a < 1 else None for a in data.keys()][:1])
+        kdes = np.array([data[a]["kdes"] if a < 1 else None for a in data.keys()][:1])
         kdot = np.array([data[a]["kdot"] if a < 1 else None for a in data.keys()][:1])
         kdotf = np.array([data[a]["kdotf"] if a < 1 else None for a in data.keys()][:1])
         u0 = np.array([data[a]["u0"] for a in data.keys()])
+        cbfs = np.array([data[a]["cbf"] for a in data.keys()])
+        ccbf = np.array([data[a]["ccbf"] for a in data.keys()])
         ii = int(data[0]["ii"] / dt)
-        # cbf = np.array([data[a]['cbf'] for a in data.keys()])
+
     except:
         traceback.print_exc()
 
@@ -101,8 +104,8 @@ set_edges_black(ax_cont_a)
 set_edges_black(ax_cont_b)
 
 # Angular Control Inputs
-ax_cont_a.plot(t[1:ii], np.pi / 4 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-ax_cont_a.plot(t[1:ii], -np.pi / 4 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(t[1:ii], np.pi / 2 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(t[1:ii], -np.pi / 2 * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
 for aa in range(nAgents):
     ax_cont_a.plot(
         t[:ii],
@@ -111,13 +114,19 @@ for aa in range(nAgents):
         linewidth=lwidth,
         color=colors[aa],
     )
-    # ax_cont_a.plot(t[:ii], u0[aa, :ii, 0], label='w_{}^0'.format(aa), linewidth=lwidth,
-    #                color=colors[color_idx[aa, 1]], dashes=dash)
+    ax_cont_a.plot(
+        t[:ii],
+        u0[aa, :ii, 0],
+        label=r"$\omega_{}^0$".format(aa),
+        linewidth=lwidth,
+        color=colors[aa],
+        dashes=dash,
+    )
 ax_cont_a.set(
     ylabel=r"$\omega$",
     ylim=[
-        -np.pi / 4 - 0.1,
-        np.pi / 4 + 0.1,
+        -np.pi / 2 - 0.1,
+        np.pi / 2 + 0.1,
     ],
     # ylim=[np.min(u[:ii, :, 0]) - 0.1, np.max(u[:ii, :, 0]) + 0.1],
     title="Control Inputs",
@@ -134,8 +143,14 @@ for aa in range(nAgents):
         linewidth=lwidth,
         color=colors[aa],
     )
-    # ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
-    #                color=colors[color_idx[aa, 1]], dashes=dash)
+    ax_cont_b.plot(
+        t[:ii],
+        u0[aa, :ii, 1],
+        label=r"$a_{}^0$".format(aa),
+        linewidth=lwidth,
+        color=colors[aa],
+        dashes=dash,
+    )
 ax_cont_b.set(
     ylabel=r"$a$",
     ylim=[
@@ -184,8 +199,11 @@ lbl = [
 ]
 clr = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 clr.reverse()
-for cbf in range(k.shape[2]):
-    ax_k.plot(t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[cbf], label=lbl[cbf])
+for kk in range(k.shape[2]):
+    ax_k.plot(t[1:ii], k[0, 1:ii, kk], linewidth=lwidth + 1, color=clr[kk], label=lbl[kk])
+    ax_k.plot(
+        t[1:ii], kdes[0, 1:ii, kk], linewidth=lwidth + 1, color=clr[kk], label=lbl[kk], dashes=dash
+    )
 ax_k.set(ylabel="k", title="Adaptation Gains")
 
 # Plot Settings
@@ -207,15 +225,15 @@ fig_kdot = plt.figure(figsize=(8, 8))
 ax_kdot = fig_kdot.add_subplot(111)
 set_edges_black(ax_kdot)
 
-for cbf in range(k.shape[2]):
-    ax_kdot.plot(t[1:ii], kdot[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[cbf], label=lbl[cbf])
+for kk in range(k.shape[2]):
+    ax_kdot.plot(t[1:ii], kdot[0, 1:ii, kk], linewidth=lwidth + 1, color=clr[kk], label=lbl[kk])
     ax_kdot.plot(
         t[1:ii],
-        kdotf[0, 1:ii, cbf],
+        kdotf[0, 1:ii, kk],
         "-.",
         linewidth=lwidth + 1,
-        color=clr[cbf],
-        label=lbl[cbf],
+        color=clr[kk],
+        label=lbl[kk],
     )
 ax_kdot.set(ylabel="kdot", title="Adaptation Derivatives")
 
@@ -253,31 +271,38 @@ ax_cz.grid(True, linestyle="dotted", color="white")
 
 plt.tight_layout(pad=2.0)
 
-# # ############################################
-# # ### CBF Trajectories ###
-# # fig_cbfs = plt.figure(figsize=(8, 8))
-# # ax_cbfs = fig_cbfs.add_subplot(111)
-# # set_edges_black(ax_cbfs)
+############################################
+### CBF Trajectories ###
+fig_cbfs = plt.figure(figsize=(8, 8))
+ax_cbfs = fig_cbfs.add_subplot(111)
+set_edges_black(ax_cbfs)
 
-# # # NN-CBF Values
-# # ax_cbfs.plot(t[1:ii], np.zeros(t[1:ii].shape), linewidth=lwidth+1, color='k')
-# # for aa in range(cbf.shape[0]):
-# #     ax_cbfs.plot(t[:ii], cbf[aa, :ii, 0], label='h_{}'.format(aa), linewidth=lwidth,
-# #                    color=colors[color_idx[aa, 0]])
-# #     # ax_cbfs.plot(t[:ii], cbf[aa, :ii, 1], label='h_{}^0'.format(aa), linewidth=lwidth,
-# #     #                color=colors[color_idx[aa, 1]], dashes=dash)
-# # ax_cbfs.set(ylabel='h',
-# #             ylim=[-0.1, 250],
-# #             title='CBF Trajectories')
+ax_cbfs.plot(t[1:ii], np.zeros(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cbfs.plot(t[1:ii], ccbf[0, 1:ii], linewidth=lwidth, color="m", dashes=dash)
+for cc in range(cbfs.shape[2]):
+    ax_cbfs.plot(
+        t[:ii],
+        cbfs[0, :ii, cc],
+        label=r"$h_{}$".format(aa),
+        linewidth=lwidth,
+        color=colors[cc],
+    )
 
-# # # Plot Settings
-# # for item in ([ax_cbfs.title, ax_cbfs.xaxis.label, ax_cbfs.yaxis.label] +
-# #              ax_cbfs.get_xticklabels() + ax_cbfs.get_yticklabels()):
-# #     item.set_fontsize(25)
-# # ax_cbfs.legend(fancybox=True)
-# # ax_cbfs.grid(True, linestyle='dotted', color='white')
+    # ax_cbfs.plot(t[:ii], cbf[aa, :ii, 1], label='h_{}^0'.format(aa), linewidth=lwidth,
+    #                color=colors[color_idx[aa, 1]], dashes=dash)
+ax_cbfs.set(ylabel="h", ylim=[-0.1, 5], title="CBF Trajectories")
 
-# # plt.tight_layout(pad=2.0)
+# Plot Settings
+for item in (
+    [ax_cbfs.title, ax_cbfs.xaxis.label, ax_cbfs.yaxis.label]
+    + ax_cbfs.get_xticklabels()
+    + ax_cbfs.get_yticklabels()
+):
+    item.set_fontsize(25)
+ax_cbfs.legend(fancybox=True)
+ax_cbfs.grid(True, linestyle="dotted", color="white")
+
+plt.tight_layout(pad=2.0)
 
 
 # ############################################
@@ -332,6 +357,7 @@ ax_pos = fig_map.add_subplot(111)
 set_edges_black(ax_pos)
 
 gain = 2.0
+R = 0.1
 R1 = 0.5
 cx1 = 0.9
 cy1 = 1.1
@@ -350,11 +376,11 @@ cy5 = -0.2
 
 # # Set Up Road
 d_points = 100
-xc1, yc1 = get_circle(np.array([cx1, cy1]), 0.47, d_points)
-xc2, yc2 = get_circle(np.array([cx2, cy2]), 0.47, d_points)
-xc3, yc3 = get_circle(np.array([cx3, cy3]), 0.47, d_points)
-xc4, yc4 = get_circle(np.array([cx4, cy4]), 0.47, d_points)
-xc5, yc5 = get_circle(np.array([cx5, cy5]), 0.47, d_points)
+xc1, yc1 = get_circle(np.array([cx1, cy1]), R, d_points)
+xc2, yc2 = get_circle(np.array([cx2, cy2]), R, d_points)
+xc3, yc3 = get_circle(np.array([cx3, cy3]), R, d_points)
+xc4, yc4 = get_circle(np.array([cx4, cy4]), R, d_points)
+xc5, yc5 = get_circle(np.array([cx5, cy5]), R, d_points)
 ax_pos.plot(xc1, yc1, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc2, yc2, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc3, yc3, linewidth=lwidth + 1, color="k")
@@ -407,7 +433,7 @@ ax_pos.set_yticks([])
 ax_pos.legend(fancybox=True, fontsize=15)
 ax_pos.grid(False)
 
-time_scale_factor = 100
+time_scale_factor = 10
 
 
 def animate_ego(jj):

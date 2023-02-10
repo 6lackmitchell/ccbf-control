@@ -50,58 +50,58 @@ k_default4 = 0.8
 k_collision = 1.0
 
 # Define cbf lists
-cbfs_individual1 = [
-    Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default1), h_ca1),
-    Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default1), h_ca2),
-    Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default1), h_ca3),
-    Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
-    Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default1), h_speed),
-    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
-    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default1), h_speed1),
-    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default1), h_speed2),
-]
-cbfs_individual2 = [
-    Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default2), h_ca1),
-    Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default2), h_ca2),
-    Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default2), h_ca3),
-    Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
-    Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default2), h_speed),
-    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
-    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default2), h_speed1),
-    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default2), h_speed2),
-]
-cbfs_individual3 = [
-    Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default3), h_ca1),
-    Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default3), h_ca2),
-    Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default3), h_ca3),
-    Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
-    Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default3), h_speed),
-    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
-    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default3), h_speed1),
-    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default3), h_speed2),
-]
-cbfs_individual4 = [
-    Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default4), h_ca1),
-    Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default4), h_ca2),
-    Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default4), h_ca3),
-    Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
-    Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default3), h_speed),
-    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
-    # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default4), h_speed1),
-    # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default4), h_speed2),
-]
+# cbfs_individual1 = [
+#     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default1), h_ca1),
+#     Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default1), h_ca2),
+#     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default1), h_ca3),
+#     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
+#     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
+#     Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default1), h_speed),
+#     Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+#     # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default1), h_speed1),
+#     # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default1), h_speed2),
+# ]
+# cbfs_individual2 = [
+#     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default2), h_ca1),
+#     Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default2), h_ca2),
+#     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default2), h_ca3),
+#     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
+#     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
+#     Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default2), h_speed),
+#     Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+#     # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default2), h_speed1),
+#     # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default2), h_speed2),
+# ]
+# cbfs_individual3 = [
+#     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default3), h_ca1),
+#     Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default3), h_ca2),
+#     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default3), h_ca3),
+#     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
+#     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
+#     Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default3), h_speed),
+#     Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+#     # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default3), h_speed1),
+#     # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default3), h_speed2),
+# ]
+# cbfs_individual4 = [
+#     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default4), h_ca1),
+#     Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default4), h_ca2),
+#     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default4), h_ca3),
+#     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
+#     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
+#     Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default3), h_speed),
+#     Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+#     # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default4), h_speed1),
+#     # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default4), h_speed2),
+# ]
 cbfs_individual = [
     Cbf(h_ca1, dhdx_ca1, d2hdx2_ca1, linear_class_k(k_default), h_ca1),
     Cbf(h_ca2, dhdx_ca2, d2hdx2_ca2, linear_class_k(k_default), h_ca2),
     Cbf(h_ca3, dhdx_ca3, d2hdx2_ca3, linear_class_k(k_default), h_ca3),
     Cbf(h_ca4, dhdx_ca4, d2hdx2_ca4, linear_class_k(k_default1), h_ca4),
     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
-    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default3), h_speed),
-    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default1), h_beta),
+    Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default), h_speed),
+    Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default), h_beta),
     # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default), h_speed1),
     # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default), h_speed2),
 ]

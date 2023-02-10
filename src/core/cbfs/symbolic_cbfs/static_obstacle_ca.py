@@ -19,7 +19,8 @@ except ModuleNotFoundError as e:
     raise e
 
 # Defining Physical Params
-gain = 5.0
+gain = 1.0
+R = 0.1
 R1 = 0.5
 cx1 = 0.8
 cy1 = 1.1
@@ -51,7 +52,7 @@ dx5 = (ss[0] - cx5) * x_scale
 dy5 = (ss[1] - cy5) * y_scale
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic1 = gain * (dx1**2 + dy1**2 - (R1) ** 2)
+h_nominal_ca_symbolic1 = gain * (dx1**2 + dy1**2 - (R) ** 2)
 dhdx_nominal_ca_symbolic1 = (
     se.DenseMatrix([h_nominal_ca_symbolic1]).jacobian(se.DenseMatrix(ss))
 ).T
@@ -61,7 +62,7 @@ dhdx_nominal_ca1 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic1, s
 d2hdx2_nominal_ca1 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic1, ss)
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic2 = gain * (dx2**2 + dy2**2 - (R2) ** 2)
+h_nominal_ca_symbolic2 = gain * (dx2**2 + dy2**2 - (R) ** 2)
 dhdx_nominal_ca_symbolic2 = (
     se.DenseMatrix([h_nominal_ca_symbolic2]).jacobian(se.DenseMatrix(ss))
 ).T
@@ -71,7 +72,7 @@ dhdx_nominal_ca2 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic2, s
 d2hdx2_nominal_ca2 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic2, ss)
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic3 = gain * (dx3**2 + dy3**2 - (R3) ** 2)
+h_nominal_ca_symbolic3 = gain * (dx3**2 + dy3**2 - (R) ** 2)
 dhdx_nominal_ca_symbolic3 = (
     se.DenseMatrix([h_nominal_ca_symbolic3]).jacobian(se.DenseMatrix(ss))
 ).T
@@ -81,7 +82,7 @@ dhdx_nominal_ca3 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic3, s
 d2hdx2_nominal_ca3 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic3, ss)
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic4 = gain * (dx4**2 + dy4**2 - (R4) ** 2)
+h_nominal_ca_symbolic4 = gain * (dx4**2 + dy4**2 - (R) ** 2)
 dhdx_nominal_ca_symbolic4 = (
     se.DenseMatrix([h_nominal_ca_symbolic4]).jacobian(se.DenseMatrix(ss))
 ).T
@@ -91,7 +92,7 @@ dhdx_nominal_ca4 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic4, s
 d2hdx2_nominal_ca4 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic4, ss)
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic5 = gain * (dx5**2 + dy5**2 - (R5) ** 2)
+h_nominal_ca_symbolic5 = gain * (dx5**2 + dy5**2 - (R) ** 2)
 dhdx_nominal_ca_symbolic5 = (
     se.DenseMatrix([h_nominal_ca_symbolic5]).jacobian(se.DenseMatrix(ss))
 ).T

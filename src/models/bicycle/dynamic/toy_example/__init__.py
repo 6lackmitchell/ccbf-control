@@ -4,10 +4,10 @@ from importlib import import_module
 from core.agent import Agent
 from core.cbfs import (
     cbfs_individual,
-    cbfs_individual1,
-    cbfs_individual2,
-    cbfs_individual3,
-    cbfs_individual4,
+    # cbfs_individual1,
+    # cbfs_individual2,
+    # cbfs_individual3,
+    # cbfs_individual4,
     cbfs_pairwise,
     cbf0,
 )

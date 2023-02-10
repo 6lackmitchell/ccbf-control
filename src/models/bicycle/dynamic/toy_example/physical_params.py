@@ -8,6 +8,6 @@ from numpy import array, pi
 
 Lr = 1.0
 LW = 3.0
-w_max = pi / 4
+w_max = pi / 2
 ar_max = 1.0
 u_max = array([w_max, ar_max])

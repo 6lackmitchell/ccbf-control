@@ -19,7 +19,7 @@ except ModuleNotFoundError as e:
 
 # Defining Physical Params
 beta_limit = np.pi / 4
-gain = 1.0
+gain = 5.0
 
 # beta CBF Symbolic
 h_beta_symbolic = gain * (beta_limit - ss[4]) * (ss[4] + beta_limit)
@@ -44,14 +44,3 @@ def d2hdx2_beta(ego):
     ret = d2hdx2_beta_func(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
-
-
-if __name__ == "__main__":
-    # This is a unit test
-    ms = 97.5
-    ze = np.array([-ms * np.cos(th), -ms * np.sin(th), th, 15.0, 0.0])
-
-    print(h_road(ze))
-    print(dhdx_road(ze))
-    print(d2hdx2_road(ze))
-    print("stop")

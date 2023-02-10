@@ -12,6 +12,7 @@ class LqrController(Controller):
         super().__init__()
         self.ego_id = ego_id
         self.complete = False
+        self.u_actual = None
 
     def _compute_control(self, t: float, z: NDArray) -> (int, str):
         """Computes the nominal input for a vehicle in the intersection situation.
@@ -36,7 +37,7 @@ class LqrController(Controller):
         xd = xg[self.ego_id]
         yd = yg[self.ego_id]
 
-        speed_d = 0.5
+        speed_d = 0.1
         vd = speed_d * np.min([1, 1 / 2 * np.linalg.norm([ze[0] - xd, ze[1] - yd])])
         th = np.arctan2(yd - ze[1], xd - ze[0])
         vxd = vd * np.cos(th)
@@ -57,7 +58,7 @@ class LqrController(Controller):
         B_di = np.array([[0, 0], [0, 0], [1, 0], [0, 1]])
 
         gain = np.min([1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 1.0])
-        Q = gain * np.eye(4)
+        Q = 0.01 * gain * np.eye(4)
         R = 5 * np.eye(2)
 
         # Compute LQR control input for double integrator model
@@ -78,7 +79,7 @@ class LqrController(Controller):
             ]
         )
 
-        if ze[3] > 0.1:
+        if ze[3] > 0.01:
             vec = np.array([mu[0] + f(ze)[1] * f(ze)[2], mu[1] - f(ze)[0] * f(ze)[2]])
             u = np.linalg.inv(S) @ vec
             omega = u[0]
@@ -91,6 +92,12 @@ class LqrController(Controller):
 
         omega = np.clip(omega, -u_max[0], u_max[0])
         ar = np.clip(ar, -u_max[1], u_max[1])
+
+        # To reduce potential chattering
+        beta = 0.5
+        if self.u_actual is not None:
+            omega = beta * self.u_actual[0] + (1 - beta) * (omega - self.u_actual[0])
+            ar = beta * self.u_actual[1] + (1 - beta) * (ar - self.u_actual[1])
 
         self.u = np.array([omega, ar])
 

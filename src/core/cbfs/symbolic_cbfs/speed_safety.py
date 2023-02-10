@@ -19,7 +19,7 @@ except ModuleNotFoundError as e:
 
 # Defining Physical Params
 speed_limit = 2.0
-gain = 1.0
+gain = 5.0
 
 # Speed CBF Symbolic
 h_speed_symbolic = gain * (speed_limit - ss[3]) * (ss[3] + speed_limit)
@@ -44,14 +44,3 @@ def d2hdx2_speed(ego):
     ret = d2hdx2_speed_func(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
-
-
-if __name__ == "__main__":
-    # This is a unit test
-    ms = 97.5
-    ze = np.array([-ms * np.cos(th), -ms * np.sin(th), th, 15.0, 0.0])
-
-    print(h_road(ze))
-    print(dhdx_road(ze))
-    print(d2hdx2_road(ze))
-    print("stop")
