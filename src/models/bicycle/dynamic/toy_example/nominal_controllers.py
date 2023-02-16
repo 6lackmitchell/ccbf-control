@@ -37,7 +37,7 @@ class LqrController(Controller):
         xd = xg[self.ego_id]
         yd = yg[self.ego_id]
 
-        speed_d = 0.1
+        speed_d = 0.25
         vd = speed_d * np.min([1, 1 / 2 * np.linalg.norm([ze[0] - xd, ze[1] - yd])])
         th = np.arctan2(yd - ze[1], xd - ze[0])
         vxd = vd * np.cos(th)
@@ -50,15 +50,15 @@ class LqrController(Controller):
         q_star = np.array([xd, yd, vxd, vyd])  # desired state
         zeta = np.array([ze[0], ze[1], f(ze)[0], f(ze)[1]])  # double integrator state
         tracking_error = zeta - q_star
-        if np.linalg.norm(tracking_error) < 0.25:
+        if np.linalg.norm(tracking_error[:2]) < (0.075):
             tracking_error = np.array([0, 0, f(ze)[0], f(ze)[1]])
             self.complete = True
 
         A_di = np.array([[0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 0, 0, 0]])
         B_di = np.array([[0, 0], [0, 0], [1, 0], [0, 1]])
 
-        gain = np.min([1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 1.0])
-        Q = 0.01 * gain * np.eye(4)
+        gain = np.min([1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 10.0])
+        Q = 0.5 * gain * np.eye(4)
         R = 5 * np.eye(2)
 
         # Compute LQR control input for double integrator model
@@ -94,10 +94,10 @@ class LqrController(Controller):
         ar = np.clip(ar, -u_max[1], u_max[1])
 
         # To reduce potential chattering
-        beta = 0.5
+        beta = 0.25
         if self.u_actual is not None:
-            omega = beta * self.u_actual[0] + (1 - beta) * (omega - self.u_actual[0])
-            ar = beta * self.u_actual[1] + (1 - beta) * (ar - self.u_actual[1])
+            omega = beta * self.u_actual[0] + (1 - beta) * omega
+            # ar = beta * self.u_actual[1] + (1 - beta) * ar
 
         self.u = np.array([omega, ar])
 

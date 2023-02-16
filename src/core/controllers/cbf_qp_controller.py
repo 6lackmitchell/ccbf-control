@@ -69,6 +69,7 @@ class CbfQpController(Controller):
         #     (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
         # )
         self.dhdt = np.zeros((self.cbf_vals.shape[0],))
+        self.d2hdtdx = np.zeros((self.cbf_vals.shape[0], 5))
         # self.dhdx = np.zeros((self.cbf_vals.shape[0], 1))
         # self.dhdx = np.zeros((self.cbf_vals.shape[0], 4))
         self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
@@ -320,7 +321,10 @@ class CbfQpController(Controller):
                 solution["x"][self.n_controls * ego : self.n_controls * (ego + 1)]
             ).flatten()
         self.u = u
-        self.u = np.clip(u, -self.u_max, self.u_max)
+        if u is not None:
+            self.u = np.clip(u, -self.u_max, self.u_max)
+        else:
+            self.u = np.array([0, 0])
         self.nominal_controller.u_actual = self.u
         # Assign other agents' controls if this is a centralized node
         if hasattr(self, "centralized_agents"):

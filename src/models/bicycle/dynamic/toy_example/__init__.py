@@ -1,5 +1,6 @@
 import builtins
 from sys import platform
+from datetime import datetime
 from importlib import import_module
 from core.agent import Agent
 from core.cbfs import (
@@ -15,7 +16,7 @@ from core.cbfs import (
 from core.controllers.cbf_qp_controller_breeden_hocbf import CbfQpController
 
 # from core.controllers.cbf_qp_controller_exponential_hocbf import CbfQpController
-from core.controllers.consolidated_cbf_controller import ConsolidatedCbfController
+from core.controllers.consolidated_cbf_controller_test import ConsolidatedCbfController
 from ..models import f, g, nControls
 from .timing_params import *
 from .physical_params import u_max
@@ -50,8 +51,10 @@ elif platform == "win32":
     # Windows...
     pass
 
+tstamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 save_path = (
-    pre_path + "Documents/git/ccbf-control/data/double_integrator/dynamic/toy_example/test.pkl"
+    pre_path
+    + f"Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/successes/success_{tstamp}.pkl"
 )
 
 

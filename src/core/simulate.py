@@ -59,10 +59,10 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
         if round(tt, 4) % 1 < dt or ii == 1:
             print("Time: {:.1f} sec".format(tt))
 
-        if round(tt, 4) % 5 < dt and tt > 0:
-            for aa, agent in enumerate(decentralized_agents):
-                agent.save_data(aa)
-            print("Time: {:.1f} sec: Intermediate Save".format(tt))
+        # if round(tt, 4) % 5 < dt and tt > 0:
+        #     for aa, agent in enumerate(decentralized_agents):
+        #         agent.save_data(aa)
+        #     print("Time: {:.1f} sec: Intermediate Save".format(tt))
 
         # Compute inputs for centralized agents
         if centralized_agents is not None:
@@ -98,9 +98,15 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
             break
 
     # Save data
-    for aa, agent in enumerate(decentralized_agents):
-        agent.save_data(aa)
+    if np.sum(complete) == nAgents:
+        for aa, agent in enumerate(decentralized_agents):
+            agent.save_data(aa)
+
+    else:
+        newfilename = "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
+        for aa, agent in enumerate(decentralized_agents):
+            agent.save_data(aa, newfilename)
 
     success = np.sum(complete) == nAgents
 
-    return success
+    return 0  # success

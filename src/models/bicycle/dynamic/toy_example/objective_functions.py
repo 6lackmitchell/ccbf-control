@@ -1,14 +1,14 @@
 import numpy as np
 from .physical_params import u_max
 
-q0 = 1 / u_max[0] ** 2
-q1 = 100.0 / u_max[1] ** 2
+q0 = 1.0 / u_max[0] ** 2
+q1 = 5.0 / u_max[1] ** 2
 # q2 = 2 * q0
 
 # q0 = 100 / u_max[0] ** 2
 # q1 = 100 / u_max[1] ** 2
-# q0 = 1
-# q1 = 2
+q0 = 1
+q1 = 10
 q2 = 100 * np.max([q0, q1])
 # q2 = 2 * q0
 

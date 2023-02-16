@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Callable, List
+from typing import Callable, List, Optional
 from nptyping import NDArray
 from pathlib import Path
 from pickle import dump, load
@@ -189,7 +189,7 @@ class Agent:
         self.timestep = self.timestep + 1
         self.t = self.timestep * self.dt
 
-    def save_data(self, identity: int) -> None:
+    def save_data(self, identity: int, fname: Optional[str] = None) -> None:
         """Saves the agent's individual simulation data out to a .pkl file.
         INPUTS
         ------
@@ -199,10 +199,14 @@ class Agent:
         -------
         None
         """
-        file = Path(self.save_file)
+        if fname is None:
+            filename = self.save_file
+        else:
+            filename = fname
+        file = Path(filename)
         if file.is_file():
             # Load data, then add to it
-            with open(self.save_file, "rb") as f:
+            with open(filename, "rb") as f:
                 try:
                     data = load(f)
                     data[identity] = self.data
@@ -213,5 +217,5 @@ class Agent:
             data = {identity: self.data}
 
         # Write data to file
-        with open(self.save_file, "wb") as f:
+        with open(filename, "wb") as f:
             dump(data, f)

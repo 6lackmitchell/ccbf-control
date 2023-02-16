@@ -35,7 +35,8 @@ elif platform == "win32":
     # Windows...
     pass
 
-filepath = pre_path + "Documents/git/ccbf-control/data/double_integrator/dynamic/toy_example/"
+filepath = pre_path + "Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/successes/"
+filepath = pre_path + "Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/"
 
 # ### Define Recording Variables ###
 t = np.linspace(dt, tf, int(tf / dt))
@@ -50,7 +51,7 @@ else:
     files.sort(key=os.path.getmtime)
     filename = files[-1]
 
-# filename = filepath + "success_3obstacles.pkl"
+# filename = filepath + "example.pkl"
 
 with open(filename, "rb") as f:
     try:
@@ -357,7 +358,7 @@ ax_pos = fig_map.add_subplot(111)
 set_edges_black(ax_pos)
 
 gain = 2.0
-R = 0.1
+R = 0.4
 R1 = 0.5
 cx1 = 0.9
 cy1 = 1.1
@@ -381,11 +382,13 @@ xc2, yc2 = get_circle(np.array([cx2, cy2]), R, d_points)
 xc3, yc3 = get_circle(np.array([cx3, cy3]), R, d_points)
 xc4, yc4 = get_circle(np.array([cx4, cy4]), R, d_points)
 xc5, yc5 = get_circle(np.array([cx5, cy5]), R, d_points)
+xc6, yc6 = get_circle(np.array([xg[0], yg[0]]), 0.1, d_points)
 ax_pos.plot(xc1, yc1, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc2, yc2, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc3, yc3, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc4, yc4, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc5, yc5, linewidth=lwidth + 1, color="k")
+ax_pos.plot(xc6, yc6, linewidth=lwidth + 1, color="g")
 
 for aaa in range(nAgents):
     if aaa == 0:
