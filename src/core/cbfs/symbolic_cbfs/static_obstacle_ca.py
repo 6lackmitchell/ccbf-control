@@ -12,8 +12,8 @@ mod = "models." + vehicle + "." + control_level + ".models"
 try:
     module = import_module(mod)
     globals().update({"f": getattr(module, "f")})
-    # globals().update({'sigma': getattr(module, 'sigma')})
     globals().update({"ss": getattr(module, "sym_state")})
+    globals().update({"tt": getattr(module, "sym_time")})
 except ModuleNotFoundError as e:
     print("No module named '{}' -- exiting.".format(mod))
     raise e
@@ -52,54 +52,48 @@ dx5 = (ss[0] - cx5) * x_scale
 dy5 = (ss[1] - cy5) * y_scale
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic1 = gain * (dx1**2 + dy1**2 - (R) ** 2)
-dhdx_nominal_ca_symbolic1 = (
-    se.DenseMatrix([h_nominal_ca_symbolic1]).jacobian(se.DenseMatrix(ss))
-).T
-d2hdx2_nominal_ca_symbolic1 = dhdx_nominal_ca_symbolic1.jacobian(se.DenseMatrix(ss))
-h_nominal_ca1 = symbolic_cbf_wrapper_singleagent(h_nominal_ca_symbolic1, ss)
-dhdx_nominal_ca1 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic1, ss)
-d2hdx2_nominal_ca1 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic1, ss)
+h_symbolic1 = gain * (dx1**2 + dy1**2 - (R) ** 2)
+dhdt_symbolic1 = (se.DenseMatrix([h_symbolic1]).jacobian(se.DenseMatrix([tt]))).T
+dhdx_symbolic1 = (se.DenseMatrix([h_symbolic1]).jacobian(se.DenseMatrix(ss))).T
+d2hdtdx_symbolic1 = dhdt_symbolic1.jacobian(se.DenseMatrix(ss))
+d2hdx2_symbolic1 = dhdx_symbolic1.jacobian(se.DenseMatrix(ss))
+h_func1 = symbolic_cbf_wrapper_singleagent(h_symbolic1, tt, ss)
+dhdt_func1 = symbolic_cbf_wrapper_singleagent(dhdt_symbolic1, tt, ss)
+dhdx_func1 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic, tt, ss)
+d2hdtdx_func1 = symbolic_cbf_wrapper_singleagent(d2hdtdx_symbolic, tt, ss)
+d2hdx2_func1 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic, tt, ss)
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic2 = gain * (dx2**2 + dy2**2 - (R) ** 2)
-dhdx_nominal_ca_symbolic2 = (
-    se.DenseMatrix([h_nominal_ca_symbolic2]).jacobian(se.DenseMatrix(ss))
-).T
-d2hdx2_nominal_ca_symbolic2 = dhdx_nominal_ca_symbolic2.jacobian(se.DenseMatrix(ss))
-h_nominal_ca2 = symbolic_cbf_wrapper_singleagent(h_nominal_ca_symbolic2, ss)
-dhdx_nominal_ca2 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic2, ss)
-d2hdx2_nominal_ca2 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic2, ss)
+h_symbolic2 = gain * (dx2**2 + dy2**2 - (R) ** 2)
+dhdx_symbolic2 = (se.DenseMatrix([h_symbolic2]).jacobian(se.DenseMatrix(ss))).T
+d2hdx2_symbolic2 = dhdx_symbolic2.jacobian(se.DenseMatrix(ss))
+h_nominal_ca2 = symbolic_cbf_wrapper_singleagent(h_symbolic2, ss)
+dhdx_nominal_ca2 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic2, ss)
+d2hdx2_nominal_ca2 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic2, ss)
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic3 = gain * (dx3**2 + dy3**2 - (R) ** 2)
-dhdx_nominal_ca_symbolic3 = (
-    se.DenseMatrix([h_nominal_ca_symbolic3]).jacobian(se.DenseMatrix(ss))
-).T
-d2hdx2_nominal_ca_symbolic3 = dhdx_nominal_ca_symbolic3.jacobian(se.DenseMatrix(ss))
-h_nominal_ca3 = symbolic_cbf_wrapper_singleagent(h_nominal_ca_symbolic3, ss)
-dhdx_nominal_ca3 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic3, ss)
-d2hdx2_nominal_ca3 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic3, ss)
+h_symbolic3 = gain * (dx3**2 + dy3**2 - (R) ** 2)
+dhdx_symbolic3 = (se.DenseMatrix([h_symbolic3]).jacobian(se.DenseMatrix(ss))).T
+d2hdx2_symbolic3 = dhdx_symbolic3.jacobian(se.DenseMatrix(ss))
+h_nominal_ca3 = symbolic_cbf_wrapper_singleagent(h_symbolic3, ss)
+dhdx_nominal_ca3 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic3, ss)
+d2hdx2_nominal_ca3 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic3, ss)
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic4 = gain * (dx4**2 + dy4**2 - (R) ** 2)
-dhdx_nominal_ca_symbolic4 = (
-    se.DenseMatrix([h_nominal_ca_symbolic4]).jacobian(se.DenseMatrix(ss))
-).T
-d2hdx2_nominal_ca_symbolic4 = dhdx_nominal_ca_symbolic4.jacobian(se.DenseMatrix(ss))
-h_nominal_ca4 = symbolic_cbf_wrapper_singleagent(h_nominal_ca_symbolic4, ss)
-dhdx_nominal_ca4 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic4, ss)
-d2hdx2_nominal_ca4 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic4, ss)
+h_symbolic4 = gain * (dx4**2 + dy4**2 - (R) ** 2)
+dhdx_symbolic4 = (se.DenseMatrix([h_symbolic4]).jacobian(se.DenseMatrix(ss))).T
+d2hdx2_symbolic4 = dhdx_symbolic4.jacobian(se.DenseMatrix(ss))
+h_nominal_ca4 = symbolic_cbf_wrapper_singleagent(h_symbolic4, ss)
+dhdx_nominal_ca4 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic4, ss)
+d2hdx2_nominal_ca4 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic4, ss)
 
 # Collision Avoidance CBF
-h_nominal_ca_symbolic5 = gain * (dx5**2 + dy5**2 - (R) ** 2)
-dhdx_nominal_ca_symbolic5 = (
-    se.DenseMatrix([h_nominal_ca_symbolic5]).jacobian(se.DenseMatrix(ss))
-).T
-d2hdx2_nominal_ca_symbolic5 = dhdx_nominal_ca_symbolic5.jacobian(se.DenseMatrix(ss))
-h_nominal_ca5 = symbolic_cbf_wrapper_singleagent(h_nominal_ca_symbolic5, ss)
-dhdx_nominal_ca5 = symbolic_cbf_wrapper_singleagent(dhdx_nominal_ca_symbolic5, ss)
-d2hdx2_nominal_ca5 = symbolic_cbf_wrapper_singleagent(d2hdx2_nominal_ca_symbolic5, ss)
+h_symbolic5 = gain * (dx5**2 + dy5**2 - (R) ** 2)
+dhdx_symbolic5 = (se.DenseMatrix([h_symbolic5]).jacobian(se.DenseMatrix(ss))).T
+d2hdx2_symbolic5 = dhdx_symbolic5.jacobian(se.DenseMatrix(ss))
+h_nominal_ca5 = symbolic_cbf_wrapper_singleagent(h_symbolic5, ss)
+dhdx_nominal_ca5 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic5, ss)
+d2hdx2_nominal_ca5 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic5, ss)
 
 
 # CBF Callables

@@ -19,6 +19,13 @@ from .symbolic_cbfs.static_obstacle_ca import (
 )
 from .symbolic_cbfs.speed_safety import h_speed, dhdx_speed, d2hdx2_speed
 from .symbolic_cbfs.beta_safety import h_beta, dhdx_beta, d2hdx2_beta
+from .symbolic_cbfs.reach_constraint import (
+    h as h_reach,
+    dhdt as dhdt_reach,
+    dhdx as dhdx_reach,
+    d2hdtdx as d2hdtdx_reach,
+    d2hdx2 as d2hdx2_reach,
+)
 
 # from .symbolic_cbfs.v1_safety import h_speed1, dhdx_speed1, d2hdx2_speed1
 # from .symbolic_cbfs.v2_safety import h_speed2, dhdx_speed2, d2hdx2_speed2
@@ -102,6 +109,7 @@ cbfs_individual = [
     Cbf(h_ca5, dhdx_ca5, d2hdx2_ca5, linear_class_k(k_default1), h_ca5),
     Cbf(h_speed, dhdx_speed, d2hdx2_speed, linear_class_k(k_default), h_speed),
     Cbf(h_beta, dhdx_beta, d2hdx2_beta, linear_class_k(k_default), h_beta),
+    Cbf(h_reach, dhdx_reach, d2hdx2_reach, linear_class_k(k_default), h_reach),
     # Cbf(h_speed1, dhdx_speed1, d2hdx2_speed1, linear_class_k(k_default), h_speed1),
     # Cbf(h_speed2, dhdx_speed2, d2hdx2_speed2, linear_class_k(k_default), h_speed2),
 ]

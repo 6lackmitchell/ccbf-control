@@ -19,11 +19,19 @@ except ModuleNotFoundError as e:
     raise e
 
 # Defining Physical Params
-limit = 2.0
-gain = 5.0
+T = 10
+goal_x = 2.0
+goal_y = 2.0
+R = 0.05
+Ri = 4
+gain = 10.0
 
-# Speed CBF Symbolic
-h_symbolic = gain * (limit - ss[3]) * (ss[3] + limit)
+# dx, dy
+dx = ss[0] - goal_x
+dy = ss[1] - goal_y
+
+# Symbolic Reach Constraint
+h_symbolic = gain * (R**2 + Ri**2 * (1 - tt / T) - dx**2 - dy**2)
 dhdt_symbolic = (se.DenseMatrix([h_symbolic]).jacobian(se.DenseMatrix([tt]))).T
 dhdx_symbolic = (se.DenseMatrix([h_symbolic]).jacobian(se.DenseMatrix(ss))).T
 d2hdtdx_symbolic = dhdt_symbolic.jacobian(se.DenseMatrix(ss))
@@ -35,29 +43,40 @@ d2hdtdx_func = symbolic_cbf_wrapper_singleagent(d2hdtdx_symbolic, tt, ss)
 d2hdx2_func = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic, tt, ss)
 
 
-def h_speed(t, x):
+def h(t, x):
     return h_func(t, x)
 
 
-def dhdt_speed(t, x):
+def dhdt(t, x):
     ret = dhdt_func(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def dhdx_speed(t, x):
+def dhdx(t, x):
     ret = dhdx_func(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def d2hdtdx_speed(t, x):
+def d2hdx2(t, x):
+    ret = d2hdx2_func(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def d2hdtdx(t, x):
     ret = d2hdtdx_func(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def d2hdx2_speed(t, x):
-    ret = d2hdx2_func(t, x)
+if __name__ == "__main__":
+    # This is a unit test
+    t = 0.25
+    x = np.array([1.0, 2.0])
 
-    return np.squeeze(np.array(ret).astype(np.float64))
+    print(h(t, x))
+    print(dhdx(t, x))
+    print(d2hdx2(t, x))
+    print("stop")
