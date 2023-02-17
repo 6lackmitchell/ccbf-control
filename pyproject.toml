@@ -19,6 +19,8 @@ symengine = "^0.9.2"
 PyQt5 = "^5.15.7"
 squaternion = "^0.3.4"
 numdifftools = "^0.9.40"
+jax = "^0.4.4"
+jaxlib = "^0.4.4"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.15.4"
