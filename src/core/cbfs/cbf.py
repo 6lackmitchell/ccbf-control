@@ -33,20 +33,20 @@ class Cbf:
         self.d2hdtdx_value = None
         self.d2hdx2_value = None
 
-        # symbolic expressions
-        self.h_sym = None
-        self.dhdt_sym = None
-        self.dhdx_sym = None
-        self.d2hdtdx_sym = None
-        self.d2hdx2_sym = None
+        # # symbolic expressions
+        # self.h_sym = None
+        # self.dhdt_sym = None
+        # self.dhdx_sym = None
+        # self.d2hdtdx_sym = None
+        # self.d2hdx2_sym = None
 
-    def set_symbolics(self, h_sym, dhdt_sym, dhdx_sym, d2hdtdx_sym, d2hdx2_sym) -> None:
-        """Sets the symbolic features of the CBF object."""
-        self.h_sym = h_sym
-        self.dhdt_sym = dhdt_sym
-        self.dhdx_sym = dhdx_sym
-        self.d2hdtdx_sym = d2hdtdx_sym
-        self.d2hdx2_sym = d2hdx2_sym
+    # def set_symbolics(self, h_sym, dhdt_sym, dhdx_sym, d2hdtdx_sym, d2hdx2_sym) -> None:
+    #     """Sets the symbolic features of the CBF object."""
+    #     self.h_sym = h_sym
+    #     self.dhdt_sym = dhdt_sym
+    #     self.dhdx_sym = dhdx_sym
+    #     self.d2hdtdx_sym = d2hdtdx_sym
+    #     self.d2hdx2_sym = d2hdx2_sym
 
     def h0(self, *args) -> float:
         self.h0_value = float(self._h0(*args))
