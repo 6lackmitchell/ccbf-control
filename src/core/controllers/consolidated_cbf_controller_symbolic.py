@@ -6,7 +6,7 @@ Provides interface to the ConsolidatedCbfController class.
 import time
 import numpy as np
 import symengine as se
-from sympy import summation
+from sympy import Matrix
 import builtins
 from typing import Callable, List, Optional, Tuple
 from importlib import import_module
@@ -145,7 +145,8 @@ def theta_gradient(a: float, b: float, c: float, d: float, p: float) -> float:
 
 
 def smooth_abs(x):
-    return 2 * se.log(1 + se.exp(x)) - x - 2 * se.log(2)
+    ret = [2 * se.log(1 + se.exp(xx)) - xx - 2 * se.log(2) for xx in x]
+    return se.DenseMatrix(ret)
 
 
 def dsmoothabs_dx(x):
@@ -257,11 +258,22 @@ class ConsolidatedCbfController(CbfQpController):
         self.k_des = kZero * np.ones((nCBFs,))
         self.adapter = AdaptationLaw(nCBFs, u_max, kZero=kZero, alpha=self.alpha)
 
-        # set up adapter
+        # assign adapter symbolic properties
         self.adapter.t_sym = self.t_sym
         self.adapter.w_sym = self.w_sym
         self.adapter.x_sym = self.x_sym
         self.adapter.all_sym = self.all_sym
+        self.adapter.H_symbolic = H_symbolic
+        self.adapter.dHdt_symbolic = dHdt_symbolic
+        self.adapter.dHdw_symbolic = dHdw_symbolic
+        self.adapter.dHdx_symbolic = dHdx_symbolic
+        self.adapter.d2Hdw2_symbolic = d2Hdw2_symbolic
+        self.adapter.d2Hdwdx_symbolic = d2Hdwdx_symbolic
+        self.adapter.d2Hdwdt_symbolic = d2Hdwdt_symbolic
+        self.adapter.d3Hdw3_symbolic = d3Hdw3_symbolic
+        self.adapter.d3Hdw2dx_symbolic = d3Hdw2dx_symbolic
+
+        # assign adapter functions
         self.adapter.H = self.H
         self.adapter.dHdt = self.dHdt
         self.adapter.dHdw = self.dHdw
@@ -271,6 +283,8 @@ class ConsolidatedCbfController(CbfQpController):
         self.adapter.d2Hdwdt = self.d2Hdwdt
         self.adapter.d3Hdw3 = self.d3Hdw3
         self.adapter.d3Hdw2dx = self.d3Hdw2dx
+
+        # finish adapter setup
         self.adapter.setup()
 
         self.adapter.dt = self._dt
@@ -768,6 +782,7 @@ class AdaptationLaw:
 
         """
         nStates = 5  # placeholder
+        self.n_weights = nWeights
 
         # time
         self.t = 0.0
@@ -823,6 +838,17 @@ class AdaptationLaw:
         self.w_sym = None
         self.x_sym = None
         self.all_sym = None
+        self.H_symbolic = None
+        self.dHdt_symbolic = None
+        self.dHdw_symbolic = None
+        self.dHdx_symbolic = None
+        self.d2Hdw2_symbolic = None
+        self.d2Hdwdx_symbolic = None
+        self.d2Hdwdt_symbolic = None
+        self.d3Hdw3_symbolic = None
+        self.d3Hdw2dx_symbolic = None
+
+        # function placeholders
         self.H = None
         self.dHdt = None
         self.dHdw = None
@@ -832,6 +858,29 @@ class AdaptationLaw:
         self.d2Hdwdt = None
         self.d3Hdw3 = None
         self.d3Hdw2dx = None
+
+        # preallocate feasible region functions
+        self._b1 = nWeights * [None]
+        self._db1dt = nWeights * [None]
+        self._db1dw = nWeights * [None]
+        self._db1dx = nWeights * [None]
+        self._d2b1dw2 = nWeights * [None]
+        self._d2b1dwdx = nWeights * [None]
+        self._d2b1dwdt = nWeights * [None]
+        self._b2 = nWeights * [None]
+        self._db2dt = nWeights * [None]
+        self._db2dw = nWeights * [None]
+        self._db2dx = nWeights * [None]
+        self._d2b2dw2 = nWeights * [None]
+        self._d2b2dwdx = nWeights * [None]
+        self._d2b2dwdt = nWeights * [None]
+        self._b3 = None
+        self._db3dt = None
+        self._db3dw = None
+        self._db3dx = None
+        self._d2b3dw2 = None
+        self._d2b3dwdx = None
+        self._d2b3dwdt = None
 
         # delta terms
         self._delta = None
@@ -1012,6 +1061,7 @@ class AdaptationLaw:
         # Gains and Parameters -- Testing
         self.alpha = alpha
         self.eta_mu = 0.25
+        self.eta_nu = 0.25
         self.w_dot_gain = 1
         self.cost_gain_mat = 1e-1 * np.eye(nWeights)
         # self.cost_gain_mat = 1e3 * np.eye(nWeights)
@@ -1092,23 +1142,24 @@ class AdaptationLaw:
             None
 
         """
-        # symbolic functions
-        b1_symbolic = self.w_min - self.w_sym
-        db1dt_symbolic = (se.DenseMatrix([b1_symbolic]).jacobian(se.DenseMatrix(self.t_sym))).T
-        db1dw_symbolic = (se.DenseMatrix([b1_symbolic]).jacobian(se.DenseMatrix(self.w_sym))).T
-        db1dx_symbolic = (se.DenseMatrix([b1_symbolic]).jacobian(se.DenseMatrix(self.x_sym))).T
-        d2b1dw2_symbolic = db1dw_symbolic.jacobian(se.DenseMatrix(self.w_sym))
-        d2b1dwdx_symbolic = db1dw_symbolic.jacobian(se.DenseMatrix(self.x_sym))
-        d2b1dwdt_symbolic = db1dw_symbolic.jacobian(se.DenseMatrix(self.t_sym))
+        for ii, _ in enumerate(self._b1):
+            # symbolic functions
+            b1_symbolic = self.w_min - self.w_sym[ii]
+            db1dt_symbolic = (se.DenseMatrix([b1_symbolic]).jacobian(se.DenseMatrix(self.t_sym))).T
+            db1dw_symbolic = (se.DenseMatrix([b1_symbolic]).jacobian(se.DenseMatrix(self.w_sym))).T
+            db1dx_symbolic = (se.DenseMatrix([b1_symbolic]).jacobian(se.DenseMatrix(self.x_sym))).T
+            d2b1dw2_symbolic = db1dw_symbolic.jacobian(se.DenseMatrix(self.w_sym))
+            d2b1dwdx_symbolic = db1dw_symbolic.jacobian(se.DenseMatrix(self.x_sym))
+            d2b1dwdt_symbolic = db1dw_symbolic.jacobian(se.DenseMatrix(self.t_sym))
 
-        # callable c-cbf symbolic functions
-        self._b1 = symbolic_cbf_wrapper_singleagent(b1_symbolic, self.all_sym)
-        self._db1dt = symbolic_cbf_wrapper_singleagent(db1dt_symbolic, self.all_sym)
-        self._db1dw = symbolic_cbf_wrapper_singleagent(db1dw_symbolic, self.all_sym)
-        self._db1dx = symbolic_cbf_wrapper_singleagent(db1dx_symbolic, self.all_sym)
-        self._d2b1dw2 = symbolic_cbf_wrapper_singleagent(d2b1dw2_symbolic, self.all_sym)
-        self._d2b1dwdx = symbolic_cbf_wrapper_singleagent(d2b1dwdx_symbolic, self.all_sym)
-        self._d2b1dwdt = symbolic_cbf_wrapper_singleagent(d2b1dwdt_symbolic, self.all_sym)
+            # callable c-cbf symbolic functions
+            self._b1[ii] = symbolic_cbf_wrapper_singleagent(b1_symbolic, self.all_sym)
+            self._db1dt[ii] = symbolic_cbf_wrapper_singleagent(db1dt_symbolic, self.all_sym)
+            self._db1dw[ii] = symbolic_cbf_wrapper_singleagent(db1dw_symbolic, self.all_sym)
+            self._db1dx[ii] = symbolic_cbf_wrapper_singleagent(db1dx_symbolic, self.all_sym)
+            self._d2b1dw2[ii] = symbolic_cbf_wrapper_singleagent(d2b1dw2_symbolic, self.all_sym)
+            self._d2b1dwdx[ii] = symbolic_cbf_wrapper_singleagent(d2b1dwdx_symbolic, self.all_sym)
+            self._d2b1dwdt[ii] = symbolic_cbf_wrapper_singleagent(d2b1dwdt_symbolic, self.all_sym)
 
     def setup_b2(self) -> None:
         """Generates symbolic functions for bounding the weights from above.
@@ -1120,23 +1171,24 @@ class AdaptationLaw:
             None
 
         """
-        # symbolic functions
-        b2_symbolic = self.w_sym - self.w_max
-        db2dt_symbolic = (se.DenseMatrix([b2_symbolic]).jacobian(se.DenseMatrix(self.t_sym))).T
-        db2dw_symbolic = (se.DenseMatrix([b2_symbolic]).jacobian(se.DenseMatrix(self.w_sym))).T
-        db2dx_symbolic = (se.DenseMatrix([b2_symbolic]).jacobian(se.DenseMatrix(self.x_sym))).T
-        d2b2dw2_symbolic = db2dw_symbolic.jacobian(se.DenseMatrix(self.w_sym))
-        d2b2dwdx_symbolic = db2dw_symbolic.jacobian(se.DenseMatrix(self.x_sym))
-        d2b2dwdt_symbolic = db2dw_symbolic.jacobian(se.DenseMatrix(self.t_sym))
+        for ii, _ in enumerate(self._b2):
+            # symbolic functions
+            b2_symbolic = self.w_sym[ii] - self.w_max
+            db2dt_symbolic = (se.DenseMatrix([b2_symbolic]).jacobian(se.DenseMatrix(self.t_sym))).T
+            db2dw_symbolic = (se.DenseMatrix([b2_symbolic]).jacobian(se.DenseMatrix(self.w_sym))).T
+            db2dx_symbolic = (se.DenseMatrix([b2_symbolic]).jacobian(se.DenseMatrix(self.x_sym))).T
+            d2b2dw2_symbolic = db2dw_symbolic.jacobian(se.DenseMatrix(self.w_sym))
+            d2b2dwdx_symbolic = db2dw_symbolic.jacobian(se.DenseMatrix(self.x_sym))
+            d2b2dwdt_symbolic = db2dw_symbolic.jacobian(se.DenseMatrix(self.t_sym))
 
-        # callable c-cbf symbolic functions
-        self._b2 = symbolic_cbf_wrapper_singleagent(b2_symbolic, self.all_sym)
-        self._db2dt = symbolic_cbf_wrapper_singleagent(db2dt_symbolic, self.all_sym)
-        self._db2dw = symbolic_cbf_wrapper_singleagent(db2dw_symbolic, self.all_sym)
-        self._db2dx = symbolic_cbf_wrapper_singleagent(db2dx_symbolic, self.all_sym)
-        self._d2b2dw2 = symbolic_cbf_wrapper_singleagent(d2b2dw2_symbolic, self.all_sym)
-        self._d2b2dwdx = symbolic_cbf_wrapper_singleagent(d2b2dwdx_symbolic, self.all_sym)
-        self._d2b2dwdt = symbolic_cbf_wrapper_singleagent(d2b2dwdt_symbolic, self.all_sym)
+            # callable c-cbf symbolic functions
+            self._b2[ii] = symbolic_cbf_wrapper_singleagent(b2_symbolic, self.all_sym)
+            self._db2dt[ii] = symbolic_cbf_wrapper_singleagent(db2dt_symbolic, self.all_sym)
+            self._db2dw[ii] = symbolic_cbf_wrapper_singleagent(db2dw_symbolic, self.all_sym)
+            self._db2dx[ii] = symbolic_cbf_wrapper_singleagent(db2dx_symbolic, self.all_sym)
+            self._d2b2dw2[ii] = symbolic_cbf_wrapper_singleagent(d2b2dw2_symbolic, self.all_sym)
+            self._d2b2dwdx[ii] = symbolic_cbf_wrapper_singleagent(d2b2dwdx_symbolic, self.all_sym)
+            self._d2b2dwdt[ii] = symbolic_cbf_wrapper_singleagent(d2b2dwdt_symbolic, self.all_sym)
 
     def setup_b3(self) -> None:
         """Generates symbolic functions for validating the C-CBF.
@@ -1149,31 +1201,129 @@ class AdaptationLaw:
 
         """
         # symbolic functions
-        delta_symbolic = (
-            self.eta_mu
-            + self.eta_nu
-            - self.dHdt
-            - self.dHdx @ f(np.zeros((1,)), True)
-            - self.dHdw @ self._w_dot_drift_f
-            - self.alpha(self.H)
+        delta_symbolic_a = (
+            se.DenseMatrix([self.eta_mu + self.eta_nu])
+            - self.dHdt_symbolic
+            - self.dHdx_symbolic.T @ f(np.zeros((1,)), True)
+            - self.alpha * se.DenseMatrix([self.H_symbolic])
         )
-        q_symbolic = self.dHdx @ g(np.zeros((1,)), True) + self.dHdw @ self._w_dot_contr_f
-        b3_symbolic = delta_symbolic - smooth_abs(q_symbolic) @ self.u_max
-        db3dt_symbolic = (se.DenseMatrix([b3_symbolic]).jacobian(se.DenseMatrix(self.t_sym))).T
-        db3dw_symbolic = (se.DenseMatrix([b3_symbolic]).jacobian(se.DenseMatrix(self.w_sym))).T
-        db3dx_symbolic = (se.DenseMatrix([b3_symbolic]).jacobian(se.DenseMatrix(self.x_sym))).T
-        d2b3dw2_symbolic = db3dw_symbolic.jacobian(se.DenseMatrix(self.w_sym))
-        d2b3dwdx_symbolic = db3dw_symbolic.jacobian(se.DenseMatrix(self.x_sym))
-        d2b3dwdt_symbolic = db3dw_symbolic.jacobian(se.DenseMatrix(self.t_sym))
+        delta_symbolic_b = -self.dHdw_symbolic
+        q_symbolic_a = self.dHdx_symbolic.T @ g(np.zeros((1,)), True)
+        q_symbolic_b = self.dHdw_symbolic
+
+        # delta = (
+        #     lambda ag: symbolic_cbf_wrapper_singleagent(delta_symbolic, self.all_sym)(ag)
+        #     + symbolic_cbf_wrapper_singleagent(self.dHdw_symbolic, self.all_sym)(ag).T
+        #     @ self._w_dot_drift_f
+        # )
+
+        # component of b3 function without filtered variables
+        b3_symbolic_a = delta_symbolic_a - smooth_abs(q_symbolic_a).T @ Matrix(self.u_max)
+        db3dt_symbolic_a = (se.DenseMatrix([b3_symbolic_a]).jacobian(se.DenseMatrix(self.t_sym))).T
+        db3dw_symbolic_a = (se.DenseMatrix([b3_symbolic_a]).jacobian(se.DenseMatrix(self.w_sym))).T
+        db3dx_symbolic_a = (se.DenseMatrix([b3_symbolic_a]).jacobian(se.DenseMatrix(self.x_sym))).T
+        d2b3dw2_symbolic_a = db3dw_symbolic_a.jacobian(se.DenseMatrix(self.w_sym))
+        d2b3dwdx_symbolic_a = db3dw_symbolic_a.jacobian(se.DenseMatrix(self.x_sym))
+        d2b3dwdt_symbolic_a = db3dw_symbolic_a.jacobian(se.DenseMatrix(self.t_sym))
+        b3_a = symbolic_cbf_wrapper_singleagent(b3_symbolic_a, self.all_sym)
+        db3dt_a = symbolic_cbf_wrapper_singleagent(db3dt_symbolic_a, self.all_sym)
+        db3dw_a = symbolic_cbf_wrapper_singleagent(db3dw_symbolic_a, self.all_sym)
+        db3dx_a = symbolic_cbf_wrapper_singleagent(db3dx_symbolic_a, self.all_sym)
+        d2b3dw2_a = symbolic_cbf_wrapper_singleagent(d2b3dw2_symbolic_a, self.all_sym)
+        d2b3dwdx_a = symbolic_cbf_wrapper_singleagent(d2b3dwdx_symbolic_a, self.all_sym)
+        d2b3dwdt_a = symbolic_cbf_wrapper_singleagent(d2b3dwdt_symbolic_a, self.all_sym)
+
+        # component of b3 function with filtered mu
+        b3_symbolic_b = delta_symbolic_b
+        db3dt_symbolic_b = se.DenseMatrix([b3_symbolic_b]).jacobian(se.DenseMatrix(self.t_sym))
+        db3dw_symbolic_b = se.DenseMatrix([b3_symbolic_b]).jacobian(se.DenseMatrix(self.w_sym))
+        db3dx_symbolic_b = se.DenseMatrix([b3_symbolic_b]).jacobian(se.DenseMatrix(self.x_sym))
+        #! these need to be fixed
+        # d2b3dw2_symbolic_b = db3dw_symbolic_b.jacobian(se.DenseMatrix(self.w_sym))
+        # d2b3dwdx_symbolic_b = db3dw_symbolic_b.jacobian(se.DenseMatrix(self.x_sym))
+        # d2b3dwdt_symbolic_b = db3dw_symbolic_b.jacobian(se.DenseMatrix(self.t_sym))
+
+        d2b3dw2_symbolic_b = se.DenseMatrix(
+            [
+                db3dw_symbolic_b[:, ii].jacobian(se.DenseMatrix(self.w_sym)).T
+                for ii in range(self.n_weights)
+            ]
+        )
+        d2b3dwdx_symbolic_b = se.DenseMatrix(
+            [
+                db3dw_symbolic_b[:, ii].jacobian(se.DenseMatrix(self.x_sym)).T
+                for ii in range(self.n_weights)
+            ]
+        )
+        d2b3dwdt_symbolic_b = se.DenseMatrix(
+            [
+                db3dw_symbolic_b[:, ii].jacobian(se.DenseMatrix(self.t_sym)).T
+                for ii in range(self.n_weights)
+            ]
+        )
+
+        b3_b = symbolic_cbf_wrapper_singleagent(b3_symbolic_b, self.all_sym)
+        db3dt_b = symbolic_cbf_wrapper_singleagent(db3dt_symbolic_b, self.all_sym)
+        db3dw_b = symbolic_cbf_wrapper_singleagent(db3dw_symbolic_b, self.all_sym)
+        db3dx_b = symbolic_cbf_wrapper_singleagent(db3dx_symbolic_b, self.all_sym)
+        d2b3dw2_b = lambda v: symbolic_cbf_wrapper_singleagent(d2b3dw2_symbolic_b, self.all_sym)(
+            v
+        ).reshape((self.n_weights, self.n_weights, self.n_weights))
+        d2b3dwdx_b = lambda v: symbolic_cbf_wrapper_singleagent(d2b3dwdx_symbolic_b, self.all_sym)(
+            v
+        ).reshape((self.n_weights, self.n_weights, self.n_states))
+        d2b3dwdt_b = lambda v: symbolic_cbf_wrapper_singleagent(d2b3dwdt_symbolic_b, self.all_sym)(
+            v
+        ).reshape((self.n_weights, self.n_weights))
+
+        # component of b3 function with filtered nu
+        b3_symbolic_c = -smooth_abs(q_symbolic_b) @ self.u_max
+        db3dt_symbolic_c = (se.DenseMatrix([b3_symbolic_c]).jacobian(se.DenseMatrix(self.t_sym))).T
+        db3dw_symbolic_c = (se.DenseMatrix([b3_symbolic_c]).jacobian(se.DenseMatrix(self.w_sym))).T
+        db3dx_symbolic_c = (se.DenseMatrix([b3_symbolic_c]).jacobian(se.DenseMatrix(self.x_sym))).T
+        d2b3dw2_symbolic_c = db3dw_symbolic_c.jacobian(se.DenseMatrix(self.w_sym))
+        d2b3dwdx_symbolic_c = db3dw_symbolic_c.jacobian(se.DenseMatrix(self.x_sym))
+        d2b3dwdt_symbolic_c = db3dw_symbolic_c.jacobian(se.DenseMatrix(self.t_sym))
+        b3_c = symbolic_cbf_wrapper_singleagent(b3_symbolic_c, self.all_sym)
+        db3dt_c = symbolic_cbf_wrapper_singleagent(db3dt_symbolic_c, self.all_sym)
+        db3dw_c = symbolic_cbf_wrapper_singleagent(db3dw_symbolic_c, self.all_sym)
+        db3dx_c = symbolic_cbf_wrapper_singleagent(db3dx_symbolic_c, self.all_sym)
+        d2b3dw2_c = symbolic_cbf_wrapper_singleagent(d2b3dw2_symbolic_c, self.all_sym)
+        d2b3dwdx_c = symbolic_cbf_wrapper_singleagent(d2b3dwdx_symbolic_c, self.all_sym)
+        d2b3dwdt_c = symbolic_cbf_wrapper_singleagent(d2b3dwdt_symbolic_c, self.all_sym)
 
         # callable c-cbf symbolic functions
-        self._b3 = symbolic_cbf_wrapper_singleagent(b3_symbolic, self.all_sym)
-        self._db3dt = symbolic_cbf_wrapper_singleagent(db3dt_symbolic, self.all_sym)
-        self._db3dw = symbolic_cbf_wrapper_singleagent(db3dw_symbolic, self.all_sym)
-        self._db3dx = symbolic_cbf_wrapper_singleagent(db3dx_symbolic, self.all_sym)
-        self._d2b3dw2 = symbolic_cbf_wrapper_singleagent(d2b3dw2_symbolic, self.all_sym)
-        self._d2b3dwdx = symbolic_cbf_wrapper_singleagent(d2b3dwdx_symbolic, self.all_sym)
-        self._d2b3dwdt = symbolic_cbf_wrapper_singleagent(d2b3dwdt_symbolic, self.all_sym)
+        self._b3 = lambda v: b3_a(v) + b3_b(v) @ self._w_dot_drift_f + b3_c(v) @ self._w_dot_contr_f
+        self._db3dt = (
+            lambda v: db3dt_a(v)
+            + db3dt_b(v) @ self._w_dot_drift_f
+            + db3dt_c(v) @ self._w_dot_contr_f
+        )
+        self._db3dw = (
+            lambda v: db3dw_a(v)
+            + db3dw_b(v) @ self._w_dot_drift_f
+            + db3dw_c(v) @ self._w_dot_contr_f
+        )
+        self._db3dx = (
+            lambda v: db3dx_a(v)
+            + db3dx_b(v) @ self._w_dot_drift_f
+            + db3dx_c(v) @ self._w_dot_contr_f
+        )
+        self._d2b3dw2 = (
+            lambda v: d2b3dw2_a(v)
+            + d2b3dw2_b(v) @ self._w_dot_drift_f
+            + d2b3dw2_c(v) @ self._w_dot_contr_f
+        )
+        self._d2b3dwdx = (
+            lambda v: d2b3dwdx_a(v)
+            + d2b3dwdx_b(v) @ self._w_dot_drift_f
+            + d2b3dwdx_c(v) @ self._w_dot_contr_f
+        )
+        self._d2b3dwdt = (
+            lambda v: d2b3dwdt_a(v)
+            + d2b3dwdt_b(v) @ self._w_dot_drift_f
+            + d2b3dwdt_c(v) @ self._w_dot_contr_f
+        )
 
     def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
         """Updates the adaptation gains and returns the new k weights.
