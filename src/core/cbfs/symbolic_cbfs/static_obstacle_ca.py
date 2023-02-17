@@ -3,6 +3,7 @@ import numpy as np
 import symengine as se
 from importlib import import_module
 from core.cbfs.cbf_wrappers import symbolic_cbf_wrapper_singleagent
+from core.cbfs.cbf import Cbf
 
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]
@@ -53,130 +54,223 @@ dy5 = (ss[1] - cy5) * y_scale
 
 # Collision Avoidance CBF
 h_symbolic1 = gain * (dx1**2 + dy1**2 - (R) ** 2)
-dhdt_symbolic1 = (se.DenseMatrix([h_symbolic1]).jacobian(se.DenseMatrix([tt]))).T
+dhdt_symbolic1 = (se.DenseMatrix([h_symbolic1]).jacobian(se.DenseMatrix(tt))).T
 dhdx_symbolic1 = (se.DenseMatrix([h_symbolic1]).jacobian(se.DenseMatrix(ss))).T
 d2hdtdx_symbolic1 = dhdt_symbolic1.jacobian(se.DenseMatrix(ss))
 d2hdx2_symbolic1 = dhdx_symbolic1.jacobian(se.DenseMatrix(ss))
 h_func1 = symbolic_cbf_wrapper_singleagent(h_symbolic1, tt, ss)
 dhdt_func1 = symbolic_cbf_wrapper_singleagent(dhdt_symbolic1, tt, ss)
-dhdx_func1 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic, tt, ss)
-d2hdtdx_func1 = symbolic_cbf_wrapper_singleagent(d2hdtdx_symbolic, tt, ss)
-d2hdx2_func1 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic, tt, ss)
+dhdx_func1 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic1, tt, ss)
+d2hdtdx_func1 = symbolic_cbf_wrapper_singleagent(d2hdtdx_symbolic1, tt, ss)
+d2hdx2_func1 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic1, tt, ss)
 
 # Collision Avoidance CBF
 h_symbolic2 = gain * (dx2**2 + dy2**2 - (R) ** 2)
+dhdt_symbolic2 = (se.DenseMatrix([h_symbolic2]).jacobian(se.DenseMatrix(tt))).T
 dhdx_symbolic2 = (se.DenseMatrix([h_symbolic2]).jacobian(se.DenseMatrix(ss))).T
+d2hdtdx_symbolic2 = dhdt_symbolic2.jacobian(se.DenseMatrix(ss))
 d2hdx2_symbolic2 = dhdx_symbolic2.jacobian(se.DenseMatrix(ss))
-h_nominal_ca2 = symbolic_cbf_wrapper_singleagent(h_symbolic2, ss)
-dhdx_nominal_ca2 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic2, ss)
-d2hdx2_nominal_ca2 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic2, ss)
+h_func2 = symbolic_cbf_wrapper_singleagent(h_symbolic2, tt, ss)
+dhdt_func2 = symbolic_cbf_wrapper_singleagent(dhdt_symbolic2, tt, ss)
+dhdx_func2 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic2, tt, ss)
+d2hdtdx_func2 = symbolic_cbf_wrapper_singleagent(d2hdtdx_symbolic2, tt, ss)
+d2hdx2_func2 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic2, tt, ss)
 
 # Collision Avoidance CBF
 h_symbolic3 = gain * (dx3**2 + dy3**2 - (R) ** 2)
+dhdt_symbolic3 = (se.DenseMatrix([h_symbolic3]).jacobian(se.DenseMatrix(tt))).T
 dhdx_symbolic3 = (se.DenseMatrix([h_symbolic3]).jacobian(se.DenseMatrix(ss))).T
+d2hdtdx_symbolic3 = dhdt_symbolic3.jacobian(se.DenseMatrix(ss))
 d2hdx2_symbolic3 = dhdx_symbolic3.jacobian(se.DenseMatrix(ss))
-h_nominal_ca3 = symbolic_cbf_wrapper_singleagent(h_symbolic3, ss)
-dhdx_nominal_ca3 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic3, ss)
-d2hdx2_nominal_ca3 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic3, ss)
+h_func3 = symbolic_cbf_wrapper_singleagent(h_symbolic3, tt, ss)
+dhdt_func3 = symbolic_cbf_wrapper_singleagent(dhdt_symbolic3, tt, ss)
+dhdx_func3 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic3, tt, ss)
+d2hdtdx_func3 = symbolic_cbf_wrapper_singleagent(d2hdtdx_symbolic3, tt, ss)
+d2hdx2_func3 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic3, tt, ss)
 
 # Collision Avoidance CBF
 h_symbolic4 = gain * (dx4**2 + dy4**2 - (R) ** 2)
+dhdt_symbolic4 = (se.DenseMatrix([h_symbolic4]).jacobian(se.DenseMatrix(tt))).T
 dhdx_symbolic4 = (se.DenseMatrix([h_symbolic4]).jacobian(se.DenseMatrix(ss))).T
+d2hdtdx_symbolic4 = dhdt_symbolic4.jacobian(se.DenseMatrix(ss))
 d2hdx2_symbolic4 = dhdx_symbolic4.jacobian(se.DenseMatrix(ss))
-h_nominal_ca4 = symbolic_cbf_wrapper_singleagent(h_symbolic4, ss)
-dhdx_nominal_ca4 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic4, ss)
-d2hdx2_nominal_ca4 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic4, ss)
+h_func4 = symbolic_cbf_wrapper_singleagent(h_symbolic4, tt, ss)
+dhdt_func4 = symbolic_cbf_wrapper_singleagent(dhdt_symbolic4, tt, ss)
+dhdx_func4 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic4, tt, ss)
+d2hdtdx_func4 = symbolic_cbf_wrapper_singleagent(d2hdtdx_symbolic4, tt, ss)
+d2hdx2_func4 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic4, tt, ss)
 
 # Collision Avoidance CBF
 h_symbolic5 = gain * (dx5**2 + dy5**2 - (R) ** 2)
+dhdt_symbolic5 = (se.DenseMatrix([h_symbolic5]).jacobian(se.DenseMatrix(tt))).T
 dhdx_symbolic5 = (se.DenseMatrix([h_symbolic5]).jacobian(se.DenseMatrix(ss))).T
+d2hdtdx_symbolic5 = dhdt_symbolic5.jacobian(se.DenseMatrix(ss))
 d2hdx2_symbolic5 = dhdx_symbolic5.jacobian(se.DenseMatrix(ss))
-h_nominal_ca5 = symbolic_cbf_wrapper_singleagent(h_symbolic5, ss)
-dhdx_nominal_ca5 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic5, ss)
-d2hdx2_nominal_ca5 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic5, ss)
+h_func5 = symbolic_cbf_wrapper_singleagent(h_symbolic5, tt, ss)
+dhdt_func5 = symbolic_cbf_wrapper_singleagent(dhdt_symbolic5, tt, ss)
+dhdx_func5 = symbolic_cbf_wrapper_singleagent(dhdx_symbolic5, tt, ss)
+d2hdtdx_func5 = symbolic_cbf_wrapper_singleagent(d2hdtdx_symbolic5, tt, ss)
+d2hdx2_func5 = symbolic_cbf_wrapper_singleagent(d2hdx2_symbolic5, tt, ss)
 
 
 # CBF Callables
-def h_ca1(ego):
-    return h_nominal_ca1(ego)
+def h1(t, x):
+    return h_func1(t, x)
 
 
-def dhdx_ca1(ego):
-    ret = dhdx_nominal_ca1(ego)
-
-    return np.squeeze(np.array(ret).astype(np.float64))
-
-
-# Necessary for stochastic systems
-def d2hdx2_ca1(ego):
-    ret = d2hdx2_nominal_ca1(ego)
+def dhdt1(t, x):
+    ret = dhdt_func1(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def h_ca2(ego):
-    return h_nominal_ca2(ego)
-
-
-def dhdx_ca2(ego):
-    ret = dhdx_nominal_ca2(ego)
+def dhdx1(t, x):
+    ret = dhdx_func1(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-# Necessary for stochastic systems
-def d2hdx2_ca2(ego):
-    ret = d2hdx2_nominal_ca2(ego)
+def d2hdtdx1(t, x):
+    ret = d2hdtdx_func1(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def h_ca3(ego):
-    return h_nominal_ca3(ego)
-
-
-def dhdx_ca3(ego):
-    ret = dhdx_nominal_ca3(ego)
+def d2hdx2_1(t, x):
+    ret = d2hdx2_func1(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def d2hdx2_ca3(ego):
-    ret = d2hdx2_nominal_ca3(ego)
+def h2(t, x):
+    return h_func2(t, x)
+
+
+def dhdt2(t, x):
+    ret = dhdt_func2(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def h_ca4(ego):
-    return h_nominal_ca4(ego)
-
-
-def dhdx_ca4(ego):
-    ret = dhdx_nominal_ca4(ego)
+def dhdx2(t, x):
+    ret = dhdx_func2(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def d2hdx2_ca4(ego):
-    ret = d2hdx2_nominal_ca4(ego)
+def d2hdtdx2(t, x):
+    ret = d2hdtdx_func2(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def h_ca5(ego):
-    return h_nominal_ca5(ego)
-
-
-def dhdx_ca5(ego):
-    ret = dhdx_nominal_ca5(ego)
+def d2hdx2_2(t, x):
+    ret = d2hdx2_func2(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def d2hdx2_ca5(ego):
-    ret = d2hdx2_nominal_ca5(ego)
+def h3(t, x):
+    return h_func3(t, x)
+
+
+def dhdt3(t, x):
+    ret = dhdt_func3(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def dhdx3(t, x):
+    ret = dhdx_func3(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def d2hdtdx3(t, x):
+    ret = d2hdtdx_func3(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def d2hdx2_3(t, x):
+    ret = d2hdx2_func3(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def h4(t, x):
+    return h_func4(t, x)
+
+
+def dhdt4(t, x):
+    ret = dhdt_func4(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def dhdx4(t, x):
+    ret = dhdx_func4(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def d2hdtdx4(t, x):
+    ret = d2hdtdx_func4(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def d2hdx2_4(t, x):
+    ret = d2hdx2_func4(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def h5(t, x):
+    return h_func5(t, x)
+
+
+def dhdt5(t, x):
+    ret = dhdt_func5(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def dhdx5(t, x):
+    ret = dhdx_func5(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def d2hdtdx5(t, x):
+    ret = d2hdtdx_func5(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def d2hdx2_5(t, x):
+    ret = d2hdx2_func5(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
+def linear_class_k(k):
+    def alpha(h):
+        return k * h
+
+    return alpha
+
+
+cbf1 = Cbf(h1, None, dhdx1, None, d2hdx2_1, linear_class_k(1.0))
+cbf2 = Cbf(h2, None, dhdx2, None, d2hdx2_2, linear_class_k(1.0))
+cbf3 = Cbf(h3, None, dhdx3, None, d2hdx2_3, linear_class_k(1.0))
+cbf4 = Cbf(h4, None, dhdx4, None, d2hdx2_4, linear_class_k(1.0))
+cbf5 = Cbf(h5, None, dhdx5, None, d2hdx2_5, linear_class_k(1.0))
+cbf1.set_symbolics(h_symbolic1, None, dhdx_symbolic1, None, d2hdx2_symbolic1)
+cbf2.set_symbolics(h_symbolic2, None, dhdx_symbolic2, None, d2hdx2_symbolic2)
+cbf3.set_symbolics(h_symbolic3, None, dhdx_symbolic3, None, d2hdx2_symbolic3)
+cbf4.set_symbolics(h_symbolic4, None, dhdx_symbolic4, None, d2hdx2_symbolic4)
+cbf5.set_symbolics(h_symbolic5, None, dhdx_symbolic5, None, d2hdx2_symbolic5)
 
 
 if __name__ == "__main__":

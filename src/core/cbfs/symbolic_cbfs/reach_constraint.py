@@ -3,6 +3,7 @@ import numpy as np
 import symengine as se
 from importlib import import_module
 from core.cbfs.cbf_wrappers import symbolic_cbf_wrapper_singleagent
+from core.cbfs.cbf import Cbf
 
 vehicle = builtins.PROBLEM_CONFIG["vehicle"]
 control_level = builtins.PROBLEM_CONFIG["control_level"]
@@ -24,15 +25,15 @@ goal_x = 2.0
 goal_y = 2.0
 R = 0.05
 Ri = 4
-gain = 10.0
+gain = 0.5
 
 # dx, dy
 dx = ss[0] - goal_x
 dy = ss[1] - goal_y
 
 # Symbolic Reach Constraint
-h_symbolic = gain * (R**2 + Ri**2 * (1 - tt / T) - dx**2 - dy**2)
-dhdt_symbolic = (se.DenseMatrix([h_symbolic]).jacobian(se.DenseMatrix([tt]))).T
+h_symbolic = gain * (R**2 + Ri**2 * (1 - tt[0] / T) - dx**2 - dy**2)
+dhdt_symbolic = (se.DenseMatrix([h_symbolic]).jacobian(se.DenseMatrix(tt))).T
 dhdx_symbolic = (se.DenseMatrix([h_symbolic]).jacobian(se.DenseMatrix(ss))).T
 d2hdtdx_symbolic = dhdt_symbolic.jacobian(se.DenseMatrix(ss))
 d2hdx2_symbolic = dhdx_symbolic.jacobian(se.DenseMatrix(ss))
@@ -59,17 +60,27 @@ def dhdx(t, x):
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
+def d2hdtdx(t, x):
+    ret = d2hdtdx_func(t, x)
+
+    return np.squeeze(np.array(ret).astype(np.float64))
+
+
 def d2hdx2(t, x):
     ret = d2hdx2_func(t, x)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
 
-def d2hdtdx(t, x):
-    ret = d2hdtdx_func(t, x)
+def linear_class_k(k):
+    def alpha(h):
+        return k * h
 
-    return np.squeeze(np.array(ret).astype(np.float64))
+    return alpha
 
+
+cbf = Cbf(h, dhdt, dhdx, d2hdtdx, d2hdx2, linear_class_k(1.0))
+cbf.set_symbolics(h_symbolic, dhdt_symbolic, dhdx_symbolic, d2hdtdx_symbolic, d2hdx2_symbolic)
 
 if __name__ == "__main__":
     # This is a unit test

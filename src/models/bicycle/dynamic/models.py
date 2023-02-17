@@ -26,7 +26,7 @@ yg = getattr(__import__(mod + ".initial_conditions", fromlist=["yg"]), "yg")
 
 # define symbolic variables
 sym_state = se.symbols(["x", "y", "psi", "vr", "beta"], real=True)
-sym_time = se.symbols("t", real=True)
+sym_time = se.symbols(["t"], real=True)
 
 # Define symbolic system dynamics
 f_symbolic = se.DenseMatrix(

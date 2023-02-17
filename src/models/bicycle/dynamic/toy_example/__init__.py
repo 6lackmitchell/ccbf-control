@@ -16,7 +16,7 @@ from core.cbfs import (
 from core.controllers.cbf_qp_controller_breeden_hocbf import CbfQpController
 
 # from core.controllers.cbf_qp_controller_exponential_hocbf import CbfQpController
-from core.controllers.consolidated_cbf_controller_test import ConsolidatedCbfController
+from core.controllers.consolidated_cbf_controller_symbolic import ConsolidatedCbfController
 from ..models import f, g, nControls
 from .timing_params import *
 from .physical_params import u_max
