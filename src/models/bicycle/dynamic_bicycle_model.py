@@ -21,7 +21,7 @@ class RearDriveDynamicBicycleModel(Model):
     and control inputs a (rear wheel acceleration) and omega (slip angle rate)
     """
 
-    def __init__(self, initial_state: NDArray, n_controls: int):
+    def __init__(self, initial_state: NDArray, u_max: NDArray):
         """Class constructor.
 
         Arguments:
@@ -31,7 +31,7 @@ class RearDriveDynamicBicycleModel(Model):
             something
 
         """
-        super().__init__(initial_state, n_controls)
+        super().__init__(initial_state, u_max)
         self.lr = LR
 
     def xdot(self) -> NDArray:

@@ -1,32 +1,12 @@
-import builtins
-import numpy as np
-from sys import exit
-from importlib import import_module
+import jax.numpy as jnp
 from nptyping import NDArray
 from typing import Callable, List
 from scipy.linalg import block_diag
 from core.solve_cvxopt import solve_qp_cvxopt
+from models.model import Model
 from core.controllers.controller import Controller
-from core.cbfs import Cbf
 
-vehicle = builtins.PROBLEM_CONFIG["vehicle"]
-control_level = builtins.PROBLEM_CONFIG["control_level"]
-system_model = builtins.PROBLEM_CONFIG["system_model"]
-mod = "models." + vehicle + "." + control_level + ".models"
-
-# Programmatic import
-try:
-    module = import_module(mod)
-    globals().update({"f": getattr(module, "f")})
-    globals().update({"g": getattr(module, "g")})
-    globals().update({"sigma": getattr(module, "sigma_{}".format(system_model))})
-
-except ModuleNotFoundError as e:
-    print("No module named '{}' -- exiting.".format(mod))
-    raise e
-
-global integrated_error
-integrated_error = np.zeros((25,))
+from core.cbfs.cbf import Cbf
 
 
 class CbfQpController(Controller):
@@ -37,49 +17,45 @@ class CbfQpController(Controller):
 
     def __init__(
         self,
-        u_max: List,
-        nAgents: int,
-        objective_function: Callable,
+        model: Model,
         nominal_controller: Controller,
+        objective_function: Callable,
         cbfs_individual: List,
         cbfs_pairwise: List,
+        n_agents: int = 1,
         ignore: List = None,
     ):
         super().__init__()
-        self.u_max = u_max
-        self.objective = objective_function
+        self.model = model
         self.nominal_controller = nominal_controller
+        self.objective = objective_function
         self.cbfs_individual = cbfs_individual
         self.cbfs_pairwise = cbfs_pairwise
         self.ignored_agents = ignore
         self.code = 0
         self.status = "Initialized"
 
-        # Control Parameters
-        self.n_controls = len(u_max)
-        self.n_agents = nAgents
+        # parameters
+        self.n_states = model.n_states
+        self.n_controls = model.n_controls
+        self.n_agents = n_agents
         self.n_dec_vars = 1
         self.desired_class_k = 1.0
         self.max_class_k = 1e6
+        self.u_max = model.u_max
 
-        # self.cbf_vals = np.zeros(
-        #     (len(cbfs_individual) + 1 + (self.n_agents - 1) * len(cbfs_pairwise)),
-        # )
-        self.cbf_vals = np.zeros(
+        # cbf parameters
+        self.cbf_vals = jnp.zeros(
             (len(cbfs_individual) + (self.n_agents - 1) * len(cbfs_pairwise)),
         )
-        self.dhdt = np.zeros((self.cbf_vals.shape[0],))
-        self.d2hdtdx = np.zeros((self.cbf_vals.shape[0], 5))
-        # self.dhdx = np.zeros((self.cbf_vals.shape[0], 1))
-        # self.dhdx = np.zeros((self.cbf_vals.shape[0], 4))
-        self.dhdx = np.zeros((self.cbf_vals.shape[0], 5))
-        # self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 1, 1))
-        # self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 4, 4))
-        self.d2hdx2 = np.zeros((self.cbf_vals.shape[0], 5, 5))
+        self.dhdt = jnp.zeros((self.cbf_vals.shape[0],))
+        self.dhdx = jnp.zeros((self.cbf_vals.shape[0], 5))
+        self.d2hdtdx = jnp.zeros((self.cbf_vals.shape[0], 5))
+        self.d2hdx2 = jnp.zeros((self.cbf_vals.shape[0], 5, 5))
 
         # Define individual input constraints
-        self.au = block_diag(*self.n_controls * [np.array([[1, -1]]).T])
-        self.bu = np.tile(np.array(self.u_max).reshape(self.n_controls, 1), 2).flatten()
+        self.au = block_diag(*self.n_controls * [jnp.array([[1, -1]]).T])
+        self.bu = jnp.tile(jnp.array(self.u_max).reshape(self.n_controls, 1), 2).flatten()
 
     def _compute_control(
         self, t: float, z: NDArray, cascaded: bool = False
@@ -102,7 +78,6 @@ class CbfQpController(Controller):
         status: more info on error/success
 
         """
-        global integrated_error
         code = 0
         status = "Incomplete"
 
@@ -111,24 +86,21 @@ class CbfQpController(Controller):
         if self.ignored_agents is not None:
             self.ignored_agents.sort(reverse=True)
             for ignore in self.ignored_agents:
-                z = np.delete(z, ignore, 0)
+                z = jnp.delete(z, ignore, 0)
                 if ego > ignore:
                     ego = ego - 1
 
         # Partition state into ego and other
         ze = z[ego, :]
-        zo = np.vstack([z[:ego, :], z[ego + 1 :, :]])
+        zo = jnp.vstack([z[:ego, :], z[ego + 1 :, :]])
 
         # Compute nominal control input for ego only -- assume others are zero
         z_copy_nom = z.copy()
         z_copy_nom[self.ego_id] = z[ego]
-        u_nom = np.zeros((len(z), 2))
-        # u_nom = np.zeros((len(z), 1))
+        u_nom = jnp.zeros((len(z), 2))
+        # u_nom = jnp.zeros((len(z), 1))
         u_nom[ego, :], code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
-        u_nom[ego, :] = u_nom[ego, :] + integrated_error[ego]
         self.u_nom = u_nom[ego, :]
-
-        # print(integrated_error[ego])
 
         tuning_nominal = False
         if tuning_nominal:
@@ -151,7 +123,7 @@ class CbfQpController(Controller):
                     pass
             else:
                 status = "Divide by Zero"
-                self.u = np.zeros((self.n_controls,))
+                self.u = jnp.zeros((self.n_controls,))
 
         else:
             pass
@@ -172,28 +144,24 @@ class CbfQpController(Controller):
             #             Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
             #             sol = solve_qp_cvxopt(Q, p, A, b, G, h)
             #             if not sol['code']:
-            #                 self.u = np.zeros((self.n_controls,))
+            #                 self.u = jnp.zeros((self.n_controls,))
             #             else:
             #                 self.assign_control(sol, ego)
             #         else:
-            #             self.u = np.zeros((self.n_controls,))
+            #             self.u = jnp.zeros((self.n_controls,))
             #     else:
-            #         alf = np.array(sol['x'])[-1]
+            #         alf = jnp.array(sol['x'])[-1]
             #         self.assign_control(sol, ego)
             #
             # else:
             #     code = 0
             #     status = 'Divide by Zero'
-            #     self.u = np.zeros((self.n_controls,))
+            #     self.u = jnp.zeros((self.n_controls,))
 
         if not code:
             print(A[-1, :])
             print(b[-1])
             print("wtf")
-        decay_const = 0.0  # needs to be < 1
-        integrated_error[ego] = (
-            np.linalg.norm(self.u - self.u_nom) + integrated_error[ego]
-        ) * decay_const
 
         return self.u, code, status
 
@@ -214,18 +182,18 @@ class CbfQpController(Controller):
         # Au, bu: input constraints
         if self.n_dec_vars > 0:
             alpha_nom = 1.0
-            Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom))
+            Q, p = self.objective(jnp.append(u_nom.flatten(), alpha_nom))
             Au = block_diag(*(na + self.n_dec_vars) * [self.au])[:-2, :-1]
-            bu = np.append(np.array(na * [self.bu]).flatten(), self.n_dec_vars * [100, 0])
+            bu = jnp.append(jnp.array(na * [self.bu]).flatten(), self.n_dec_vars * [100, 0])
         else:
             Q, p = self.objective(u_nom.flatten())
             Au = block_diag(*(na) * [self.au])
-            bu = np.array(na * [self.bu]).flatten()
+            bu = jnp.array(na * [self.bu]).flatten()
 
         # Initialize inequality constraints
         lci = len(self.cbfs_individual)
-        Ai = np.zeros((lci + len(zr), self.n_controls * na + self.n_dec_vars))
-        bi = np.zeros((lci + len(zr),))
+        Ai = jnp.zeros((lci + len(zr), self.n_controls * na + self.n_dec_vars))
+        bi = jnp.zeros((lci + len(zr),))
 
         # Iterate over individual CBF constraints
         for cc, cbf in enumerate(self.cbfs_individual):
@@ -234,15 +202,15 @@ class CbfQpController(Controller):
             dhdx = cbf.dhdx(ze)
 
             # Stochastic Term -- 0 for deterministic systems
-            if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
+            if jnp.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
                 d2hdx2 = cbf.d2hdx2(ze)
-                stoch = 0.5 * np.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
+                stoch = 0.5 * jnp.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
             else:
                 stoch = 0.0
 
             # Get CBF Lie Derivatives
             Lfh = dhdx @ f(ze) + stoch
-            Lgh = np.zeros((self.n_controls * na,))
+            Lgh = jnp.zeros((self.n_controls * na,))
             Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx @ g(
                 ze
             )  # Only assign ego control
@@ -267,18 +235,18 @@ class CbfQpController(Controller):
                 dhdx = cbf.dhdx(ze, zo)
 
                 # Stochastic Term -- 0 for deterministic systems
-                if np.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
+                if jnp.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
                     d2hdx2 = cbf.d2hdx2(ze, zo)
                     stoch = 0.5 * (
-                        np.trace(sigma(ze).T @ d2hdx2[:ns, :ns] @ sigma(ze))
-                        + np.trace(sigma(zo).T @ d2hdx2[ns:, ns:] @ sigma(zo))
+                        jnp.trace(sigma(ze).T @ d2hdx2[:ns, :ns] @ sigma(ze))
+                        + jnp.trace(sigma(zo).T @ d2hdx2[ns:, ns:] @ sigma(zo))
                     )
                 else:
                     stoch = 0.0
 
                 # Get CBF Lie Derivatives
                 Lfh = dhdx[:ns] @ f(ze) + dhdx[ns:] @ f(zo) + stoch
-                Lgh = np.zeros((self.n_controls * na,))
+                Lgh = jnp.zeros((self.n_controls * na,))
                 Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx[:ns] @ g(ze)
                 if cascade:
                     Lgh[self.n_controls * ego] = 0.0
@@ -298,8 +266,8 @@ class CbfQpController(Controller):
                 )
                 self.cbf_vals[update_idx] = h
 
-        A = np.vstack([Au, Ai])
-        b = np.hstack([bu, bi])
+        A = jnp.vstack([Au, Ai])
+        b = jnp.hstack([bu, bi])
 
         return Q, p, A, b, None, None
 
@@ -317,18 +285,18 @@ class CbfQpController(Controller):
         if solution["status"] == "violates_constraints":
             u = self.u
         else:
-            u = np.array(
+            u = jnp.array(
                 solution["x"][self.n_controls * ego : self.n_controls * (ego + 1)]
             ).flatten()
         self.u = u
         if u is not None:
-            self.u = np.clip(u, -self.u_max, self.u_max)
+            self.u = jnp.clip(u, -self.u_max, self.u_max)
         else:
-            self.u = np.array([0, 0])
+            self.u = jnp.array([0, 0])
         self.nominal_controller.u_actual = self.u
         # Assign other agents' controls if this is a centralized node
         if hasattr(self, "centralized_agents"):
             for agent in self.centralized_agents:
-                agent.u = np.array(
+                agent.u = jnp.array(
                     solution["x"][agent.nu * agent.id : self.n_controls * (agent.id + 1)]
                 ).flatten()

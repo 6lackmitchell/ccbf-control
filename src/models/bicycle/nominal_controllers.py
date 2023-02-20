@@ -12,11 +12,11 @@ from core.controllers.controller import Controller
 
 
 class LqrController(Controller):
-    def __init__(self, xg: NDArray, u_max: NDArray, model: Model):
+    def __init__(self, xg: NDArray, model: Model):
         super().__init__()
         self.xg = xg
-        self.u_max = u_max
         self.model = model
+        self.u_max = model.u_max
 
         self.id = None
         self.complete = False

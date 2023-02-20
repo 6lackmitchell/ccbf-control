@@ -20,7 +20,7 @@ class Model:
         dynamics: computes xdot as function of t, x, u
     """
 
-    def __init__(self, initial_state: NDArray, n_controls: int):
+    def __init__(self, initial_state: NDArray, u_max: NDArray):
         """Class constructor.
 
         Arguments:
@@ -28,12 +28,15 @@ class Model:
             n_controls (int): number of control inputs
 
         """
+        # initial conditions
         self.t = 0.0
         self.x = initial_state
-        self.u = jnp.zeros((n_controls,))
+        self.u = 0 * u_max
+        self.u_max = u_max
 
+        # dimensions
         self.n_states = len(self.x)
-        self.n_controls = n_controls
+        self.n_controls = len(u_max)
 
     def _deterministic_nonlinear_dynamics(self) -> NDArray:
         """Computes the state derivative as a function of the time (t), state (x), and input (u).
