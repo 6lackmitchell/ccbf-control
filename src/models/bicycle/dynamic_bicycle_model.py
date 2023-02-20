@@ -1,5 +1,6 @@
 import jax.numpy as jnp
 from nptyping import NDArray
+from typing import Optional
 from ..model import Model
 
 # Physical Parameters
@@ -21,17 +22,24 @@ class RearDriveDynamicBicycleModel(Model):
     and control inputs a (rear wheel acceleration) and omega (slip angle rate)
     """
 
-    def __init__(self, initial_state: NDArray, u_max: NDArray):
+    def __init__(
+        self,
+        initial_state: NDArray,
+        u_max: NDArray,
+        dt: float,
+        tf: float,
+        centralized: Optional[bool] = False,
+    ):
         """Class constructor.
 
         Arguments:
-            something
-
-        Returns:
-            something
+            initial_state (NDArray): initial state vector at t0
+            u_max (NDArray): maximum control inputs
+            dt (float): length of timestep in sec
+            tf (float): final time in sec
 
         """
-        super().__init__(initial_state, u_max)
+        super().__init__(initial_state, u_max, dt, tf, centralized)
         self.lr = LR
 
     def xdot(self) -> NDArray:

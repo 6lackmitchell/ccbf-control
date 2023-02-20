@@ -19,11 +19,11 @@ def minimum_deviation(u_nom: NDArray, x: Optional[NDArray] = None) -> Tuple[NDAr
     """
 
     if len(u_nom) % 2 == 0:
-        Q = jnp.diag(int(len(u_nom) / 2) * [q1, q2])
+        Qlist = int(len(u_nom) / 2) * [q1, q2]
     else:
-        Q = jnp.diag(int(len(u_nom) / 2) * [q1, q2] + [q3])
+        Qlist = int(len(u_nom) / 2) * [q1, q2] + [q3]
 
-    Q = 1 / 2 * Q
+    Q = 1 / 2 * jnp.diag(jnp.array(Qlist))
 
     p = -Q @ u_nom
     return Q, p

@@ -42,7 +42,8 @@ class LqrController(Controller):
         yd = self.xg[1]
 
         speed_d = 0.25
-        vd = speed_d * jnp.min([1, 1 / 2 * jnp.linalg.norm([ze[0] - xd, ze[1] - yd])])
+        pos_err = jnp.array([ze[0] - xd, ze[1] - yd])
+        vd = speed_d * jnp.array([1, 1 / 2 * jnp.linalg.norm(pos_err)]).min()
         th = jnp.arctan2(yd - ze[1], xd - ze[0])
         vxd = vd * jnp.cos(th)
         vyd = vd * jnp.sin(th)
@@ -57,7 +58,8 @@ class LqrController(Controller):
         A_di = jnp.array([[0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 0, 0, 0]])
         B_di = jnp.array([[0, 0], [0, 0], [1, 0], [0, 1]])
 
-        gain = jnp.min([1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 10.0])
+        gain = 1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2)
+        gain = jnp.array([gain, 10.0]).min()
         Q = 0.5 * gain * jnp.eye(4)
         R = 5 * jnp.eye(2)
 

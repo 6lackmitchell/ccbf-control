@@ -99,7 +99,8 @@ class CbfQpController(Controller):
         z_copy_nom[self.ego_id] = z[ego]
         u_nom = jnp.zeros((len(z), 2))
         # u_nom = jnp.zeros((len(z), 1))
-        u_nom[ego, :], code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
+        u0, code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
+        u_nom.at[ego, :].set(u0)
         self.u_nom = u_nom[ego, :]
 
         tuning_nominal = False

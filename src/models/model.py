@@ -6,6 +6,7 @@ Contains class Model, parent class for all dynamical system models.
 import jax.numpy as jnp
 from jax import jacfwd
 from nptyping import NDArray
+from typing import Optional
 
 
 class Model:
@@ -20,19 +21,36 @@ class Model:
         dynamics: computes xdot as function of t, x, u
     """
 
-    def __init__(self, initial_state: NDArray, u_max: NDArray):
+    def __init__(
+        self,
+        initial_state: NDArray,
+        u_max: NDArray,
+        dt: float,
+        tf: float,
+        centralized: Optional[bool] = False,
+    ):
         """Class constructor.
 
         Arguments:
             initial_state (NDArray): initial state vector at t0
-            n_controls (int): number of control inputs
+            u_max (NDArray): maximum control inputs
+            dt (float): length of timestep in sec
+            tf (float): final time in sec
+            centralized (bool, optional): true if model belongs to group of centrally controlled agents
 
         """
-        # initial conditions
+        # time params
         self.t = 0.0
+        self.dt = dt
+        self.tf = tf
+
+        # state
         self.x = initial_state
+
+        # controls
         self.u = 0 * u_max
         self.u_max = u_max
+        self.centralized = centralized
 
         # dimensions
         self.n_states = len(self.x)
@@ -68,32 +86,39 @@ class Model:
 
         return xdot
 
-    def F(self):
-        z = jnp.hstack([self.t, self.x])
+    def F(self, z=None):
+        if z is None:
+            z = jnp.hstack([self.t, self.x])
         return self._F(z)
 
-    def f(self):
-        z = jnp.hstack([self.t, self.x])
+    def f(self, z=None):
+        if z is None:
+            z = jnp.hstack([self.t, self.x])
         return self._f(z)
 
-    def g(self):
-        z = jnp.hstack([self.t, self.x])
+    def g(self, z=None):
+        if z is None:
+            z = jnp.hstack([self.t, self.x])
         return self._g(z)
 
-    def dfdt(self):
-        z = jnp.hstack([self.t, self.x])
+    def dfdt(self, z=None):
+        if z is None:
+            z = jnp.hstack([self.t, self.x])
         return self._dfdz(z)[:, 0]
 
-    def dfdx(self):
-        z = jnp.hstack([self.t, self.x])
+    def dfdx(self, z=None):
+        if z is None:
+            z = jnp.hstack([self.t, self.x])
         return self._dfdz(z)[:, 1:]
 
-    def dgdt(self):
-        z = jnp.hstack([self.t, self.x])
+    def dgdt(self, z=None):
+        if z is None:
+            z = jnp.hstack([self.t, self.x])
         return self._dgdz(z)[:, 0]
 
-    def dgdx(self):
-        z = jnp.hstack([self.t, self.x])
+    def dgdx(self, z=None):
+        if z is None:
+            z = jnp.hstack([self.t, self.x])
         return self._dgdz(z)[:, 1:]
 
     def _F(self, z: NDArray) -> NDArray:

@@ -4,6 +4,7 @@ from nptyping import NDArray
 from pathlib import Path
 from pickle import dump, load
 from .controllers.controller import Controller
+from models.model import Model
 
 
 class Agent:
@@ -27,30 +28,25 @@ class Agent:
 
     def __init__(
         self,
-        identifier: int,
-        z0: NDArray,
-        u0: NDArray,
-        cbf0: NDArray,
-        timing: List,
-        dynamics: Callable,
+        model: Model,
         controller: Controller,
         save_file: str,
     ):
         """Class initializer."""
-        self.id = identifier
-        self.u = u0
-        self.u_nom = u0
-        self.cbf = cbf0
-        self.dynamics = dynamics
+        self.model = model
         self.controller = controller
-        self.save_file = save_file
 
-        # Give identifier to controller
-        self.controller.ego_id = self.id
+        #
+        self.id = None
+        self.u = self.model.u
+        self.u_nom = self.model.u
+        self.cbf = self.controller.cbf_vals
+        self.save_file = save_file
+        self.centralized = self.model.centralized
 
         # Extract timing data
-        self.dt = timing[0]
-        self.tf = timing[1]
+        self.dt = self.model.dt
+        self.tf = self.model.tf
         self.nTimesteps = int((self.tf - self.t) / self.dt) + 1
         self.controller._dt = self.dt
 
@@ -72,8 +68,21 @@ class Agent:
         self.safety = None
         self._timestep = None
 
-        # self.reset(np.zeros(5,))  # For experiments
-        self.reset(z0)  # For simulations
+        self.reset(self.model.x)  # For simulations
+
+    def set_id(self, id: int) -> None:
+        """Sets the identifier for the agent.
+
+        Arguments:
+            id (int): agent identifier (place in state vector)
+
+        Returns:
+            None
+        """
+        self.id = id
+        self.controller.ego_id = id
+        if hasattr(self.controller, "nominal_controller"):
+            self.controller.nominal_controller.id = id
 
     def reset(self, x0: NDArray) -> None:
         """Resets run variables for new trial."""
@@ -170,7 +179,8 @@ class Agent:
         x_updated: new state vector
         x_updated: new state vector
         """
-        x_updated = self.dynamics(self.t, self.x, self.u)
+        xdot = self.model.xdot()
+        x_updated = self.x + self.dt * xdot
         self.update(x_updated)
 
         return x_updated

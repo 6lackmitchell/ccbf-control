@@ -1,51 +1,31 @@
 """ simulate.py: simulation entry-point for testing controllers for specific dynamical models. """
 
 import numpy as np
-import builtins
+from typing import List
+from .agent import Agent
 
 
-def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> bool:
+def simulate(tf: float, dt: float, agents: List[Agent]) -> bool:
     """Simulates the system specified by config.py for tf seconds at a frequency of dt.
 
     ARGUMENTS
         tf: final time (in sec)
         dt: timestep length (in sec)
-        vehicle: the vehicle to be simulated
-        level: the control level (i.e. kinematic, dynamic, etc.)
-        situation: i.e. intersection_old, intersection, etc.
+        agents (List): list of agents in simulation
 
     RETURNS
         None
 
     """
-    # Program-wide specifications
-    builtins.PROBLEM_CONFIG = {
-        "vehicle": vehicle,
-        "control_level": level,
-        "situation": situation,
-        "system_model": "deterministic",
-    }
-
-    if vehicle == "bicycle":
-        from models.bicycle import nAgents, nStates, z0, centralized_agents, decentralized_agents
-    elif vehicle == "double_integrator":
-        from models.double_integrator import (
-            nAgents,
-            nStates,
-            z0,
-            centralized_agents,
-            decentralized_agents,
-        )
-    elif vehicle == "nonlinear_1d":
-        from models.nonlinear_1d import (
-            nAgents,
-            nStates,
-            z0,
-            centralized_agents,
-            decentralized_agents,
-        )
-
+    # dimensions
     nTimesteps = int((tf - 0.0) / dt) + 1
+    nAgents = len(agents)
+    nStates = len(agents[0].x)
+
+    # extract full initial state
+    z0 = np.array([agent.x for agent in agents])
+    centralized_agents = [agent for agent in agents if agent.centralized]
+    decentralized_agents = [agent for agent in agents if not agent.centralized]
 
     # Simulation setup
     broken = np.zeros((nAgents,))
@@ -65,7 +45,8 @@ def simulate(tf: float, dt: float, vehicle: str, level: str, situation: str) -> 
         #     print("Time: {:.1f} sec: Intermediate Save".format(tt))
 
         # Compute inputs for centralized agents
-        if centralized_agents is not None:
+        # if centralized_agents is not None:
+        if len(centralized_agents) > 0:
             centralized_agents.compute_control(tt, z[ii])
 
         # Iterate over all agents in the system
