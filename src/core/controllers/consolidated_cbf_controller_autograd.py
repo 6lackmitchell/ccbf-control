@@ -316,8 +316,8 @@ class ConsolidatedCbfController(CbfQpController):
         Hdot_contr = dHdw @ w_dot_contr + dHdx @ self.model.g(x)
 
         # construct class K function
-        eps = 0.1
-        alpha_H = self.alpha * H - eps
+        # eps = 0.1
+        alpha_H = self.alpha * H
         # alpha_H = -H * self.adapter.b
 
         # CBF Condition (fixed class K)
@@ -426,7 +426,7 @@ class AdaptationLaw:
         self.czero_val2 = 0.0
 
         # wdot filter design (2nd order)
-        self.wn = 10.0
+        self.wn = 50.0
         self.zeta = 0.707  # butterworth
         self._filter_order = 1
         self._w_dot_f = jnp.zeros((nWeights,))
@@ -455,7 +455,7 @@ class AdaptationLaw:
         self._grad_phi_ww_inv = None
 
         # convexity parameter
-        self.s = 1e6
+        self.s = 1e3
 
         # Gains and Parameters -- Testing
         self.alpha = alpha
