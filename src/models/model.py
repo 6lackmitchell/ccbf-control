@@ -4,7 +4,7 @@ Contains class Model, parent class for all dynamical system models.
 
 """
 import jax.numpy as jnp
-from jax import jacfwd
+from jax import jacfwd, jit
 from nptyping import NDArray
 from typing import Optional
 
@@ -55,6 +55,10 @@ class Model:
         # dimensions
         self.n_states = len(self.x)
         self.n_controls = len(u_max)
+
+        # placeholders
+        self._dfdz_ = None
+        self._dgdz_ = None
 
     def _deterministic_nonlinear_dynamics(self) -> NDArray:
         """Computes the state derivative as a function of the time (t), state (x), and input (u).
@@ -167,7 +171,9 @@ class Model:
             dfdt (NDArray): partial f partial t
 
         """
-        return jacfwd(self._f)(z)
+        if self._dfdz_ is None:
+            self._dfdz_ = jit(jacfwd(self._f))(z)
+        return self._dfdz_
 
     def _dgdz(self, z: NDArray) -> NDArray:
         """Partial derivative of the drift vector with respect to time.
@@ -179,7 +185,9 @@ class Model:
             dfdt (NDArray): partial f partial t
 
         """
-        return jacfwd(self._g)(z)
+        if self._dgdz_ is None:
+            self._dgdz_ = jit(jacfwd(self._g))(z)
+        return self._dgdz_
 
 
 if __name__ == "__main__":

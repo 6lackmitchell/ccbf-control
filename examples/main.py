@@ -13,17 +13,14 @@ from models.bicycle.cbfs.obstacle_avoidance import cbfs as cbfs_obstacle_avoidan
 from models.bicycle.cbfs.speed_limit import cbfs as cbfs_speed
 from models.bicycle.cbfs.slip_limit import cbfs as cbfs_slip
 from models.bicycle.cbfs.reach_target import cbfs as cbfs_reach
-
-
-# Not Complete
 from core.controllers.consolidated_cbf_controller_autograd import ConsolidatedCbfController
 from core.controllers.objective_functions import minimum_deviation
 
 # save location
-# save_file = (
-#     "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
-# )
-save_file = "/home/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
+save_file = (
+    "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
+)
+# save_file = "/home/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
 
 # time params
 tf = 10.0
@@ -42,7 +39,7 @@ bicycle_model = DynamicBicycleModel(initial_state=x0, u_max=u_max, dt=dt, tf=tf)
 # consolidated cbf controller
 nominal_controller = LqrController(xg=goal_state, model=bicycle_model)
 objective = minimum_deviation
-cbfs_individual = cbfs_obstacle_avoidance + cbfs_speed + cbfs_slip + cbfs_reach
+cbfs_individual = cbfs_obstacle_avoidance + cbfs_reach + cbfs_speed + cbfs_slip
 cbfs_pairwise = []
 ccbf_controller = ConsolidatedCbfController(
     model=bicycle_model,

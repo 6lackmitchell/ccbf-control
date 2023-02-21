@@ -95,11 +95,11 @@ class LqrController(Controller):
         omega = jnp.clip(omega, -self.u_max[0], self.u_max[0])
         ar = jnp.clip(ar, -self.u_max[1], self.u_max[1])
 
-        # To reduce potential chattering
-        beta = 0.25
-        if self.u_actual is not None:
-            omega = beta * self.u_actual[0] + (1 - beta) * omega
-            # ar = beta * self.u_actual[1] + (1 - beta) * ar
+        # # To reduce potential chattering
+        # beta = 0.25
+        # if self.u_actual is not None:
+        #     omega = beta * self.u_actual[0] + (1 - beta) * omega
+        # ar = beta * self.u_actual[1] + (1 - beta) * ar
 
         self.u = jnp.array([omega, ar])
 

@@ -40,7 +40,7 @@ class CbfQpController(Controller):
         self.n_controls = model.n_controls
         self.n_agents = n_agents
         self.n_dec_vars = 1
-        self.desired_class_k = 1.0
+        self.desired_class_k = 0.75
         self.max_class_k = 1e6
         self.u_max = model.u_max
 
@@ -100,12 +100,15 @@ class CbfQpController(Controller):
         u_nom = jnp.zeros((len(z), 2))
         # u_nom = jnp.zeros((len(z), 1))
         u0, code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
-        u_nom.at[ego, :].set(u0)
+        if self.u_nom is None:
+            self.u_nom = u0
+        u_nom = u_nom.at[ego, :].set(u0)
         self.u_nom = u_nom[ego, :]
 
         tuning_nominal = False
         if tuning_nominal:
             self.u = self.u_nom
+            print(self.u)
             return self.u, 1, "Optimal"
 
         if not cascaded:

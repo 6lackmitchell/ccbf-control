@@ -59,11 +59,10 @@ class Agent:
         self.cbf_trajectory = None
         self.consolidated_cbf_trajectory = None
         self.k_gains_trajectory = None
-        self.k_desired_trajectory = None
-        self.k_dot_trajectory = None
-        self.k_dot_f_trajectory = None
-        self.czero1_trajectory = None
-        self.czero2_trajectory = None
+        self.w_desired_trajectory = None
+        self.w_dot_trajectory = None
+        self.w_dot_f_trajectory = None
+        self.b3_trajectory = None
 
         self.safety = None
         self._timestep = None
@@ -98,20 +97,18 @@ class Agent:
             self.cbf_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
             self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
             self.k_gains_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
-            self.k_desired_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
-            self.k_dot_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
-            self.k_dot_f_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
-            self.czero1_trajectory = np.zeros((self.nTimesteps,))
-            self.czero2_trajectory = np.zeros((self.nTimesteps,))
+            self.w_desired_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
+            self.w_dot_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
+            self.w_dot_f_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
+            self.b3_trajectory = np.zeros((self.nTimesteps,))
         else:
             self.cbf_trajectory = np.zeros((self.nTimesteps,))
             self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
             self.k_gains_trajectory = np.zeros((self.nTimesteps,))
-            self.k_desired_trajectory = np.zeros((self.nTimesteps,))
-            self.k_dot_trajectory = np.zeros((self.nTimesteps,))
-            self.k_dot_f_trajectory = np.zeros((self.nTimesteps,))
-            self.czero1_trajectory = np.zeros((self.nTimesteps,))
-            self.czero2_trajectory = np.zeros((self.nTimesteps,))
+            self.w_desired_trajectory = np.zeros((self.nTimesteps,))
+            self.w_dot_trajectory = np.zeros((self.nTimesteps,))
+            self.w_dot_f_trajectory = np.zeros((self.nTimesteps,))
+            self.b3_trajectory = np.zeros((self.nTimesteps,))
 
         # Save data object -- auto-updating since defined by reference
         self.data = {
@@ -121,11 +118,10 @@ class Agent:
             "cbf": self.cbf_trajectory,
             "ccbf": self.consolidated_cbf_trajectory,
             "kgains": self.k_gains_trajectory,
-            "kdes": self.k_desired_trajectory,
-            "kdot": self.k_dot_trajectory,
-            "kdotf": self.k_dot_f_trajectory,
-            "czero1": self.czero1_trajectory,
-            "czero2": self.czero2_trajectory,
+            "kdes": self.w_desired_trajectory,
+            "kdot": self.w_dot_trajectory,
+            "kdotf": self.w_dot_f_trajectory,
+            "b3": self.b3_trajectory,
             "ii": self.t,
         }
 
@@ -142,6 +138,7 @@ class Agent:
         misc = None
 
         self.u, code, status = self.controller.compute_control(self.t, full_state)
+        self.model.u = self.u
 
         # Update Control and CBF Trajectories
         self.u_trajectory[self.timestep, :] = self.controller.u
@@ -151,18 +148,16 @@ class Agent:
             self.cbf_trajectory[self.timestep, :] = self.controller.cbf_vals
         if hasattr(self.controller, "c_cbf"):
             self.consolidated_cbf_trajectory[self.timestep] = self.controller.c_cbf
-        if hasattr(self.controller, "k_weights"):
-            self.k_gains_trajectory[self.timestep, :] = self.controller.k_weights
-        if hasattr(self.controller, "k_des"):
-            self.k_desired_trajectory[self.timestep, :] = self.controller.k_des
-        if hasattr(self.controller, "k_dot"):
-            self.k_dot_trajectory[self.timestep, :] = self.controller.k_dot
-        if hasattr(self.controller, "k_dot_f"):
-            self.k_dot_f_trajectory[self.timestep, :] = self.controller.k_dot_f
-        if hasattr(self.controller, "czero1"):
-            self.czero1_trajectory[self.timestep] = self.controller.czero1
-        if hasattr(self.controller, "czero2"):
-            self.czero2_trajectory[self.timestep] = self.controller.czero2
+        if hasattr(self.controller, "w_weights"):
+            self.k_gains_trajectory[self.timestep, :] = self.controller.w_weights
+        if hasattr(self.controller, "w_des"):
+            self.w_desired_trajectory[self.timestep, :] = self.controller.w_des
+        if hasattr(self.controller, "w_dot"):
+            self.w_dot_trajectory[self.timestep, :] = self.controller.w_dot
+        if hasattr(self.controller, "w_dot_f"):
+            self.w_dot_f_trajectory[self.timestep, :] = self.controller.w_dot_f
+        if hasattr(self.controller, "b"):
+            self.b3_trajectory[self.timestep] = self.controller.b
 
         if misc is not None:
             print(misc)
@@ -195,6 +190,7 @@ class Agent:
         None
         """
         self.x = x_new
+        self.model.x = x_new
         self.x_trajectory[self.timestep, :] = self.x
         self.timestep = self.timestep + 1
         self.t = self.timestep * self.dt

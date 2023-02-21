@@ -42,8 +42,8 @@ colors[0] = colors[1]
 
 if platform == "linux" or platform == "linux2":
     # linux
-    # pre_path = "/home/6lackmitchell/"
-    pre_path = "/home/dasc/mitchell/"
+    pre_path = "/home/6lackmitchell/Documents/git/"
+    # pre_path = "/home/dasc/mitchell/"
 elif platform == "darwin":
     # OS X
     pre_path = "/Users/mblack/"
@@ -78,8 +78,7 @@ with open(filename, "rb") as f:
 
         x = np.array([data[a]["x"] for a in data.keys()])
         u = np.array([data[a]["u"] for a in data.keys()])
-        czero1 = np.array([data[a]["czero1"] for a in data.keys()])
-        czero2 = np.array([data[a]["czero2"] for a in data.keys()])
+        b3 = np.array([data[a]["b3"] for a in data.keys()])
         # k = np.array([data[a]["kgains"] if a < 3 else None for a in data.keys()][0:3])
         # kdot = np.array([data[a]["kdot"] if a < 3 else None for a in data.keys()][0:3])
         # kdotf = np.array([data[a]["kdotf"] if a < 3 else None for a in data.keys()][0:3])
@@ -268,14 +267,13 @@ ax_kdot.grid(True, linestyle="dotted", color="white")
 plt.tight_layout(pad=2.0)
 
 ############################################
-### CZero Trajectories ###
+### b3 Trajectories ###
 fig_cz = plt.figure(figsize=(8, 8))
 ax_cz = fig_cz.add_subplot(111)
 set_edges_black(ax_cz)
 
-ax_cz.plot(t[1:ii], czero1[0, 1:ii], linewidth=lwidth + 1, color=clr[1], label="C_01")
-ax_cz.plot(t[1:ii], czero2[0, 1:ii], linewidth=lwidth + 1, color=clr[2], label="C_02")
-ax_cz.set(ylabel="C_0", title="CZero Trajectory")
+ax_cz.plot(t[1:ii], b3[0, 1:ii], linewidth=lwidth + 1, color=clr[1], label="b3")
+ax_cz.set(ylabel="b3", title="b3 Trajectory")
 
 # Plot Settings
 for item in (

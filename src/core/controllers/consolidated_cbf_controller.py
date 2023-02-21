@@ -188,10 +188,8 @@ class ConsolidatedCbfController(CbfQpController):
         self.czero2 = 0
 
         kZero = 1.0
-        self.k_weights = kZero * np.ones((nCBF,))
-        self.k_des = kZero * np.ones((nCBF,))
-        # self.k_weights[5] = 3.0
-        # self.k_weights[6] = 3.0
+        self.weights = kZero * np.ones((nCBF,))
+        self.w_des = kZero * np.ones((nCBF,))
         self.adapter = AdaptationLaw(nCBF, u_max, kZero=kZero, alpha=self.alpha)
         self.adapter.dt = self._dt
 
@@ -202,11 +200,11 @@ class ConsolidatedCbfController(CbfQpController):
             self.adapter.dt = self._dt
 
         # Update k weights, k_dot
-        k_weights, k_dot, k_dot_f = self.adapter.update(self.u, self._dt)
-        self.k_weights = k_weights
-        self.k_des = self.adapter.k_desired
-        self.k_dot = k_dot
-        self.k_dot_f = k_dot_f
+        w_weights, w_dot, w_dot_f = self.adapter.update(self.u, self._dt)
+        self.weights = w_weights
+        self.w_des = self.adapter.w_desired
+        self.w_dot = w_dot
+        self.w_dot_f = w_dot_f
         self.czero1 = self.adapter.czero_val1
         self.czero2 = self.adapter.czero_val2
 

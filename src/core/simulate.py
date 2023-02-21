@@ -84,8 +84,8 @@ def simulate(tf: float, dt: float, agents: List[Agent]) -> bool:
             agent.save_data(aa)
 
     else:
-        newfilename = "/home/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
-        # newfilename = "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
+        # newfilename = "/home/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
+        newfilename = "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
         for aa, agent in enumerate(decentralized_agents):
             agent.save_data(aa, newfilename)
 
