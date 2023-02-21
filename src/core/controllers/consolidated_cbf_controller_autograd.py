@@ -102,7 +102,7 @@ class ConsolidatedCbfController(CbfQpController):
         xidxs = jnp.s_[1 : self.n_states + 1]
         widxs = jnp.s_[self.n_states + 1 : self.n_states + 1 + len(self.cbfs)]
 
-        # consolidated cbf
+        # # consolidated cbf
         self.H = lambda z: 1 - jnp.sum(
             jnp.array(
                 [
@@ -111,6 +111,14 @@ class ConsolidatedCbfController(CbfQpController):
                 ]
             )
         )
+        # self.H = lambda z: 1 - jnp.sum(
+        #     jnp.array(
+        #         [
+        #             1 / (1 + z[self.n_states + 1 + cc] * cbf._h(z[0], z[1 : self.n_states + 1]))
+        #             for cc, cbf in enumerate(self.cbfs)
+        #         ]
+        #     )
+        # )
         self.dHdt = lambda z: jit(jacfwd(self.H))(z)[tidxs]
         self.dHdx = lambda z: jit(jacfwd(self.H))(z)[xidxs]
         self.dHdw = lambda z: jit(jacfwd(self.H))(z)[widxs]
@@ -204,7 +212,6 @@ class ConsolidatedCbfController(CbfQpController):
 
         # Iterate over pairwise CBF constraints
         for cc, cbf in enumerate(self.cbfs_pairwise):
-
             # Iterate over all other vehicles
             for ii, zo in enumerate(zr):
                 # other = ii + (ii >= ego)
@@ -503,13 +510,30 @@ class AdaptationLaw:
             None
 
         """
-        self.phi = lambda z: self.c(z) - 1 / z[-1] * (
-            jnp.sum(jnp.log(-self.b1(z))) + jnp.sum(jnp.log(-self.b2(z))) + jnp.log(-self.b3(z))
-        )
-        self.d_phi_dw = lambda z: jacfwd(self.phi)(z)[self.widxs]
-        self.d2_phi_dwdt = lambda z: jit(jacfwd(jacrev(self.phi)))(z)[self.widxs, self.tidxs]
-        self.d2_phi_dwdx = lambda z: jit(jacfwd(jacrev(self.phi)))(z)[self.widxs, self.xidxs]
-        self.d2_phi_dw2 = lambda z: jit(jacfwd(jacrev(self.phi)))(z)[self.widxs, self.widxs]
+
+        def phi(z):
+            return self.c(z) - 1 / z[-1] * (
+                jnp.sum(jnp.log(-self.b1(z))) + jnp.sum(jnp.log(-self.b2(z))) + jnp.log(-self.b3(z))
+            )
+
+        def d_phi_dw(z):
+            return jacfwd(self.phi)(z)[self.widxs]
+
+        def d2_phi_dwdt(z):
+            return jacfwd(jacrev(self.phi))(z)[self.widxs, self.tidxs]
+
+        def d2_phi_dwdx(z):
+            return jacfwd(jacrev(self.phi))(z)[self.widxs, self.xidxs]
+
+        def d2_phi_dw2(z):
+            return jacfwd(jacrev(self.phi))(z)[self.widxs, self.widxs]
+
+        # just-in-time compilation
+        self.phi = jit(phi)
+        self.d_phi_dw = jit(d_phi_dw)
+        self.d2_phi_dwdt = jit(d2_phi_dwdt)
+        self.d2_phi_dwdx = jit(d2_phi_dwdx)
+        self.d2_phi_dw2 = jit(d2_phi_dw2)
 
     def setup_cost(self) -> None:
         """Generates symbolic functions for the cost function and feasible region
@@ -522,13 +546,13 @@ class AdaptationLaw:
             None
 
         """
-        self.c = (
-            lambda z: 1
-            / 2
-            * (z[self.widxs] - self.w_des(z)).T
-            @ self.Q
-            @ (z[self.widxs] - self.w_des(z))
-        )
+
+        def c(z):
+            return (
+                1 / 2 * (z[self.widxs] - self.w_des(z)).T @ self.Q @ (z[self.widxs] - self.w_des(z))
+            )
+
+        self.c = jit(c)
 
     def setup_b1(self) -> None:
         """Generates symbolic functions bounding the weights from below.
@@ -540,10 +564,14 @@ class AdaptationLaw:
             None
 
         """
+
         # w > w_min constraints
-        self.b1 = lambda z: jnp.array(
-            [self.w_min - z[self.n_states + 1 + cc] for cc in range(self.n_weights)]
-        )
+        def b1(z):
+            return jnp.array(
+                [self.w_min - z[self.n_states + 1 + cc] for cc in range(self.n_weights)]
+            )
+
+        self.b1 = jit(b1)
 
     def setup_b2(self) -> None:
         """Generates symbolic functions for bounding the weights from above.
@@ -555,10 +583,14 @@ class AdaptationLaw:
             None
 
         """
+
         # w < w_max constraints
-        self.b2 = lambda z: jnp.array(
-            [z[self.n_states + 1 + cc] - self.w_max for cc in range(self.n_weights)]
-        )
+        def b2(z):
+            return jnp.array(
+                [z[self.n_states + 1 + cc] - self.w_max for cc in range(self.n_weights)]
+            )
+
+        self.b2 = jit(b2)
 
     def setup_b3(self) -> None:
         """Generates symbolic functions for validating the C-CBF.
@@ -570,19 +602,23 @@ class AdaptationLaw:
             None
 
         """
-        self.b3 = (
-            lambda z: self.eta_mu
-            + self.eta_nu
-            - self.dHdt(z)
-            - self.dHdx(z) @ self.model.f(z[: self.n_states + 1])
-            - self.dHdw(z) @ self._w_dot_drift_f
-            - self.alpha * self.H(z)
-            - smooth_abs(
-                self.dHdx(z) @ self.model.g(z[: self.n_states + 1])
-                + self.dHdw(z) @ self._w_dot_contr_f
+
+        def b3(z):
+            return (
+                self.eta_mu
+                + self.eta_nu
+                - self.dHdt(z)
+                - self.dHdx(z) @ self.model.f(z[: self.n_states + 1])
+                - self.dHdw(z) @ self._w_dot_drift_f
+                - self.alpha * self.H(z)
+                - smooth_abs(
+                    self.dHdx(z) @ self.model.g(z[: self.n_states + 1])
+                    + self.dHdw(z) @ self._w_dot_contr_f
+                )
+                @ self.u_max
             )
-            @ self.u_max
-        )
+
+        self.b3 = jit(b3)
 
     def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
         """Updates the adaptation gains and returns the new k weights.
@@ -656,7 +692,6 @@ class AdaptationLaw:
         self._grad_phi_wt = self.d2_phi_dwdt(self.z)
         self._grad_phi_wx = self.d2_phi_dwdx(self.z)
         self._grad_phi_ww_inv = jnp.linalg.inv(self.d2_phi_dw2(self.z))
-        print("computed")
 
     def w_dot_drift(self) -> NDArray:
         """Computes the drift (uncontrolled) component of the time-derivative
