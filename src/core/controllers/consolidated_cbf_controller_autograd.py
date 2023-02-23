@@ -242,8 +242,8 @@ class ConsolidatedCbfController(CbfQpController):
 
         """
         if self.n_dec_vars > 0:
-            Au = block_diag(*(self.n_agents + self.n_dec_vars) * [self.au])  # [:-2, :-1]
-            # Au = block_diag(*(self.n_agents + self.n_dec_vars) * [self.au])[:-2, :-1]
+            # Au = block_diag(*(self.n_agents + self.n_dec_vars) * [self.au])  # [:-2, :-1]
+            Au = block_diag(*(self.n_agents + self.n_dec_vars) * [self.au])[:-2, :-1]
             bu = jnp.append(
                 jnp.array(self.n_agents * [self.bu]).flatten(),
                 self.n_dec_vars * jnp.array([self.max_class_k, 0]),
@@ -322,14 +322,14 @@ class ConsolidatedCbfController(CbfQpController):
 
         # CBF Condition (fixed class K)
         qp_scale = 1 / jnp.array([1e-6, abs(self.adapter.b)]).max()
-        # a_mat = jnp.append(-Hdot_contr, -alpha_H)
-        # b_vec = jnp.array([Hdot_drift]).flatten()
-        # a_mat *= qp_scale
-        # b_vec *= qp_scale
-        a_mat = jnp.append(-Hdot_contr, 0)
-        b_vec = jnp.array([Hdot_drift + alpha_H]).flatten()
+        a_mat = jnp.append(-Hdot_contr, -alpha_H)
+        b_vec = jnp.array([Hdot_drift]).flatten()
         a_mat *= qp_scale
         b_vec *= qp_scale
+        # a_mat = jnp.append(-Hdot_contr, 0)
+        # b_vec = jnp.array([Hdot_drift + alpha_H]).flatten()
+        # a_mat *= qp_scale
+        # b_vec *= qp_scale
 
         # test bdot
         if self.adapter.b > -1e-1:
@@ -502,7 +502,19 @@ class AdaptationLaw:
         # self.b3_gain = 1.0
         # self.ci_gain = 1.0
 
-        # Gains and Parameters -- Oscillator
+        # # Gains and Parameters -- Oscillator
+        # self.alpha = alpha
+        # self.eta_mu = self.eta_nu = 0.01
+        # self.w_dot_gain = 1.0
+        # self.Q = 1 * jnp.eye(nWeights)  # Cost function gain
+        # self.P = 100 * jnp.eye(nWeights)
+        # self.w_des_gain = 1.0
+        # self.w_min = 0.01
+        # self.w_max = 50.0
+        # self.b3_gain = 1.0
+        # self.ci_gain = 1.0
+
+        # Gains and Parameters -- Bicycle
         self.alpha = alpha
         self.eta_mu = self.eta_nu = 0.01
         self.w_dot_gain = 1.0
@@ -513,18 +525,6 @@ class AdaptationLaw:
         self.w_max = 50.0
         self.b3_gain = 1.0
         self.ci_gain = 1.0
-
-        # # Gains and Parameters -- Bicycle
-        # self.alpha = alpha
-        # self.eta_mu = self.eta_nu = 0.01
-        # self.w_dot_gain = 1.0
-        # self.Q = 1 * jnp.eye(nWeights)  # Cost function gain
-        # self.P = 1 * jnp.eye(nWeights)
-        # self.w_des_gain = 1.0
-        # self.w_min = 0.01
-        # self.w_max = 50.0
-        # self.b3_gain = 1.0
-        # self.ci_gain = 1.0
 
     def setup(self) -> None:
         """Generates symbolic functions for the cost function and feasible region
@@ -675,7 +675,8 @@ class AdaptationLaw:
                     jnp.array(
                         [
                             jnp.exp(
-                                -(
+                                -2
+                                * (
                                     cbf._dhdt(z[0], z[1 : self.n_states + 1])
                                     + cbf._dhdx(z[0], z[1 : self.n_states + 1])
                                     @ self.model.f(z[: self.n_states + 1])

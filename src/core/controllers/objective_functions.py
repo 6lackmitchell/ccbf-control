@@ -2,8 +2,8 @@ import jax.numpy as jnp
 from typing import Optional, Tuple
 from nptyping import NDArray
 
-q1 = 1e-3
-q2 = 1e2
+q1 = 1
+q2 = 100
 q3 = 100 * jnp.array([q1, q2]).max()
 
 
