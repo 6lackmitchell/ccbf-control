@@ -7,7 +7,7 @@ gain = 5.0
 
 
 @jit
-def h(z: NDArray, slip_limit: float) -> float:
+def h(z: NDArray, xg: float, yg: float, slip_limit: float) -> float:
     """Generic speed limit constraint function. Super-level set convention.
 
     Arguments:
@@ -17,14 +17,16 @@ def h(z: NDArray, slip_limit: float) -> float:
     Returns:
         ret (float): value of constraint function evaluated at time and state
 
-    """
+    #"""
+    # theta_star = jnp.arctan2(yg - z[2], xg - z[1])
+    # ret = (slip_limit - (theta_star - (z[3] + z[5]))) * (slip_limit + (theta_star - (z[3] + z[5])))
     ret = (slip_limit - z[5]) * (slip_limit + z[5])
 
     return ret * gain
 
 
 @jit
-def dhdz(z: NDArray, slip_limit: float) -> NDArray:
+def dhdz(z: NDArray, xg: float, yg: float, slip_limit: float) -> NDArray:
     """Generic speed limit Jacobian function.
 
     Arguments:
@@ -34,11 +36,11 @@ def dhdz(z: NDArray, slip_limit: float) -> NDArray:
     Returns:
         ret (NDArray): value of jacobian evaluated at time and state
     """
-    return jacfwd(h)(z, slip_limit)
+    return jacfwd(h)(z, xg, yg, slip_limit)
 
 
 @jit
-def d2hdz2(z: NDArray, slip_limit: float) -> NDArray:
+def d2hdz2(z: NDArray, xg: float, yg: float, slip_limit: float) -> NDArray:
     """Generic obstacle avoidance Hessian function.
 
     Arguments:
@@ -48,7 +50,7 @@ def d2hdz2(z: NDArray, slip_limit: float) -> NDArray:
     Returns:
         ret (NDArray): value of Hessian evaluated at time and state
     """
-    return jacfwd(jacrev(h))(z, slip_limit)
+    return jacfwd(jacrev(h))(z, xg, yg, slip_limit)
 
 
 def linear_class_k(k):
@@ -59,12 +61,14 @@ def linear_class_k(k):
 
 
 # Speed Constraint
-slip_limit = jnp.pi / 4
-h1 = lambda t, x: h(jnp.hstack([t, x]), slip_limit)
-dh1dt = lambda t, x: dhdz(jnp.hstack([t, x]), slip_limit)[0]
-dh1dx = lambda t, x: dhdz(jnp.hstack([t, x]), slip_limit)[1:]
-d2h1dtdx = lambda t, x: d2hdz2(jnp.hstack([t, x]), slip_limit)[0, 1:]
-d2h1dx2 = lambda t, x: d2hdz2(jnp.hstack([t, x]), slip_limit)[1:, 1:]
+xg = 2.0
+yg = 2.0
+slip_limit = jnp.pi / 3
+h1 = lambda t, x: h(jnp.hstack([t, x]), xg, yg, slip_limit)
+dh1dt = lambda t, x: dhdz(jnp.hstack([t, x]), xg, yg, slip_limit)[0]
+dh1dx = lambda t, x: dhdz(jnp.hstack([t, x]), xg, yg, slip_limit)[1:]
+d2h1dtdx = lambda t, x: d2hdz2(jnp.hstack([t, x]), xg, yg, slip_limit)[0, 1:]
+d2h1dx2 = lambda t, x: d2hdz2(jnp.hstack([t, x]), xg, yg, slip_limit)[1:, 1:]
 
 cbf = Cbf(h1, None, dh1dx, None, d2h1dx2, linear_class_k(1.0))
 

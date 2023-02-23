@@ -72,7 +72,7 @@ class ConsolidatedCbfController(CbfQpController):
         self.c_cbf = 100
         self.w_dot = jnp.zeros((nCBFs,))
         self.w_dot_f = jnp.zeros((nCBFs,))
-        self.alpha = self.desired_class_k
+        self.alpha = 1.0  # self.desired_class_k
         self.czero1 = 0
         kZero = 1.0
 
@@ -313,8 +313,9 @@ class ConsolidatedCbfController(CbfQpController):
         dBdw = -(self.adapter.b * dHdw + dbdw * H)
 
         # cbf dynamics
-        Hdot_drift = dHdt + dHdw @ w_dot_drift + dHdx @ self.model.f()
-        Hdot_contr = dHdw @ w_dot_contr + dHdx @ self.model.g()
+        adaptation_drift = dHdw @ w_dot_drift
+        Hdot_drift = dHdt + dHdx @ self.model.f() + adaptation_drift * (adaptation_drift < 0)
+        Hdot_contr = dHdx @ self.model.g() + dHdw @ w_dot_contr
         alpha_H = self.alpha * H**3
         # Hdot_drift = dBdt + dBdw @ w_dot_drift + dBdx @ self.model.f(x)
         # Hdot_contr = dBdw @ w_dot_contr + dBdx @ self.model.g(x)
@@ -322,14 +323,14 @@ class ConsolidatedCbfController(CbfQpController):
 
         # CBF Condition (fixed class K)
         qp_scale = 1 / jnp.array([1e-6, abs(self.adapter.b)]).max()
-        a_mat = jnp.append(-Hdot_contr, -alpha_H)
-        b_vec = jnp.array([Hdot_drift]).flatten()
-        a_mat *= qp_scale
-        b_vec *= qp_scale
-        # a_mat = jnp.append(-Hdot_contr, 0)
-        # b_vec = jnp.array([Hdot_drift + alpha_H]).flatten()
+        # a_mat = jnp.append(-Hdot_contr, -alpha_H)
+        # b_vec = jnp.array([Hdot_drift]).flatten()
         # a_mat *= qp_scale
         # b_vec *= qp_scale
+        a_mat = jnp.append(-Hdot_contr, 0)
+        b_vec = jnp.array([Hdot_drift + alpha_H]).flatten()
+        a_mat *= qp_scale
+        b_vec *= qp_scale
 
         # test bdot
         if self.adapter.b > -1e-1:
@@ -486,23 +487,7 @@ class AdaptationLaw:
         # convexity parameter
         self.s = 1
 
-        # # Gains and Parameters -- Testing
-        # self.alpha = alpha
-        # self.eta_mu = self.eta_nu = 0.01
-        # self.w_dot_gain = 1.0
-        # # hc = 1e6  # high cost
-        # # lc = 1e-3  # low cost
-        # # self.Q = jnp.diag(jnp.array([hc, hc, hc, hc, hc, hc, lc, lc]))  # Cost function gain
-        # # self.P = 1 * jnp.eye(nWeights)
-        # # self.P = 1e1 * jnp.eye(nWeights)
-        # self.P = 1e-3 * jnp.eye(nWeights)
-        # self.w_des_gain = 1.0
-        # self.w_min = 0.01
-        # self.w_max = 50.0
-        # self.b3_gain = 1.0
-        # self.ci_gain = 1.0
-
-        # # Gains and Parameters -- Oscillator
+        # # Gains and Parameters -- Oscillator Final
         # self.alpha = alpha
         # self.eta_mu = self.eta_nu = 0.01
         # self.w_dot_gain = 1.0
@@ -514,12 +499,15 @@ class AdaptationLaw:
         # self.b3_gain = 1.0
         # self.ci_gain = 1.0
 
-        # Gains and Parameters -- Bicycle
+        # Gains and Parameters -- Bicycle Testing
         self.alpha = alpha
         self.eta_mu = self.eta_nu = 0.01
         self.w_dot_gain = 1.0
-        self.Q = 1 * jnp.eye(nWeights)  # Cost function gain
-        self.P = 100 * jnp.eye(nWeights)
+        hc = 1e9  # high cost
+        lc = 1  # low cost
+        self.Q = jnp.diag(jnp.array([hc, hc, hc, hc, hc, hc, lc, lc]))  # Cost function gain
+        # self.Q = 5 * jnp.eye(nWeights)  # Cost function gain
+        self.P = 50 * jnp.eye(nWeights)
         self.w_des_gain = 1.0
         self.w_min = 0.01
         self.w_max = 50.0
@@ -556,13 +544,13 @@ class AdaptationLaw:
             None
 
         """
-        eps = 0.1
+        eps = 1e-2
 
         def phi(z):
             return self.c(z) - 1 / z[-1] * (
                 jnp.sum(jnp.log(-self.b1(z)))
                 + jnp.sum(jnp.log(-self.b2(z)))
-                + jnp.log(-self.b3(z) - eps) / ((-self.b3(z) - eps) ** 3)
+                + jnp.log(-self.b3(z) - eps) / ((-self.b3(z) - eps) ** 5)
             )
 
         def d_phi_dw(z):
@@ -596,10 +584,27 @@ class AdaptationLaw:
 
         """
 
-        def c(z):
+        def maximum_control_authority(z):
+            return (
+                -abs(
+                    self.dHdx(z) @ self.model.g(z[: self.n_states + 1])
+                    + self.dHdw(z) @ self._w_dot_contr_f
+                )
+                @ self.u_max
+            )
+
+        def track_wdes(z):
             return (
                 1 / 2 * (z[self.widxs] - self.w_des(z)).T @ self.Q @ (z[self.widxs] - self.w_des(z))
             )
+
+        def minimum_w(z):
+            return 1 / 2 * (z[self.widxs]).T @ self.Q @ (z[self.widxs])
+
+        def c(z):
+            # return minimum_w(z)
+            return track_wdes(z)
+            # return maximum_control_authority(z)
 
         self.c = jit(c)
 
@@ -652,48 +657,47 @@ class AdaptationLaw:
 
         """
 
-        # def b3(z):
-        #     return (
-        #         self.eta_mu
-        #         + self.eta_nu
-        #         - self.dHdt(z)
-        #         - self.dHdx(z) @ self.model.f(z[: self.n_states + 1])
-        #         # - self.dHdw(z) @ self._w_dot_drift_f
-        #         - self.alpha * self.H(z) ** 3
-        #         - abs(
-        #             self.dHdx(z)
-        #             @ self.model.g(z[: self.n_states + 1])
-        #             # + self.dHdw(z) @ self._w_dot_contr_f
-        #         )
-        #         @ self.u_max
-        #     ) * self.b3_gain
-
         def b3(z):
             return (
-                -1
-                + jnp.sum(
-                    jnp.array(
-                        [
-                            jnp.exp(
-                                -2
-                                * (
-                                    cbf._dhdt(z[0], z[1 : self.n_states + 1])
-                                    + cbf._dhdx(z[0], z[1 : self.n_states + 1])
-                                    @ self.model.f(z[: self.n_states + 1])
-                                    + abs(
-                                        cbf._dhdx(z[0], z[1 : self.n_states + 1])
-                                        @ self.model.g(z[: self.n_states + 1])
-                                    )
-                                    @ self.u_max
-                                    + cbf.alpha(cbf._h(z[0], z[1 : self.n_states + 1]))
-                                )
-                            )
-                            for cbf in self.cbfs
-                        ]
-                    )
+                self.eta_mu
+                + self.eta_nu
+                - self.dHdt(z)
+                - self.dHdx(z) @ self.model.f(z[: self.n_states + 1])
+                # - self.dHdw(z) @ self._w_dot_drift_f
+                - self.alpha * self.H(z) ** 3
+                - abs(
+                    self.dHdx(z) @ self.model.g(z[: self.n_states + 1])
+                    + self.dHdw(z) @ self._w_dot_contr_f
                 )
-                * self.b3_gain
-            )
+                @ self.u_max
+            ) * self.b3_gain
+
+        # def b3(z):
+        #     return (
+        #         -1
+        #         + jnp.sum(
+        #             jnp.array(
+        #                 [
+        #                     jnp.exp(
+        #                         -1
+        #                         * (
+        #                             cbf._dhdt(z[0], z[1 : self.n_states + 1])
+        #                             + cbf._dhdx(z[0], z[1 : self.n_states + 1])
+        #                             @ self.model.f(z[: self.n_states + 1])
+        #                             + abs(
+        #                                 cbf._dhdx(z[0], z[1 : self.n_states + 1])
+        #                                 @ self.model.g(z[: self.n_states + 1])
+        #                             )
+        #                             @ self.u_max
+        #                             + cbf.alpha(cbf._h(z[0], z[1 : self.n_states + 1]))
+        #                         )
+        #                     )
+        #                     for cbf in self.cbfs
+        #                 ]
+        #             )
+        #         )
+        #         * self.b3_gain
+        #     )
 
         def d_b3_dt(z):
             return jacfwd(b3)(z)[self.tidxs]
@@ -737,29 +741,29 @@ class AdaptationLaw:
         #         @ self.u_max
         #     ) * self.b3_gain
 
-        def b3_a(z):
-            return (
-                self.eta_mu
-                + self.eta_nu
-                - self.dHdt(z)
-                - self.dHdx(z) @ self.model.f(z[: self.n_states + 1])
-                # - self.dHdw(z) @ self._w_dot_drift_f
-                - self.alpha * self.H(z)
-            )
+        # def b3_a(z):
+        #     return (
+        #         self.eta_mu
+        #         + self.eta_nu
+        #         - self.dHdt(z)
+        #         - self.dHdx(z) @ self.model.f(z[: self.n_states + 1])
+        #         # - self.dHdw(z) @ self._w_dot_drift_f
+        #         - self.alpha * self.H(z)
+        #     )
 
-        def b3_b(z):
-            return (
-                -abs(
-                    self.dHdx(z)
-                    @ self.model.g(z[: self.n_states + 1])
-                    # + self.dHdw(z) @ self._w_dot_contr_f
-                )
-                @ self.u_max
-            )
+        # def b3_b(z):
+        #     return (
+        #         -abs(
+        #             self.dHdx(z)
+        #             @ self.model.g(z[: self.n_states + 1])
+        #             # + self.dHdw(z) @ self._w_dot_contr_f
+        #         )
+        #         @ self.u_max
+        #     )
 
         self.b3 = jit(b3)
-        self.b3_a = jit(b3_a)
-        self.b3_b = jit(b3_b)
+        # self.b3_a = jit(b3_a)
+        # self.b3_b = jit(b3_b)
         self.d_b3_dt = jit(d_b3_dt)
         self.d_b3_dx = jit(d_b3_dx)
         self.d_b3_dw = jit(d_b3_dw)
@@ -970,22 +974,6 @@ class AdaptationLaw:
 
         return self._w_dot_f
 
-    # def w_des(self, z: NDArray) -> NDArray:
-    #     """Computes the desired gains k for the constituent cbfs. This can be
-    #     thought of as the nominal adaptation law (unconstrained).
-
-    #     Arguments:
-    #         h (NDArray): array of constituent cbf values
-
-    #     Returns:
-    #         w_des (NDArray)
-
-    #     """
-
-    #     w_des = jnp.ones((self.n_weights,)) * self.w_des_gain
-
-    #     return jnp.clip(w_des, self.w_min, self.w_max)
-
     def w_des(self, z: NDArray) -> NDArray:
         """Computes the desired gains k for the constituent cbfs. This can be
         thought of as the nominal adaptation law (unconstrained).
@@ -997,8 +985,8 @@ class AdaptationLaw:
             w_des (NDArray)
 
         """
-        w_des = jnp.array([cbf._h(z[0], z[1 : self.n_states + 1]) for cbf in self.cbfs])
-        # w_des = jnp.ones((self.n_weights,)) * self.w_des_gain
+        # w_des = jnp.array([cbf._h(z[0], z[1 : self.n_states + 1]) for cbf in self.cbfs])
+        w_des = jnp.ones((self.n_weights,)) * self.w_des_gain
 
         return w_des * self.w_des_gain
 
