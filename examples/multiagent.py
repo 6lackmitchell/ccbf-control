@@ -8,7 +8,7 @@ from core.simulate import simulate
 
 # settings for simulation
 from models.bicycle import DynamicBicycleModel
-from models.bicycle.nominal_controllers import LqrController, ZeroController
+from models.bicycle.nominal_controllers import LqrController
 from models.bicycle.cbfs.obstacle_avoidance import cbfs as cbfs_obstacle_avoidance
 from models.bicycle.cbfs.speed_limit import cbfs as cbfs_speed
 from models.bicycle.cbfs.slip_limit import cbfs as cbfs_slip
@@ -32,7 +32,7 @@ u_max = jnp.array([jnp.pi / 2, 1.0])
 goal_state = jnp.array([2.0, 2.0, 0.0, 0.0, 0.0])
 xi = -1.0
 yi = 0.0
-psii = jnp.arctan2(goal_state[1] - yi + 0.1, goal_state[0] - xi)
+psii = jnp.arctan2(goal_state[1] - yi, goal_state[0] - xi)
 vi = 0.5
 x0 = jnp.array([xi, yi, psii, vi, 0.0])
 bicycle_model = DynamicBicycleModel(initial_state=x0, u_max=u_max, dt=dt, tf=tf)

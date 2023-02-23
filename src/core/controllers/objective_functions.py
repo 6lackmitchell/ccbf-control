@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 from nptyping import NDArray
 
 q1 = 1
-q2 = 100
+q2 = 1
 q3 = 100 * jnp.array([q1, q2]).max()
 
 
