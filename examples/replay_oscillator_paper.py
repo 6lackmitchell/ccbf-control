@@ -184,16 +184,18 @@ kdot = np.concatenate(
     ]
 )
 
+legend_font = 19
+fontsize = 30
 lwidth = 3
 dash = [3, 2]
 color_idx = np.array(range(0, 2 * nAgents)).reshape(nAgents, 2)
 names = [
-    r"$\alpha = 1$",
-    r"$\alpha = 0.1$",
-    r"$\alpha = 0.01$",
-    r"$\alpha = 1$",
-    r"$\alpha = 0.1$",
-    r"$\alpha = 0.01$",
+    r"$\gamma = 1$",
+    r"$\gamma = 0.1$",
+    r"$\gamma = 0.01$",
+    r"$\gamma = 1$",
+    r"$\gamma = 0.1$",
+    r"$\gamma = 0.01$",
 ]
 
 
@@ -225,7 +227,7 @@ for aa in [0]:
     ax_cont.plot(
         t[:ii_u],
         u0[aa, :ii_u, 0],
-        label=r"$u_{0, \mathrm{pos}}$",
+        label=r"$u_{0, \theta=0}$",
         linewidth=lwidth,
         color="m",
         dashes=dash,
@@ -243,7 +245,7 @@ for aa in [3]:
     ax_cont.plot(
         t[:ii_u],
         u0[aa, :ii_u, 0],
-        label=r"$u_{0, \mathrm{neg}}$",
+        label=r"$u_{0, \theta=\pi}$",
         linewidth=lwidth,
         color="c",
         dashes=dash,
@@ -258,7 +260,7 @@ for aa in [3, 4, 5]:
     )
 
 ax_cont.set(
-    xlim=[-2.5, 10.25],
+    xlim=[-2.75, 10.25],
     xlabel=r"$t$ (sec)",
     ylabel=r"$u$",
 )
@@ -272,7 +274,7 @@ for item in (
 
 # ax_cont.set_xticks([])
 # ax_cont.set_yticks([-1, 0, 1])
-ax_cont.legend(fancybox=True, fontsize=18)
+ax_cont.legend(fancybox=True, fontsize=legend_font)
 ax_cont.grid(True, linestyle="dotted", color="white")
 # ax_cont.set_xticks([0, 2, 4, 6, 8, 10])
 
@@ -286,12 +288,12 @@ set_edges_black(ax_k)
 
 # Angular Control Inputs
 lbl = [
-    [r"$w_1: \alpha = 1.0$", r"$w_2: \alpha = 1.0$"],
-    [r"$w_1: \alpha = 0.1$", r"$w_2: \alpha = 0.1$"],
-    [r"$w_1: \alpha = 0.01$", r"$w_2: \alpha = 0.01$"],
-    [r"$w_1: \alpha = 1.0$", r"$w_2: \alpha = 1.0$"],
-    [r"$w_1: \alpha = 0.1$", r"$w_2: \alpha = 0.1$"],
-    [r"$w_1: \alpha = 0.01$", r"$w_2: \alpha = 0.01$"],
+    [r"$w_1: \gamma = 1.0$", r"$w_2: \gamma = 1.0$"],
+    [r"$w_1: \gamma = 0.1$", r"$w_2: \gamma = 0.1$"],
+    [r"$w_1: \gamma = 0.01$", r"$w_2: \gamma = 0.01$"],
+    [r"$w_1: \gamma = 1.0$", r"$w_2: \gamma = 1.0$"],
+    [r"$w_1: \gamma = 0.1$", r"$w_2: \gamma = 0.1$"],
+    [r"$w_1: \gamma = 0.01$", r"$w_2: \gamma = 0.01$"],
 ]
 lbl = [
     [None, None],
@@ -324,8 +326,8 @@ for item in (
     + ax_k.get_xticklabels()
     + ax_k.get_yticklabels()
 ):
-    item.set_fontsize(25)
-ax_k.legend(fancybox=True, fontsize=20)
+    item.set_fontsize(fontsize)
+ax_k.legend(fancybox=True, fontsize=legend_font)
 ax_k.grid(True, linestyle="dotted", color="white")
 
 plt.tight_layout(pad=2.0)
@@ -337,12 +339,12 @@ set_edges_black(ax_wdot)
 
 # Angular Control Inputs
 lbl = [
-    [r"$\dot{w}_1: \alpha = 1.0$", r"$\dot{w}_2: \alpha = 1.0$"],
-    [r"$\dot{w}_1: \alpha = 0.1$", r"$\dot{w}_2: \alpha = 0.1$"],
-    [r"$\dot{w}_1: \alpha = 0.01$", r"$\dot{w}_2: \alpha = 0.01$"],
-    [r"$\dot{w}_1: \alpha = 1.0$", r"$\dot{w}_2: \alpha = 1.0$"],
-    [r"$\dot{w}_1: \alpha = 0.1$", r"$\dot{w}_2: \alpha = 0.1$"],
-    [r"$\dot{w}_1: \alpha = 0.01$", r"$\dot{w}_2: \alpha = 0.01$"],
+    [r"$\dot{w}_1: \gamma = 1.0$", r"$\dot{w}_2: \gamma = 1.0$"],
+    [r"$\dot{w}_1: \gamma = 0.1$", r"$\dot{w}_2: \gamma = 0.1$"],
+    [r"$\dot{w}_1: \gamma = 0.01$", r"$\dot{w}_2: \gamma = 0.01$"],
+    [r"$\dot{w}_1: \gamma = 1.0$", r"$\dot{w}_2: \gamma = 1.0$"],
+    [r"$\dot{w}_1: \gamma = 0.1$", r"$\dot{w}_2: \gamma = 0.1$"],
+    [r"$\dot{w}_1: \gamma = 0.01$", r"$\dot{w}_2: \gamma = 0.01$"],
 ]
 lbl = [
     [None, None],
@@ -379,8 +381,8 @@ for item in (
     + ax_wdot.get_xticklabels()
     + ax_wdot.get_yticklabels()
 ):
-    item.set_fontsize(25)
-ax_wdot.legend(fancybox=True, fontsize=20)
+    item.set_fontsize(fontsize)
+ax_wdot.legend(fancybox=True, fontsize=legend_font)
 ax_wdot.grid(True, linestyle="dotted", color="white")
 
 plt.tight_layout(pad=2.0)
@@ -400,7 +402,7 @@ for item in (
     + ax_cz.get_xticklabels()
     + ax_cz.get_yticklabels()
 ):
-    item.set_fontsize(25)
+    item.set_fontsize(fontsize)
 ax_cz.legend(fancybox=True)
 ax_cz.grid(True, linestyle="dotted", color="white")
 
@@ -484,8 +486,8 @@ for item in (
     + ax_H.get_xticklabels()
     + ax_H.get_yticklabels()
 ):
-    item.set_fontsize(25)
-ax_H.legend(fancybox=True, fontsize=18)
+    item.set_fontsize(fontsize)
+ax_H.legend(fancybox=True, fontsize=legend_font)
 ax_H.grid(True, linestyle="dotted", color="white")
 
 
@@ -507,8 +509,8 @@ for item in (
     + ax_b3.get_xticklabels()
     + ax_b3.get_yticklabels()
 ):
-    item.set_fontsize(25)
-ax_b3.legend(fancybox=True, fontsize=18)
+    item.set_fontsize(fontsize)
+ax_b3.legend(fancybox=True, fontsize=legend_font)
 ax_b3.grid(True, linestyle="dotted", color="white")
 
 plt.tight_layout(pad=2.0)
@@ -535,7 +537,7 @@ ax_state.plot(t[1:ii], barr2, label=r"$h_2=0$", color="k", linewidth=lwidth)
 traj_pos = 4 * np.sin(2 * np.pi * t[1:ii] / 5)
 traj_neg = -4 * np.sin(2 * np.pi * t[1:ii] / 5)
 ax_state.plot(
-    t[1:ii], traj_pos, label=r"$x^*_{\mathrm{pos}}$", color="m", linewidth=lwidth, dashes=dash
+    t[1:ii], traj_pos, label=r"$x^*_{\theta=0}$", color="m", linewidth=lwidth, dashes=dash
 )
 
 
@@ -548,7 +550,7 @@ for aa in [0, 1, 2]:
         linewidth=lwidth,
     )
 ax_state.plot(
-    t[1:ii], traj_neg, label=r"$x^*_{\mathrm{neg}}$", color="c", linewidth=lwidth, dashes=dash
+    t[1:ii], traj_neg, label=r"$x^*_{\theta=\pi}$", color="c", linewidth=lwidth, dashes=dash
 )
 for aa in [3, 4, 5]:
     ax_state.plot(
@@ -563,7 +565,7 @@ for aa in [3, 4, 5]:
 
 ax_state.set(
     ylim=[-4.05, 4.05],
-    xlim=[-2.5, 10.25],
+    xlim=[-2.75, 10.25],
     xlabel=r"$t$",
     ylabel=r"$x$",
 )
@@ -574,14 +576,14 @@ for item in (
     + ax_state.get_xticklabels()
     + ax_state.get_yticklabels()
 ):
-    item.set_fontsize(25)
+    item.set_fontsize(fontsize)
 # Hide X and Y axes label marks
 # ax_map.xaxis.set_tick_params(labelbottom=False)
 # ax_map.yaxis.set_tick_params(labelleft=False)
 # Hide X and Y axes tick marks
 # ax_map.set_xticks([])
 # ax_map.set_yticks([])
-ax_state.legend(fancybox=True, fontsize=18)
+ax_state.legend(fancybox=True, fontsize=legend_font)
 ax_state.grid(False)
 
 plt.tight_layout(pad=2.0)
