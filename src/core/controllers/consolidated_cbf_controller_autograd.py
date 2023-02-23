@@ -504,10 +504,10 @@ class AdaptationLaw:
         self.eta_mu = self.eta_nu = 0.01
         self.w_dot_gain = 1.0
         hc = 1e9  # high cost
-        lc = 1  # low cost
+        lc = 1e-3  # low cost
         self.Q = jnp.diag(jnp.array([hc, hc, hc, hc, hc, hc, lc, lc]))  # Cost function gain
         # self.Q = 5 * jnp.eye(nWeights)  # Cost function gain
-        self.P = 50 * jnp.eye(nWeights)
+        self.P = 1e-3 * jnp.eye(nWeights)
         self.w_des_gain = 1.0
         self.w_min = 0.01
         self.w_max = 50.0
