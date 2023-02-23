@@ -104,3 +104,28 @@ class LqrController(Controller):
         self.u = jnp.array([omega, ar])
 
         return self.u, 1, "Optimal"
+
+
+class ZeroController(Controller):
+    def __init__(self):
+        super().__init__()
+
+        self.id = None
+        self.complete = False
+        self.u_actual = None
+
+    def _compute_control(self, t: float, z: NDArray) -> (int, str):
+        """Computes the nominal input for a vehicle in the intersection situation.
+
+        Arguments:
+            t (float): time in sec
+            z (NDArray): full state vector
+
+        Returns:
+            code: success (1) / error (0, -1, ...) code
+            status: more informative success / error flag
+
+        """
+        self.u = jnp.array([0.0, 0.0])
+
+        return self.u, 1, "Optimal"

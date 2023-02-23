@@ -63,8 +63,8 @@ def linear_class_k(k):
 
 
 # Global params
-gain = 2.0
-R = 0.4
+gain = 1.0
+R = 0.25
 
 # Obstacle 1
 cx1 = 0.8

@@ -3,7 +3,7 @@ from jax import jacfwd, jacrev, jit
 from nptyping import NDArray
 from core.cbfs.cbf import Cbf
 
-gain = 1.0
+gain = 0.25
 
 
 @jit
@@ -61,7 +61,7 @@ def linear_class_k(k):
 # Speed Constraint
 ri = 4.0
 rf = 0.1
-T = 10.0
+T = 5.0
 cx = 2.0
 cy = 2.0
 h1 = lambda t, x: h(jnp.hstack([t, x]), cx, cy, ri, rf, T)

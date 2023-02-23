@@ -1,15 +1,3 @@
-from sys import platform
-from core.visualize import visualize
-
-vehicle = "bicycle"
-level = "dynamic"
-situation = "swarm"
-
-end_time = 50.0
-timestep = 0.01
-
-root_dir = "/Documents/git/ccbf-control/data"
-
 import matplotlib
 
 matplotlib.use("Qt5Agg")
@@ -46,7 +34,7 @@ if platform == "linux" or platform == "linux2":
     # pre_path = "/home/dasc/mitchell/"
 elif platform == "darwin":
     # OS X
-    pre_path = "/Users/mblack/"
+    pre_path = "/Users/mblack/Documents/git/"
 elif platform == "win32":
     # Windows...
     pass
@@ -373,20 +361,15 @@ ax_pos = fig_map.add_subplot(111)
 set_edges_black(ax_pos)
 
 gain = 2.0
-R = 0.4
-R1 = 0.5
+R = 0.25
 cx1 = 0.9
 cy1 = 1.1
-R2 = 0.5
 cx2 = 1.5
 cy2 = 2.25
-R3 = 0.5
 cx3 = 2.4
 cy3 = 1.5
-R4 = 0.5
 cx4 = 2.0
 cy4 = 0.35
-R5 = 0.5
 cx5 = 0.8
 cy5 = -0.2
 

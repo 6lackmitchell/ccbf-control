@@ -40,7 +40,7 @@ class CbfQpController(Controller):
         self.n_controls = model.n_controls
         self.n_agents = n_agents
         self.n_dec_vars = 1
-        self.desired_class_k = 0.75
+        self.desired_class_k = 1.0
         self.max_class_k = 1e6
         self.u_max = model.u_max
 
@@ -97,8 +97,7 @@ class CbfQpController(Controller):
         # Compute nominal control input for ego only -- assume others are zero
         z_copy_nom = z.copy()
         z_copy_nom[self.ego_id] = z[ego]
-        u_nom = jnp.zeros((len(z), 2))
-        # u_nom = jnp.zeros((len(z), 1))
+        u_nom = jnp.zeros((len(z), self.model.n_controls))
         u0, code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
         if self.u_nom is None:
             self.u_nom = u0

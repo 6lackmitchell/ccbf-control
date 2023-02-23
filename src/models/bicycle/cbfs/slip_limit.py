@@ -3,7 +3,7 @@ from jax import jacfwd, jacrev, jit
 from nptyping import NDArray
 from core.cbfs.cbf import Cbf
 
-gain = 1.0
+gain = 5.0
 
 
 @jit
