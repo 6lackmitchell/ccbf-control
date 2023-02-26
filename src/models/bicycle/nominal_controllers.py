@@ -58,9 +58,9 @@ class LqrController(Controller):
         A_di = jnp.array([[0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 0, 0, 0]])
         B_di = jnp.array([[0, 0], [0, 0], [1, 0], [0, 1]])
 
-        gain = 1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2)
+        gain = 10.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2)
         gain = jnp.array([gain, 10.0]).min()
-        Q = 0.5 * gain * jnp.eye(4)
+        Q = gain * jnp.eye(4)
         R = 5 * jnp.eye(2)
 
         # Compute LQR control ijnput for double integrator model

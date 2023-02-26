@@ -17,10 +17,10 @@ from core.controllers.consolidated_cbf_controller_autograd import ConsolidatedCb
 from core.controllers.objective_functions import minimum_deviation
 
 # save location
-save_file = (
-    "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
-)
-# save_file = "/Users/mblack/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
+# save_file = (
+#     "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
+# )
+save_file = "/Users/mblack/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
 # save_file = "/home/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
 
 # time params
@@ -28,9 +28,11 @@ tf = 10.0
 dt = 1e-2
 
 # bicycle dynamics model
-u_max = jnp.array([jnp.pi / 2, 1.0])
+# u_max = jnp.array([2 * jnp.pi, 0.25])
+u_max = jnp.array([jnp.pi / 2, 0.5])
 goal_state = jnp.array([2.0, 2.0, 0.0, 0.0, 0.0])
-xi = -1.0
+xi = -0.75
+xi = 0.0
 yi = 0.0
 psii = jnp.arctan2(goal_state[1] - yi + 0.1, goal_state[0] - xi)
 vi = 0.5

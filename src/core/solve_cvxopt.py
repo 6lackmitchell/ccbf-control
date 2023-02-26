@@ -73,7 +73,7 @@ def solve_qp_cvxopt(Q0, p0, A0=None, b0=None, G0=None, h0=None, level=0) -> dict
             check_A = np.array(A)
             check_b = np.array(b)[:, 0]
             if np.sum((check_A @ check_x) <= check_b) < len(check_b):
-                data["code"] = 0
+                data["code"] = 1
                 data["status"] = "violates_constraints"
                 print("VIOLATES")
 

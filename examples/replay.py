@@ -360,26 +360,27 @@ fig_map = plt.figure(figsize=(10, 10))
 ax_pos = fig_map.add_subplot(111)
 set_edges_black(ax_pos)
 
-gain = 2.0
-R = 0.25
-cx1 = 0.9
+gain = 5.0
+R = 0.45
+offset = 0.25
+cx1 = 0.8
 cy1 = 1.1
-cx2 = 1.5
+cx2 = 1.25
 cy2 = 2.25
-cx3 = 2.4
-cy3 = 1.5
+cx3 = 2.5
+cy3 = 1.75
 cx4 = 2.0
-cy4 = 0.35
+cy4 = 0.25
 cx5 = 0.8
-cy5 = -0.2
+cy5 = -0.25
 
 # # Set Up Road
 d_points = 100
-xc1, yc1 = get_circle(np.array([cx1, cy1]), R, d_points)
-xc2, yc2 = get_circle(np.array([cx2, cy2]), R, d_points)
-xc3, yc3 = get_circle(np.array([cx3, cy3]), R, d_points)
-xc4, yc4 = get_circle(np.array([cx4, cy4]), R, d_points)
-xc5, yc5 = get_circle(np.array([cx5, cy5]), R, d_points)
+xc1, yc1 = get_circle(np.array([cx1 + offset, cy1 + offset]), R, d_points)
+xc2, yc2 = get_circle(np.array([cx2 + offset, cy2 + offset]), R, d_points)
+xc3, yc3 = get_circle(np.array([cx3 + offset, cy3 + offset]), R, d_points)
+xc4, yc4 = get_circle(np.array([cx4 + offset, cy4 + offset]), R, d_points)
+xc5, yc5 = get_circle(np.array([cx5 + offset, cy5 + offset]), R, d_points)
 xc6, yc6 = get_circle(np.array([xg[0], yg[0]]), 0.1, d_points)
 ax_pos.plot(xc1, yc1, linewidth=lwidth + 1, color="k")
 ax_pos.plot(xc2, yc2, linewidth=lwidth + 1, color="k")
@@ -434,7 +435,7 @@ ax_pos.set_yticks([])
 ax_pos.legend(fancybox=True, fontsize=15)
 ax_pos.grid(False)
 
-time_scale_factor = 10
+time_scale_factor = int(1e-1 / dt)
 
 
 def animate_ego(jj):

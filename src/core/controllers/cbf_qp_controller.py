@@ -40,7 +40,7 @@ class CbfQpController(Controller):
         self.n_controls = model.n_controls
         self.n_agents = n_agents
         self.n_dec_vars = 1
-        self.desired_class_k = 0.1
+        self.desired_class_k = 0.9
         self.max_class_k = 1e6
         self.u_max = model.u_max
 
@@ -285,7 +285,7 @@ class CbfQpController(Controller):
 
     def assign_control(self, solution: dict, ego: int) -> None:
         """Assigns the control solution to the appropriate agent."""
-        if solution["status"] == "violates_constraints":
+        if solution["status"] != "optimal":
             u = self.u
         else:
             u = jnp.array(
