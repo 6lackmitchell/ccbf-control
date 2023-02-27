@@ -34,7 +34,7 @@ goal_state = jnp.array([2.0, 2.0, 0.0, 0.0, 0.0])
 xi = -0.75
 xi = 0.0
 yi = 0.0
-psii = jnp.arctan2(goal_state[1] - yi + 0.1, goal_state[0] - xi)
+psii = jnp.arctan2(goal_state[1] - yi, goal_state[0] - xi)
 vi = 0.5
 x0 = jnp.array([xi, yi, psii, vi, 0.0])
 bicycle_model = DynamicBicycleModel(initial_state=x0, u_max=u_max, dt=dt, tf=tf)
