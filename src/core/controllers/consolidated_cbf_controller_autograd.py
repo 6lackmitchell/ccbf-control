@@ -1177,6 +1177,8 @@ class ControlLaw:
     def __init__(
         self,
         model: Model,
+        adapter: AdaptationLaw,
+        nominal_controller: Controller,
         alpha: Optional[float] = 0.1,
     ):
         """Initializes class attributes.
@@ -1186,8 +1188,10 @@ class ControlLaw:
             kZero (float, Opt): class K function weight in C-CBF condition
 
         """
-        # model
+        # model, adapter, nominal controller
         self.model = model
+        self.adapter = adapter
+        self.nominal_controller = nominal_controller
 
         # dimensions
         self.n_states = self.model.n_states
@@ -1200,29 +1204,22 @@ class ControlLaw:
         self.u_max = self.model.u_max
         self.u_min = -self.u_max
 
-        # cbfs
-        self.cbfs = None
-
         # class K parameters
         self.alpha = alpha
-        self.cubic = False
 
         # u controls and derivatives
         self._u_controls = jnp.zeros((self.n_controls,))
         self._u_desired = jnp.zeros((self.n_controls,))
-        self._w_dot = jnp.zeros((self.n_controls,))
+        self._u_dot = jnp.zeros((self.n_controls,))
 
-        # # wdot filter design (2nd order)
-        # self.wn = 50.0
-        # self.zeta = 0.707  # butterworth
-        # self._filter_order = 1
-        # self._w_dot_f = jnp.zeros((nWeights,))
-        # self._w_dot_drift_f = jnp.zeros((nWeights,))
-        # self._w_2dot_drift_f = jnp.zeros((nWeights,))
-        # self._w_3dot_drift_f = jnp.zeros((nWeights,))
-        # self._w_dot_contr_f = jnp.zeros((nWeights, self.n_controls))
-        # self._w_2dot_contr_f = jnp.zeros((nWeights, self.n_controls))
-        # self._w_3dot_contr_f = jnp.zeros((nWeights, self.n_controls))
+        # cbfs placeholders
+        self.cbfs = None
+
+        # indices placeholders
+        self.tidxs = None
+        self.widxs = None
+        self.xidxs = None
+        self.uidxs = None
 
         # function placeholders
         self.H = None
@@ -1234,12 +1231,12 @@ class ControlLaw:
         self.J = None
 
         # control constraint function placeholders
-        self.c1 = None
-        self.c2 = None
+        self.d1 = None
+        self.d2 = None
 
         # c-cbf constraint function placeholders
-        self.c3 = None
-        self._c3 = None
+        self.d3 = None
+        self._d3 = None
 
         # psi function placeholders
         self.psi = None
@@ -1248,24 +1245,21 @@ class ControlLaw:
         self.d2_psi_dudx = None
         self.d2_psi_dudw = None
         self.d2_psi_du2 = None
-        self._grad_phi_u = None
-        self._grad_phi_ut = None
-        self._grad_phi_ux = None
-        self._grad_phi_uw = None
-        self._grad_phi_uu_inv = None
-        self._grad_phi_u_f = None
+        self._grad_psi_u = None
+        self._grad_psi_ut = None
+        self._grad_psi_ux = None
+        self._grad_psi_uw = None
+        self._grad_psi_uu_inv = None
+        self._grad_psi_u_f = None
 
         # convexity parameter
         self.s = 1e3
 
         # Gains and Parameters
-        self.alpha = alpha
         self.Q = 1 * jnp.eye(nWeights)  # Cost function gain
         self.P = 100 * jnp.eye(nWeights)
-        self.u_min = 0.01
-        self.w_max = 50.0
-        self.b3_gain = 1.0
-        self.ci_gain = 1.0
+        self.d3_gain = 1.0
+        self.di_gain = 1.0
 
     def setup(self) -> None:
         """Generates symbolic functions for the cost function and feasible region
@@ -1279,12 +1273,12 @@ class ControlLaw:
 
         """
         self.setup_cost()  # defines cost function
-        self.setup_b1()  # defines w > wmin constraint function
-        self.setup_b2()  # defines w < wmax constraint function
-        self.setup_b3()  # defines sufficient control authority constraint function
+        self.setup_d1()  # defines w > wmin constraint function
+        self.setup_d2()  # defines w < wmax constraint function
+        self.setup_d3()  # defines sufficient control authority constraint function
 
         # defines augmented unconstrained cost function
-        self.setup_phi()
+        self.setup_psi()
 
     def setup_psi(self) -> None:
         """Generates symbolic functions for the augmented unconstrained cost function. Must be called
@@ -1302,9 +1296,9 @@ class ControlLaw:
 
         def psi(z):
             return self.J(z) - 1 / z[-1] * (
-                jnp.sum(jnp.log(-self.c1(z)))
-                + jnp.sum(jnp.log(-self.c2(z)))
-                + jnp.log(-self.c3(z) - eps) / ((-self.c3(z) - eps) ** exp)
+                jnp.sum(jnp.log(-self.d1(z)))
+                + jnp.sum(jnp.log(-self.d2(z)))
+                + jnp.log(-self.d3(z) - eps) / ((-self.d3(z) - eps) ** exp)
             )
 
         def d_psi_du(z):
@@ -1352,7 +1346,7 @@ class ControlLaw:
 
         self.J = jit(J)
 
-    def setup_c1(self) -> None:
+    def setup_d1(self) -> None:
         """Generates symbolic functions bounding the weights from below.
 
         Arguments:
@@ -1364,7 +1358,7 @@ class ControlLaw:
         """
 
         # w > w_min constraints
-        def c1(z):
+        def d1(z):
             return jnp.array(
                 [
                     self.u_min[uu] - z[self.n_states + self.n_weights + 1 + uu]
@@ -1372,9 +1366,9 @@ class ControlLaw:
                 ]
             )
 
-        self.c1 = jit(c1)
+        self.d1 = jit(d1)
 
-    def setup_c2(self) -> None:
+    def setup_d2(self) -> None:
         """Generates symbolic functions for bounding the weights from above.
 
         Arguments:
@@ -1386,7 +1380,7 @@ class ControlLaw:
         """
 
         # u < u_max constraints
-        def c2(z):
+        def d2(z):
             return jnp.array(
                 [
                     z[self.n_states + self.n_weights + 1 + uu] - self.u_max[uu]
@@ -1394,9 +1388,9 @@ class ControlLaw:
                 ]
             )
 
-        self.c2 = jit(c2)
+        self.d2 = jit(d2)
 
-    def setup_c3(self) -> None:
+    def setup_d3(self) -> None:
         """Generates symbolic functions for validating the C-CBF.
 
         Arguments:
@@ -1407,23 +1401,20 @@ class ControlLaw:
 
         """
 
-        def c3(z):
+        def d3(z):
             ret = (
                 -self.dHdt(z)
                 - self.dHdx(z) @ self.model.f(z[: self.n_states + 1])
-                - (self.dHdw(z) @ self._w_dot_drift_f) * (self.dHdw(z) @ self._w_dot_drift_f < 0)
+                - self.dHdw(z) @ self.w_dot(z)
                 - self.alpha * self.H(z) ** 3
-                - (
-                    self.dHdx(z) @ self.model.g(z[: self.n_states + 1])
-                    + self.dHdw(z) @ self._w_dot_contr_f
-                )
-                @ self.u
-            ) * self.b3_gain
+                - self.dHdx(z) @ self.model.g(z[: self.n_states + 1]) @ self.z[self.uidxs]
+            ) * self.d3_gain
 
+            # resolve numerical issues
             low = -1e-6
             return ret * (ret < low) + low
 
-        self.c3 = jit(c3)
+        self.d3 = jit(d3)
 
     def update(self, u: NDArray, dt: float) -> Tuple[NDArray, NDArray]:
         """Updates the adaptation gains and returns the new k weights.
@@ -1441,43 +1432,40 @@ class ControlLaw:
 
         """
         self.t += dt
-        w_dot = self.compute_wdot(u)
-        w_dot_f = self.filter_update(u)
+        u_dot = self.compute_udot()
+        u_dot_f = self.filter_update()
 
-        self._w_weights += w_dot * self.dt
+        self._u_controls += u_dot * self.dt
 
-        return self._w_weights, w_dot, w_dot_f
+        return self._u_controls, u_dot, u_dot_f
 
-    def compute_wdot(self, u: NDArray) -> NDArray:
+    def compute_udot(self) -> NDArray:
         """Computes the time-derivative w_dot of the w_weights vector.
 
         Arguments:
-            u (NDArray): control input applied to system
+            None
 
         Returns:
-            w_dot (NDArray): time-derivative of kWeights
+            u_dot (NDArray): time-derivative of u_controls
 
         """
         # compute unconstrained w_dot
-        w_dot_0 = self._w_dot_drift + self._w_dot_contr @ u
+        u_dot_0 = self._u_dot
 
         # compute what weights would become with unconstrained w_dot
-        w_weights = self._w_weights + w_dot_0 * self.dt
+        u_controls = self._u_controls + u_dot_0 * self.dt
 
         # account for exceeding kmin/kmax bounds
-        max_idx = jnp.where(w_weights > self.w_max)
-        w_weights = w_weights.at[max_idx].set(0.999 * self.w_max)
-        min_idx = jnp.where(w_weights < self.w_min)
-        w_weights = w_weights.at[min_idx].set(1.001 * self.w_min)
-        w_dot = (w_weights - self._w_weights) / self.dt
-
-        # attribute deviation to drift term
-        self._w_dot_drift -= w_dot_0 - w_dot
+        max_idx = jnp.where(u_controls > self.u_max)
+        u_controls = u_controls.at[max_idx].set(0.999 * self.u_max)
+        min_idx = jnp.where(u_controls < self.u_min)
+        u_controls = u_controls.at[min_idx].set(1.001 * self.u_min)
+        u_dot = (u_controls - self._u_controls) / self.dt
 
         # set final w_dot value
-        self._w_dot = w_dot
+        self._u_dot = u_dot
 
-        return self._w_dot
+        return self._u_dot
 
     def precompute(self) -> NDArray:
         """Precomputes terms needed to compute the adaptation law.
@@ -1492,123 +1480,58 @@ class ControlLaw:
             None
 
         """
-        # phi
-        self._grad_phi_w = self.d_phi_dw(self.z)
-        self._grad_phi_wt = self.d2_phi_dwdt(self.z)
-        self._grad_phi_wx = self.d2_phi_dwdx(self.z)
-        self._grad_phi_ww_inv = jnp.linalg.inv(self.d2_phi_dw2(self.z))
-        self._grad_phi_w_f = self._grad_phi_w
-        # self._grad_phi_wt_f = self._grad_phi_wt
-        # self._grad_phi_wx_f = self._grad_phi_wx
-        # self._grad_phi_ww_inv_f = self._grad_phi_ww_inv
+        # psi gradients
+        self._grad_psi_u = self.d_psi_du(self.z)
+        self._grad_psi_ut = self.d2_psi_dudt(self.z)
+        self._grad_psi_ux = self.d2_psi_dudx(self.z)
+        self._grad_psi_uu_inv = jnp.linalg.inv(self.d2_psi_du2(self.z))
+        self._grad_psi_u_f = self._grad_psi_u
 
-        # filtered version for numerical stability (as in Fazlyab 2017 TAC)
-        gamma = self.wn * 2
-        if self._grad_phi_w_f is None:
-            self._grad_phi_w_f = jnp.zeros(self._grad_phi_w.shape)
-            # self._grad_phi_wt_f = jnp.zeros(self._grad_phi_wt.shape)
-            # self._grad_phi_wx_f = jnp.zeros(self._grad_phi_wx.shape)
-            # self._grad_phi_ww_inv_f = jnp.zeros(self._grad_phi_ww_inv.shape)
-        else:
-            self._grad_phi_w_f += (-gamma * self._grad_phi_w_f + self.wn * self._grad_phi_w) * 1e-2
-            # self._grad_phi_wt_f += (
-            #     -gamma * self._grad_phi_wt_f + self.wn * self._grad_phi_wt
-            # ) * 1e-2
-            # self._grad_phi_wx_f += (
-            #     -gamma * self._grad_phi_wx_f + self.wn * self._grad_phi_wx
-            # ) * 1e-2
-            # self._grad_phi_ww_inv_f += (
-            #     -gamma * self._grad_phi_ww_inv_f + self.wn * self._grad_phi_ww_inv
-            # ) * 1e-2
+        # c-cbf constraint value
+        self._d3 = self.d3(self.z)
 
-        # b3
-        self._b3 = self.b3(self.z)
-        # self._grad_b3_t = self.d_b3_dt(self.z)
-        # self._grad_b3_x = self.d_b3_dx(self.z)
-        # self._grad_b3_w = self.d_b3_dw(self.z)
-        # self._grad_b3_wt = self.d2_b3_dwdt(self.z)
-        # print(f"b3_parts: a = {self.b3_a(self.z)}, b = {self.b3_b(self.z)}")
-        # print(
-        #     f"etas: {self.eta_mu+self.eta_nu}, dHdt: {-self.dHdt(self.z)}, LfH: {- self.dHdx(self.z) @ self.model.f()}, alpha: {self.alpha * self.H(self.z)}"
-        # )
+        # # filtered version for numerical stability (as in Fazlyab 2017 TAC)
+        # gamma = self.wn * 2
+        # if self._grad_phi_w_f is None:
+        #     self._grad_phi_w_f = jnp.zeros(self._grad_phi_w.shape)
+        #     # self._grad_phi_wt_f = jnp.zeros(self._grad_phi_wt.shape)
+        #     # self._grad_phi_wx_f = jnp.zeros(self._grad_phi_wx.shape)
+        #     # self._grad_phi_ww_inv_f = jnp.zeros(self._grad_phi_ww_inv.shape)
+        # else:
+        #     self._grad_phi_w_f += (-gamma * self._grad_phi_w_f + self.wn * self._grad_phi_w) * 1e-2
+        #     # self._grad_phi_wt_f += (
+        #     #     -gamma * self._grad_phi_wt_f + self.wn * self._grad_phi_wt
+        #     # ) * 1e-2
+        #     # self._grad_phi_wx_f += (
+        #     #     -gamma * self._grad_phi_wx_f + self.wn * self._grad_phi_wx
+        #     # ) * 1e-2
+        #     # self._grad_phi_ww_inv_f += (
+        #     #     -gamma * self._grad_phi_ww_inv_f + self.wn * self._grad_phi_ww_inv
+        #     # ) * 1e-2
 
-        b3_val = (
-            jnp.array(
-                [
-                    cbf.dhdt(self.z[0], self.z[1 : self.n_states + 1])
-                    + cbf.dhdx(self.z[0], self.z[1 : self.n_states + 1]) @ self.model.f()
-                    + abs(cbf.dhdx(self.z[0], self.z[1 : self.n_states + 1]) @ self.model.g())
-                    @ self.u_max
-                    + cbf.alpha(cbf.h(self.z[0], self.z[1 : self.n_states + 1]))
-                    for cbf in self.cbfs
-                ]
-            )
-            * self.b3_gain
-        )
-        # print(f"b3a: {b3_val[0]}")
-        # print(f"b3b: {b3_val[1]}")
-        # print(f"b3: {self._b3}")
-
-        # low = 1e-2
-        # if self._b3 > -low:
-        #     self.P = 1e-2 * low / abs(self._b3) ** (1) * jnp.eye(self.n_weights)
-
-    def w_dot_drift(self) -> NDArray:
-        """Computes the drift (uncontrolled) component of the time-derivative
-        w_dot of the w_weights vector.
+    def u_dot(self) -> NDArray:
+        """Computes the time-derivative u_dot of the u_controls vector.
 
         Arguments:
-            x (NDArray): state vector
-            h (NDArray): vector of candidate CBFs
-            Lf (float): C-CBF drift term (includes filtered wdot)
-            Lg (NDArray): matrix of stacked Lgh vectors
+            None
 
         Returns:
-            w_dot_drift (NDArray): time-derivative of kWeights
+            u_dot (NDArray): time-derivative of u_controls
 
         """
-        # compute w_dot_drift
-        w_dot_drift_w = -self._grad_phi_ww_inv @ (self.P @ self._grad_phi_w_f * self.wn)
-        w_dot_drift_x = -self._grad_phi_ww_inv @ (self._grad_phi_wx @ self.model.f())
-        w_dot_drift_t = -self._grad_phi_ww_inv @ self._grad_phi_wt
-        w_dot_drift = (w_dot_drift_w + w_dot_drift_x + w_dot_drift_t) * self.w_dot_gain
+        # compute u_dot
+        # u_dot_u = self.P @ self._grad_psi_u_f * self.wn
+        u_dot_u = self.P @ self._grad_psi_u
+        u_dot_x = self._grad_psi_ux @ (self.model.f() + self.model.g() @ self._u_controls)
+        u_dot_w = self._grad_psi_uw @ (self.adapter.mu() + self.adapter.nu() @ self._u_controls)
+        u_dot_t = self._grad_psi_ut
+        u_dot = -self._grad_psi_uu_inv @ (u_dot_u + u_dot_x + u_dot_w + u_dot_t) * self.u_dot_gain
 
         # assign to private var (while assuaging numerical issues)
-        if not jnp.any(jnp.isnan(w_dot_drift)):
-            self._w_dot_drift = w_dot_drift
+        if not jnp.any(jnp.isnan(u_dot)):
+            self._u_dot = u_dot
 
-        return self._w_dot_drift
-
-    def w_dot_controlled(self) -> NDArray:
-        """Computes the controlled component of the time-derivative
-        w_dot of the w_weights vector.
-
-        Arguments:
-            x (NDArray): state vector
-            u (NDArray): control input applied to system
-            h (NDArray): vector of candidate CBFs
-            Lf (float): C-CBF drift term (includes filtered wdot)
-            Lg (NDArray): matrix of stacked Lgh vectors
-
-        Returns:
-            w_dot_controlled (NDArray): time-derivative of kWeights
-
-        """
-        w_dot_contr = -self._grad_phi_ww_inv @ (self._grad_phi_wx @ self.model.g())
-        w_dot_contr *= self.w_dot_gain
-
-        # assign to private var (while assuaging numerical issues)
-        if not jnp.any(jnp.isnan(w_dot_contr)):
-            if len(w_dot_contr.shape) > 1:
-                self._w_dot_contr = w_dot_contr
-                # self._w_dot_contr += self.wn * (w_dot_contr - self._w_dot_contr) * self.dt
-            else:
-                self._w_dot_contr = w_dot_contr[:, jnp.newaxis]
-
-        return self._w_dot_contr
-
-    def filter_init(self) -> None:
-        """Initializes filter parameters."""
+        return self._u_dot
 
     def filter_update(self, u: NDArray) -> None:
         """Updates filtered variables.
@@ -1622,80 +1545,63 @@ class ControlLaw:
         None
         """
         if self._filter_order == 2:
-            self._w_3dot_drift_f = (
-                self.wn**2 * (self._w_dot_drift - self._w_dot_drift_f)
-                - 2 * self.zeta * self.wn * self._w_2dot_drift_f
+            self._u_3dot_f = (
+                self.wn**2 * (self._u_dot - self._u_dot_f)
+                - 2 * self.zeta * self.wn * self._u_2dot_f
             )
-            self._w_2dot_drift_f += self._w_3dot_drift_f * self.dt
-            self._w_dot_drift_f += self._w_2dot_drift_f * self.dt
-
-            self._w_3dot_contr_f = (
-                self.wn**2 * (self._w_dot_contr - self._w_dot_contr_f)
-                - 2 * self.zeta * self.wn * self._w_2dot_contr_f
-            )
-            self._w_2dot_contr_f += self._w_3dot_contr_f * self.dt
-            self._w_dot_contr_f += self._w_2dot_contr_f * self.dt
+            self._u_2dot_f += self._u_3dot_f * self.dt
+            self._u_dot_f += self._u_2dot_f * self.dt
 
         elif self._filter_order == 1:
-            self._w_2dot_drift_f = self.wn * (self._w_dot_drift - self._w_dot_drift_f)
-            # self._w_2dot_drift_f = 0.5 / self.dt * (self._w_dot_drift - self._w_dot_drift_f)
-            self._w_dot_drift_f += self._w_2dot_drift_f * self.dt
+            self._u_2dot_f = self.wn * (self._u_dot - self._u_dot_f)
+            self._u_dot_f += self._u_2dot_f * self.dt
 
-            self._w_2dot_contr_f = self.wn * (self._w_dot_contr - self._w_dot_contr_f)
-            # self._w_2dot_contr_f = 0.5 / self.dt * (self._w_dot_contr - self._w_dot_contr_f)
-            self._w_dot_contr_f += self._w_2dot_contr_f * self.dt
+        return self._u_dot_f
 
-        # Compute final filtered w_dot
-        self._w_dot_f = self._w_dot_drift_f + self._w_dot_contr_f @ u
-
-        return self._w_dot_f
-
-    def w_des(self, z: NDArray) -> NDArray:
-        """Computes the desired gains k for the constituent cbfs. This can be
-        thought of as the nominal adaptation law (unconstrained).
+    def u_des(self, z: NDArray) -> NDArray:
+        """Computes the desired control input u.
 
         Arguments:
-            h (NDArray): array of constituent cbf values
-
+            z: function argument
         Returns:
-            w_des (NDArray)
+            u_des (NDArray)
 
         """
-        # w_des = jnp.array([cbf._h(z[0], z[1 : self.n_states + 1]) for cbf in self.cbfs])
-        w_des = jnp.ones((self.n_weights,)) * self.w_des_gain
+        #! currently implemented as a static value for each time instance
+        u_des = self.nominal_controller.compute_control(self.z[self.tidxs], self.z[self.xidxs])
 
-        return w_des * self.w_des_gain
+        return u_des
 
-    def w_gradient_descent(self) -> float:
-        """Runs gradient descent on the w_weights in order to increase the
-        control authority at t=0.
+    # def u_gradient_descent(self) -> float:
+    #     """Runs gradient descent on the u_controls in order to increase the
+    #     control authority at t=0.
 
-        Arguments:
-            None
+    #     Arguments:
+    #         None
 
-        Returns:
-            new_weights
+    #     Returns:
+    #         new_weights
 
-        """
-        # line search parameter
-        beta = 1e-1
+    #     """
+    #     # line search parameter
+    #     beta = 1e-1
 
-        # gradient descent
-        count = 0
-        max_b = -1e-1
-        while self._b3 > max_b and count < 1e3:
-            self._w_weights = jnp.clip(
-                self._w_weights - beta * self._grad_phi_ww_inv @ self._grad_phi_w,
-                self.w_min * 1.01,
-                self.w_max * 0.99,
-            )
-            self.precompute()
-            count += 1
+    #     # gradient descent
+    #     count = 0
+    #     max_b = -1e-1
+    #     while self._b3 > max_b and count < 1e3:
+    #         self._w_weights = jnp.clip(
+    #             self._w_weights - beta * self._grad_phi_ww_inv @ self._grad_phi_w,
+    #             self.w_min * 1.01,
+    #             self.w_max * 0.99,
+    #         )
+    #         self.precompute()
+    #         count += 1
 
-        print(f"b3: {self._b3}")
-        print(f"w:  {self.w_weights}")
+    #     print(f"b3: {self._b3}")
+    #     print(f"w:  {self.w_weights}")
 
-        return self._w_weights
+    #     return self._w_weights
 
     # def adjust_learning_gain(
     #     self, x: NDArray, h: float, dBdw: NDArray, dBdx: NDArray
