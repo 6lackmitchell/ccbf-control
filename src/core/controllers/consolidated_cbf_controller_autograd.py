@@ -670,7 +670,7 @@ class AdaptationLaw:
                 + self.eta_nu
                 - self.dHdt(z)
                 - self.dHdx(z) @ self.model.f(z[: self.n_states + 1])
-                # - self.dHdw(z) @ self._w_dot_drift_f
+                - self.dHdw(z) @ self._w_dot_drift_f
                 - self.alpha * self.H(z) ** 3
                 - abs(
                     self.dHdx(z) @ self.model.g(z[: self.n_states + 1])
