@@ -153,7 +153,7 @@ class ConsolidatedCbfController(CbfQpController):
         # update control law
         try:
             u_controls, u_dot, u_dot_f = self.control_law.update()
-            w_weights, w_dot, w_dot_f = self.adapter.update(self.u, self._dt)
+            w_weights, w_dot, w_dot_f = self.adapter.update(u_controls, self._dt)
         except ValueError as e:
             print(e)
             code = 0
@@ -367,6 +367,11 @@ class ConsolidatedCbfController(CbfQpController):
     def b(self):
         return self.adapter.b
 
+    @property
+    def u_nominal(self) -> NDArray:
+        """Getter for u_nominal."""
+        return self.control_law.u_nominal
+
 
 class AdaptationLaw:
     """Computes the parameter adaptation for the ConsolidatedCbfController
@@ -488,34 +493,31 @@ class AdaptationLaw:
         # convexity parameter
         self.s = 1e3
 
-        # # Gains and Parameters -- Oscillator Final
-        # self.alpha = alpha
-        # self.eta_mu = self.eta_nu = 0.01
-        # self.w_dot_gain = 1.0
-        # self.Q = 1 * jnp.eye(nWeights)  # Cost function gain
-        # self.P = 100 * jnp.eye(nWeights)
-        # self.w_des_gain = 1.0
-        # self.w_min = 0.01
-        # self.w_max = 50.0
-        # self.b3_gain = 1.0
-        # self.ci_gain = 1.0
-
-        # Gains and Parameters -- Bicycle Testing
+        # Gains and Parameters -- Oscillator Final
         self.alpha = alpha
-        self.eta_mu = self.eta_nu = 0.00
+        self.eta_mu = self.eta_nu = 0.01
         self.w_dot_gain = 1.0
-        hc = 1e9  # high cost
-        lc = 1e-9  # low cost
-        self.Q = jnp.diag(jnp.array([hc, hc, hc, hc, hc, hc, lc, lc]))  # Cost function gain
-        # self.Q = jnp.diag(jnp.array([hc, hc, hc, hc, lc, lc]))  # Cost function gain
-        # self.Q = 5 * jnp.eye(nWeights)  # Cost function gain
-        self.P = 5e-5 * jnp.eye(nWeights)
-        # self.P = 1e-3 * jnp.eye(nWeights)
-        self.w_des_gain = 2.0
+        self.Q = 1 * jnp.eye(nWeights)  # Cost function gain
+        self.P = 100 * jnp.eye(nWeights)
+        self.w_des_gain = 1.0
         self.w_min = 0.01
         self.w_max = 50.0
         self.b3_gain = 1.0
         self.ci_gain = 1.0
+
+        # # Gains and Parameters -- Bicycle Testing
+        # self.alpha = alpha
+        # self.eta_mu = self.eta_nu = 0.00
+        # self.w_dot_gain = 1.0
+        # hc = 1e9  # high cost
+        # lc = 1e-9  # low cost
+        # self.Q = jnp.diag(jnp.array([hc, hc, hc, hc, hc, hc, lc, lc]))  # Cost function gain
+        # self.P = 5e-5 * jnp.eye(nWeights)
+        # self.w_des_gain = 2.0
+        # self.w_min = 0.01
+        # self.w_max = 50.0
+        # self.b3_gain = 1.0
+        # self.ci_gain = 1.0
 
     def setup(self) -> None:
         """Generates symbolic functions for the cost function and feasible region
@@ -550,14 +552,10 @@ class AdaptationLaw:
         """
 
         def adaptation(z):
+            x = z[: self.n_states + 1]
+            xdot = self.model.f(x) + self.model.g(x) @ z[self.uidxs]
             return -jnp.linalg.inv(self.d2_phi_dw2(z)) @ (
-                self.P @ self.d_phi_dw(z)
-                + self.d2_phi_dwdx(z)
-                @ (
-                    self.model.f(z[: self.n_states + 1])
-                    + self.model.g(z[: self.n_states + 1]) @ z[self.uidxs]
-                )
-                + self.d2_phi_dwdt(z)
+                self.P @ self.d_phi_dw(z) + self.d2_phi_dwdx(z) @ xdot + self.d2_phi_dwdt(z)
             )
 
         self._adaptation_law = jit(adaptation)
@@ -580,7 +578,7 @@ class AdaptationLaw:
             return self.c(z) - 1 / z[-1] * (
                 jnp.sum(jnp.log(-self.b1(z)))
                 + jnp.sum(jnp.log(-self.b2(z)))
-                + jnp.log(-self.b3(z) - eps) / ((-self.b3(z) - eps) ** exp)
+                + jnp.log(-self.b3(z) - eps)  # / ((-self.b3(z) - eps) ** exp)
             )
 
         def d_phi_dw(z):
@@ -732,17 +730,17 @@ class AdaptationLaw:
         #         * self.b3_gain
         #     )
 
-        def d_b3_dt(z):
-            return jacfwd(b3)(z)[self.tidxs]
+        # def d_b3_dt(z):
+        #     return jacfwd(b3)(z)[self.tidxs]
 
-        def d_b3_dx(z):
-            return jacfwd(b3)(z)[self.xidxs]
+        # def d_b3_dx(z):
+        #     return jacfwd(b3)(z)[self.xidxs]
 
-        def d_b3_dw(z):
-            return jacfwd(b3)(z)[self.widxs]
+        # def d_b3_dw(z):
+        #     return jacfwd(b3)(z)[self.widxs]
 
-        def d2_b3_dwdt(z):
-            return jacfwd(jacrev(b3))(z)[self.widxs, self.tidxs]
+        # def d2_b3_dwdt(z):
+        #     return jacfwd(jacrev(b3))(z)[self.widxs, self.tidxs]
 
         # def b3(z):
         #     return (
@@ -1015,11 +1013,9 @@ class AdaptationLaw:
 
         elif self._filter_order == 1:
             self._w_2dot_drift_f = self.wn * (self._w_dot_drift - self._w_dot_drift_f)
-            # self._w_2dot_drift_f = 0.5 / self.dt * (self._w_dot_drift - self._w_dot_drift_f)
             self._w_dot_drift_f += self._w_2dot_drift_f * self.dt
 
             self._w_2dot_contr_f = self.wn * (self._w_dot_contr - self._w_dot_contr_f)
-            # self._w_2dot_contr_f = 0.5 / self.dt * (self._w_dot_contr - self._w_dot_contr_f)
             self._w_dot_contr_f += self._w_2dot_contr_f * self.dt
 
         # Compute final filtered w_dot
@@ -1272,6 +1268,9 @@ class ControlLaw:
         self.dHdw = self.adapter.dHdw
         self.dHdx = self.adapter.dHdx
 
+        # u nominal placeholder
+        self.u_nom = None
+
         # cost function placeholder
         self.J = None
 
@@ -1317,6 +1316,7 @@ class ControlLaw:
             None
 
         """
+        self.setup_nominal_u()
         self.setup_cost()  # defines cost function
         self.setup_d1()  # defines w > wmin constraint function
         self.setup_d2()  # defines w < wmax constraint function
@@ -1325,9 +1325,8 @@ class ControlLaw:
         # defines augmented unconstrained cost function
         self.setup_psi()
 
-    def setup_psi(self) -> None:
-        """Generates symbolic functions for the augmented unconstrained cost function. Must be called
-        after the cost, b1, b2, and b3 functions are set up.
+    def setup_nominal_u(self):
+        """Sets up the symbolic function for the nominal control input.
 
         Arguments:
             None
@@ -1336,38 +1335,11 @@ class ControlLaw:
             None
 
         """
-        eps = 1e-6
-        exp = 5
 
-        def psi(z):
-            return self.J(z) - 1 / z[-1] * (
-                jnp.sum(jnp.log(-self.d1(z)))
-                + jnp.sum(jnp.log(-self.d2(z)))
-                + jnp.log(-self.d3(z) - eps) / ((-self.d3(z) - eps) ** exp)
-            )
+        def u_nom(z):
+            return self.nominal_controller.control(z)
 
-        def d_psi_du(z):
-            return jacrev(psi)(z)[self.uidxs]
-
-        def d2_psi_dudt(z):
-            return jacfwd(jacrev(psi))(z)[self.uidxs, self.tidxs]
-
-        def d2_psi_dudx(z):
-            return jacfwd(jacrev(psi))(z)[self.uidxs, self.xidxs]
-
-        def d2_psi_dudw(z):
-            return jacfwd(jacrev(psi))(z)[self.uidxs, self.widxs]
-
-        def d2_psi_du2(z):
-            return jacfwd(jacrev(psi))(z)[self.uidxs, self.uidxs]
-
-        # just-in-time compilation
-        self.psi = jit(psi)
-        self.d_psi_du = jit(d_psi_du)
-        self.d2_psi_dudt = jit(d2_psi_dudt)
-        self.d2_psi_dudx = jit(d2_psi_dudx)
-        self.d2_psi_dudw = jit(d2_psi_dudw)
-        self.d2_psi_du2 = jit(d2_psi_du2)
+        self.u_nom = jit(u_nom)
 
     def setup_cost(self) -> None:
         """Generates symbolic functions for the cost function and feasible region
@@ -1461,6 +1433,50 @@ class ControlLaw:
 
         self.d3 = jit(d3)
 
+    def setup_psi(self) -> None:
+        """Generates symbolic functions for the augmented unconstrained cost function. Must be called
+        after the cost, b1, b2, and b3 functions are set up.
+
+        Arguments:
+            None
+
+        Returns:
+            None
+
+        """
+        eps = 1e-6
+        exp = 5
+
+        def psi(z):
+            return self.J(z) - 1 / z[-1] * (
+                jnp.sum(jnp.log(-self.d1(z)))
+                + jnp.sum(jnp.log(-self.d2(z)))
+                + jnp.log(-self.d3(z) - eps)  # / ((-self.d3(z) - eps) ** exp)
+            )
+
+        def d_psi_du(z):
+            return jacrev(psi)(z)[self.uidxs]
+
+        def d2_psi_dudt(z):
+            return jacfwd(jacrev(psi))(z)[self.uidxs, self.tidxs]
+
+        def d2_psi_dudx(z):
+            return jacfwd(jacrev(psi))(z)[self.uidxs, self.xidxs]
+
+        def d2_psi_dudw(z):
+            return jacfwd(jacrev(psi))(z)[self.uidxs, self.widxs]
+
+        def d2_psi_du2(z):
+            return jacfwd(jacrev(psi))(z)[self.uidxs, self.uidxs]
+
+        # just-in-time compilation
+        self.psi = jit(psi)
+        self.d_psi_du = jit(d_psi_du)
+        self.d2_psi_dudt = jit(d2_psi_dudt)
+        self.d2_psi_dudx = jit(d2_psi_dudx)
+        self.d2_psi_dudw = jit(d2_psi_dudw)
+        self.d2_psi_du2 = jit(d2_psi_du2)
+
     def update(self) -> Tuple[NDArray, NDArray]:
         """Updates the adaptation gains and returns the new k weights.
 
@@ -1478,6 +1494,7 @@ class ControlLaw:
         u_dot_f = self.filter_update()
 
         self._u_controls += u_dot * self.dt
+        self._u_nominal = self.u_nom(self.z)
 
         return self._u_controls, u_dot, u_dot_f
 
@@ -1599,21 +1616,6 @@ class ControlLaw:
             self._u_dot_f += self._u_2dot_f * self.dt
 
         return self._u_dot_f
-
-    def u_nom(self, z: NDArray) -> NDArray:
-        """Computes the desired control input u.
-
-        Arguments:
-            z: function argument
-        Returns:
-            u_nom (NDArray)
-
-        """
-        #! currently implemented as a static value for each time instance
-        u_nom = self.nominal_controller.control(z)
-        self._u_nominal = u_nom
-
-        return u_nom
 
     # def u_gradient_descent(self) -> float:
     #     """Runs gradient descent on the u_controls in order to increase the
