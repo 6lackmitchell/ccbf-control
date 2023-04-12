@@ -142,7 +142,7 @@ class Agent:
 
         # Update Control and CBF Trajectories
         self.u_trajectory[self.timestep, :] = self.controller.u
-        self.u0_trajectory[self.timestep, :] = self.controller.u_nom
+        self.u0_trajectory[self.timestep, :] = self.controller.u_nominal
         self.data["ii"] = self.t
         if hasattr(self.controller, "cbf_vals"):
             self.cbf_trajectory[self.timestep, :] = self.controller.cbf_vals

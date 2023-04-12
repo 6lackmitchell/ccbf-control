@@ -18,16 +18,15 @@ from models.bicycle.cbfs.obstacle_avoidance import cbfs as cbfs_obstacle_avoidan
 from models.bicycle.cbfs.speed_limit import cbfs as cbfs_speed
 from models.bicycle.cbfs.slip_limit import cbfs as cbfs_slip
 from models.bicycle.cbfs.reach_target import cbfs as cbfs_reach
+from core.controllers.consolidated_cbf_controller_new import ConsolidatedCbfController
 from core.controllers.objective_functions import minimum_deviation
 
 
 # save location
-# save_file = (
-#     "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
-# )
 save_file = (
-    f"/Users/mblack/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/{config}/test.pkl"
+    "/home/6lackmitchell/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
 )
+# save_file = "/Users/mblack/Documents/git/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
 # save_file = "/home/ccbf-control/data/bicycle/dynamic/toy_example/test.pkl"
 
 # time params
