@@ -18,7 +18,7 @@ def h(z: NDArray, cx: float, cy: float, ri: float, rf: float, T: float) -> float
         ret (float): value of constraint function evaluated at time and state
 
     """
-    ret = rf**2 + ri**2 * (1 - z[0] / T) - (z[1] - cx) ** 2 - (z[2] - cy) ** 2
+    ret = rf**2 + ri**2 * (1 - z[0] / T) ** 2 - (z[1] - cx) ** 2 - (z[2] - cy) ** 2
 
     return ret * gain
 
@@ -70,7 +70,8 @@ dh1dx = lambda t, x: dhdz(jnp.hstack([t, x]), cx, cy, ri, rf, T)[1:]
 d2h1dtdx = lambda t, x: d2hdz2(jnp.hstack([t, x]), cx, cy, ri, rf, T)[0, 1:]
 d2h1dx2 = lambda t, x: d2hdz2(jnp.hstack([t, x]), cx, cy, ri, rf, T)[1:, 1:]
 
-cbf = Cbf(h1, None, dh1dx, None, d2h1dx2, linear_class_k(1.0))
+alpha = 1.0
+cbf = Cbf(h1, None, dh1dx, None, d2h1dx2, linear_class_k(alpha))
 
 cbfs = [cbf]
 

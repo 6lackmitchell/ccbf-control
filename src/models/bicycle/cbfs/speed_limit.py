@@ -66,7 +66,8 @@ dh1dx = lambda t, x: dhdz(jnp.hstack([t, x]), speed_limit)[1:]
 d2h1dtdx = lambda t, x: d2hdz2(jnp.hstack([t, x]), speed_limit)[0, 1:]
 d2h1dx2 = lambda t, x: d2hdz2(jnp.hstack([t, x]), speed_limit)[1:, 1:]
 
-cbf = Cbf(h1, None, dh1dx, None, d2h1dx2, linear_class_k(1.0))
+alpha = 1.0
+cbf = Cbf(h1, None, dh1dx, None, d2h1dx2, linear_class_k(alpha))
 
 cbfs = [cbf]
 

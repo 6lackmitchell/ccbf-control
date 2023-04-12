@@ -26,10 +26,10 @@ def minimum_deviation(
     q1n = 1.0
     q2n = 10.0
     q3n = 50.0
-    if t > 2:
-        q1n = 100.0
-        q2n = 0.01
-        q3n = 1e3
+    # if t > 2:
+    #     q1n = 100.0
+    #     q2n = 0.01
+    #     q3n = 1e3
 
     if len(u_nom) % 2 == 0:
         Qlist = int(len(u_nom) / 2) * [q1n, q2n]

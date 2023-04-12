@@ -92,7 +92,7 @@ class Cbf:
             A = np.concatenate([-Lgh, np.array([alpha_term])])
             b = Lfh
         else:
-            A = np.concatenate([-Lgh, np.array([0])])
+            A = np.concatenate([-Lgh])
             b = Lfh + self.alpha(h)
 
         return A, b

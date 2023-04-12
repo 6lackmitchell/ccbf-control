@@ -117,11 +117,12 @@ d2h5dtdx = lambda t, x: d2hdz2(jnp.hstack([t, x]), cx5, cy5, g5)[0, 1:]
 d2h5dx2 = lambda t, x: d2hdz2(jnp.hstack([t, x]), cx5, cy5, R, g5)[1:, 1:]
 
 
-cbf1 = Cbf(h1, None, dh1dx, None, d2h1dx2, linear_class_k(1.0))
-cbf2 = Cbf(h2, None, dh2dx, None, d2h2dx2, linear_class_k(1.0))
-cbf3 = Cbf(h3, None, dh3dx, None, d2h3dx2, linear_class_k(1.0))
-cbf4 = Cbf(h4, None, dh4dx, None, d2h4dx2, linear_class_k(1.0))
-cbf5 = Cbf(h5, None, dh5dx, None, d2h5dx2, linear_class_k(1.0))
+alpha = 1.0
+cbf1 = Cbf(h1, None, dh1dx, None, d2h1dx2, linear_class_k(alpha))
+cbf2 = Cbf(h2, None, dh2dx, None, d2h2dx2, linear_class_k(alpha))
+cbf3 = Cbf(h3, None, dh3dx, None, d2h3dx2, linear_class_k(alpha))
+cbf4 = Cbf(h4, None, dh4dx, None, d2h4dx2, linear_class_k(alpha))
+cbf5 = Cbf(h5, None, dh5dx, None, d2h5dx2, linear_class_k(alpha))
 
 cbfs = [
     cbf1,

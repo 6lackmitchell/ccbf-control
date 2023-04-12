@@ -110,56 +110,22 @@ class CbfQpController(Controller):
             print(self.u)
             return self.u, 1, "Optimal"
 
-        if not cascaded:
-            # Get matrices and vectors for QP controller
-            Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
+        # Get matrices and vectors for QP controller
+        Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
 
-            # Solve QP
-            sol = solve_qp_cvxopt(Q, p, A, b, G, h)
+        # Solve QP
+        sol = solve_qp_cvxopt(Q, p, A, b, G, h)
 
-            # Check solution
-            if "code" in sol.keys():
-                code = sol["code"]
-                status = sol["status"]
-                self.assign_control(sol, ego)
-                if abs(self.u[0]) > 1e-3:
-                    pass
-            else:
-                status = "Divide by Zero"
-                self.u = jnp.zeros((self.n_controls,))
-
+        # Check solution
+        if "code" in sol.keys():
+            code = sol["code"]
+            status = sol["status"]
+            self.assign_control(sol, ego)
+            if abs(self.u[0]) > 1e-3:
+                pass
         else:
-            pass
-
-            # # Get matrices and vectors for QP controller
-            # Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego, cascade=cascaded)
-            #
-            # # Solve QP
-            # sol = solve_qp_cvxopt(Q, p, A, b, G, h)
-            #
-            # # Check solution
-            # if 'code' in sol.keys():
-            #     code = sol['code']
-            #     status = sol['status']
-            #
-            #     if not code:
-            #         if cascaded:
-            #             Q, p, A, b, G, h = self.formulate_qp(t, ze, zo, u_nom, ego)
-            #             sol = solve_qp_cvxopt(Q, p, A, b, G, h)
-            #             if not sol['code']:
-            #                 self.u = jnp.zeros((self.n_controls,))
-            #             else:
-            #                 self.assign_control(sol, ego)
-            #         else:
-            #             self.u = jnp.zeros((self.n_controls,))
-            #     else:
-            #         alf = jnp.array(sol['x'])[-1]
-            #         self.assign_control(sol, ego)
-            #
-            # else:
-            #     code = 0
-            #     status = 'Divide by Zero'
-            #     self.u = jnp.zeros((self.n_controls,))
+            status = "Divide by Zero"
+            self.u = jnp.zeros((self.n_controls,))
 
         if not code:
             print(A[-1, :])
@@ -204,23 +170,14 @@ class CbfQpController(Controller):
             h = cbf.h(ze)
             dhdx = cbf.dhdx(ze)
 
-            # Stochastic Term -- 0 for deterministic systems
-            if jnp.trace(sigma(ze).T @ sigma(ze)) > 0 and self._stochastic:
-                d2hdx2 = cbf.d2hdx2(ze)
-                stoch = 0.5 * jnp.trace(sigma(ze).T @ d2hdx2 @ sigma(ze))
-            else:
-                stoch = 0.0
+            # Stochastic term
+            stoch = 0.0
 
             # Get CBF Lie Derivatives
-            Lfh = dhdx @ f(ze) + stoch
+            Lfh = dhdx @ self.model.f() + stoch
             Lgh = jnp.zeros((self.n_controls * na,))
-            Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx @ g(
-                ze
-            )  # Only assign ego control
-            if cascade:
-                Lgh[self.n_controls * ego] = 0.0
+            Lgh[self.n_controls * ego : (ego + 1) * self.n_controls] = dhdx @ self.model.g()
 
-            # Ai[cc, :], bi[cc] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, cc, adaptive=True)
             Ai[cc, :], bi[cc] = self.generate_cbf_condition(cbf, h, Lfh, Lgh, cc)
             self.cbf_vals[cc] = h
             if h0 < 0:

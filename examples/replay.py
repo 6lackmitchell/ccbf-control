@@ -40,7 +40,7 @@ elif platform == "win32":
     pass
 
 filepath = pre_path + "ccbf-control/data/bicycle/dynamic/toy_example/successes/"
-filepath = pre_path + "ccbf-control/data/bicycle/dynamic/toy_example/"
+filepath = pre_path + "ccbf-control/data/bicycle/dynamic/toy_example/ecbf/"
 
 # ### Define Recording Variables ###
 t = np.linspace(dt, tf, int(tf / dt))
