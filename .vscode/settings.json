@@ -1,15 +1,10 @@
 {
-  "python.linting.pylintEnabled": true,
-  "python.linting.pylintArgs": ["--enable=W0614"],
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[python]": {
-    "editor.defaultFormatter": "ms-python.python"
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
   },
-  "python.formatting.blackArgs": ["--line-length", "100"],
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
-  "python.formatting.provider": "black",
-  "python.formatting.autopep8Args": ["--max-line-length=200"],
   "better-comments.multilineComments": true,
   "editor.tokenColorCustomizations": {
     "comments": "#dfe88f"
