@@ -357,7 +357,7 @@ def execute_for_staliro(params, _signal_times, _signal_traces):
     return BasicResult(trace)
 
 
-TUNE = False
+TUNE = True
 if TUNE:
     initial_params = [(0, 5), (0, 5)]
     # phi = r"(always (a >= -2 and a <= 2))"

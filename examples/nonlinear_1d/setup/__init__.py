@@ -22,6 +22,8 @@ LINEAR_CLASS_K = 1.0
 W0 = 1.0
 W_MIN = 0.01
 W_MAX = 5.0
+S_VAL = 10.0
+EPS = 1e-1 
 
 # Params
 KV = 2.0
@@ -35,3 +37,17 @@ cbf_grads = [grad(X_LIMIT) for grad in cbf_grads]
 
 # Nominal Controller
 nominal_controller = controller_1(KV, U0_PERIOD)
+
+# Dimensions
+N_STATES = len(INITIAL_STATE)
+N_CONTROLS = len(ACTUATION_LIMITS)
+N_CBFS = len(cbfs)
+
+# Define indices for augmented state vector
+IDX_X = jnp.arange(0, N_STATES)
+IDX_W = jnp.arange(N_STATES, N_STATES + N_CBFS)
+IDX_WDOT = jnp.arange(N_STATES + N_CBFS, N_STATES + 2 * N_CBFS)
+IDX_U = jnp.arange(N_STATES + 2 * N_CBFS, N_STATES + 2 * N_CBFS + N_CONTROLS)
+IDX_T = jnp.arange(
+    N_STATES + 2 * N_CBFS + N_CONTROLS, N_STATES + 2 * N_CBFS + N_CONTROLS + 1
+)
