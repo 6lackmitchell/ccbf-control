@@ -1,6 +1,7 @@
 # Data files
 .idea/
 *.DS_Store
+**.DS_Store
 
 # Test files
 tests/
