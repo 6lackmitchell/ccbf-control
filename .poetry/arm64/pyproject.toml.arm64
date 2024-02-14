@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "ccbf-control"
+version = "0.1.0"
+description = "Simulating dynamical systems using consolidated control barrier function based controllers."
+authors = ["Mitchell Black <6lack.mitchell@gmail.com>"]
+license = "MIT"
+packages = [{include="ccbf", from="src"}, {include="examples"}]
+
+[tool.poetry.dependencies]
+python =">=3.10, <3.11"
+cbfkit = {path = "./.pkgs/cbfkit-0.1.1-py3-none-any.whl"}
+psy-taliro = "^1.0.0b9"
+rtamt = "^0.3.5"
+plotly = "^5.18.0"
+
+[tool.poetry.dev-dependencies]
+pylint = "^2.15.4"
+black = {version = "^23.12.1", allow-prereleases = true}
+
+[build-system]
+requires = ["poetry-core>=1.7.1"]
+build-backend = "poetry.core.masonry.api"
