@@ -11,7 +11,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from models.double_integrator.dynamic.toy_example.timing_params import dt, tf
-from models.double_integrator.dynamic.toy_example.initial_conditions import xg, yg, xi, yi
+from models.double_integrator.dynamic.toy_example.initial_conditions import (
+    xg,
+    yg,
+    xi,
+    yi,
+)
 from visualizing.helpers import get_circle
 
 matplotlib.rcParams.update({"figure.autolayout": True})
@@ -27,7 +32,10 @@ elif platform == "win32":
     pass
 
 # Specify files
-filepath = pre_path + "Documents/git/ccbf-control/data/double_integrator/dynamic/toy_example/paper/"
+filepath = (
+    pre_path
+    + "Documents/git/ccbf-control/data/double_integrator/dynamic/toy_example/paper/"
+)
 fname_ccbf = filepath + "ccbf.pkl"
 fname_hocbf = filepath + "hocbf.pkl"
 fname_ecbf = filepath + "ecbf.pkl"
@@ -78,7 +86,9 @@ names = ["C-CBF", "HO-CBF-1", "HO-CBF-2", "HO-CBF-3", "E-CBF-1", "E-CBF-2", "E-C
 # Plot Settings
 nAgents = x.shape[0]
 plt.style.use(["ggplot"])
-plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.plasma(np.linspace(0, 1, nAgents)))
+plt.rcParams["axes.prop_cycle"] = plt.cycler(
+    "color", plt.cm.plasma(np.linspace(0, 1, nAgents))
+)
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 # colors[0] = colors[1]
 colors[-1] = np.array([0.0, 0.98, 0.2, 1])
@@ -109,7 +119,9 @@ ii_u = int(10 / 0.01)
 
 # Angular Control Inputs
 ax_cont_a.plot(t[1:ii_u], 1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
-ax_cont_a.plot(t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(
+    t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k"
+)
 for aa in range(1, nAgents):
     ax_cont_a.plot(
         t[:ii_u],
@@ -119,7 +131,12 @@ for aa in range(1, nAgents):
         color=colors[aa],
     )
 ax_cont_a.plot(
-    t[:ii_u], u[0, :ii_u, 0], label=f"{names[0]}", linewidth=lwidth, color=colors[0], dashes=dash
+    t[:ii_u],
+    u[0, :ii_u, 0],
+    label=f"{names[0]}",
+    linewidth=lwidth,
+    color=colors[0],
+    dashes=dash,
 )
 ax_cont_a.set(
     ylabel=r"$a_x$",
@@ -133,7 +150,9 @@ ax_cont_a.legend(fancybox=True, fontsize=20)
 
 # Acceleration Inputs
 ax_cont_b.plot(t[1:ii_u], 1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
-ax_cont_b.plot(t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
+ax_cont_b.plot(
+    t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k"
+)
 for aa in range(1, nAgents):
     ax_cont_b.plot(
         t[:ii_u],
@@ -143,7 +162,12 @@ for aa in range(1, nAgents):
         color=colors[aa],
     )
 ax_cont_b.plot(
-    t[:ii_u], u[0, :ii_u, 1], label=f"{names[0]}", linewidth=lwidth, color=colors[0], dashes=dash
+    t[:ii_u],
+    u[0, :ii_u, 1],
+    label=f"{names[0]}",
+    linewidth=lwidth,
+    color=colors[0],
+    dashes=dash,
 )
 ax_cont_b.set(
     xlabel=r"$t$ (sec)",
@@ -283,9 +307,15 @@ gain5 = 5.0
 gain6 = 10.0
 
 ii_h6 = int(8 / 0.01)
-h1 = gain1 * ((x_ccbf[0, 1:ii_u, 0] - cx1) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy1) ** 2 - R1**2)
-h2 = gain2 * ((x_ccbf[0, 1:ii_u, 0] - cx2) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy2) ** 2 - R2**2)
-h3 = gain3 * ((x_ccbf[0, 1:ii_u, 0] - cx3) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy3) ** 2 - R2**2)
+h1 = gain1 * (
+    (x_ccbf[0, 1:ii_u, 0] - cx1) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy1) ** 2 - R1**2
+)
+h2 = gain2 * (
+    (x_ccbf[0, 1:ii_u, 0] - cx2) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy2) ** 2 - R2**2
+)
+h3 = gain3 * (
+    (x_ccbf[0, 1:ii_u, 0] - cx3) ** 2 + (x_ccbf[0, 1:ii_u, 1] - cy3) ** 2 - R2**2
+)
 h4 = gain4 * (1 - x_ccbf[0, 1:ii_u, 2] ** 2)
 h5 = gain5 * (1 - x_ccbf[0, 1:ii_u, 3] ** 2)
 # h6_a = gain6 * (
@@ -307,16 +337,23 @@ summer = np.array([np.exp(-k[0, 1:ii_u, cc] * hh[cc]) for cc in range(6)])
 H_ccbf = 1 - np.sum(summer, axis=0)
 
 
-ax_cbf.plot(t[1:ii_u], np.zeros((ii_u - 1,)), ":", linewidth=lwidth, color="k", label="Barrier")
+ax_cbf.plot(
+    t[1:ii_u], np.zeros((ii_u - 1,)), ":", linewidth=lwidth, color="k", label="Barrier"
+)
 ax_cbf.plot(t[1:ii_u], h1, linewidth=lwidth, color=colors[1], label=r"$h_1$")
 ax_cbf.plot(t[1:ii_u], h2, linewidth=lwidth, color=colors[2], label=r"$h_2$")
 ax_cbf.plot(t[1:ii_u], h3, linewidth=lwidth, color=colors[3], label=r"$h_3$")
 ax_cbf.plot(t[1:ii_u], h4, linewidth=lwidth, color=colors[4], label=r"$h_4$")
 ax_cbf.plot(t[1:ii_u], h5, linewidth=lwidth, color=colors[5], label=r"$h_5$")
 ax_cbf.plot(t[1:ii_u], h6, linewidth=lwidth, color=colors[6], label=r"$h_6$")
-ax_cbf.plot(t[1:ii_u], H_ccbf, linewidth=lwidth, color=colors[0], dashes=dash, label=r"$H$")
+ax_cbf.plot(
+    t[1:ii_u], H_ccbf, linewidth=lwidth, color=colors[0], dashes=dash, label=r"$H$"
+)
 ax_cbf.set(
-    ylabel="Constraint Function Value", xlabel=r"$t$ (sec)", xlim=[-0.25, 13.25], ylim=[-0.1, 5.25]
+    ylabel="Constraint Function Value",
+    xlabel=r"$t$ (sec)",
+    xlim=[-0.25, 13.25],
+    ylim=[-0.1, 5.25],
 )
 
 # Plot Settings
@@ -352,10 +389,19 @@ ax_map.plot(xtar, ytar, ":", linewidth=lwidth + 1, color="g")
 
 for aaa in range(1, nAgents):
     ax_map.plot(
-        x[aaa, :ii, 0], x[aaa, :ii, 1], label=names[aaa], color=colors[aaa], linewidth=lwidth
+        x[aaa, :ii, 0],
+        x[aaa, :ii, 1],
+        label=names[aaa],
+        color=colors[aaa],
+        linewidth=lwidth,
     )
 ax_map.plot(
-    x[0, :ii, 0], x[0, :ii, 1], label=names[0], color=colors[0], linewidth=lwidth, dashes=dash
+    x[0, :ii, 0],
+    x[0, :ii, 1],
+    label=names[0],
+    color=colors[0],
+    linewidth=lwidth,
+    dashes=dash,
 )
 ax_map.plot(xi[0], yi[0], "o", markersize=10, label=r"$z_0$", color="r")
 ax_map.plot(xg[0], yg[0], "*", markersize=12, label="Goal", color="g")

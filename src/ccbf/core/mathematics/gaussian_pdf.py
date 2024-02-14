@@ -34,11 +34,12 @@ def kde_cdf(data, kernel_func, bandwidth):
             cdfs.append(kernels[dd](x))
 
         return sum(cdfs) / n
+
     return evaluate
 
 
 def gaussian_pdf(xi, bandwidth):
-    """ Return Gaussian kernel density estimator.
+    """Return Gaussian kernel density estimator.
 
     INPUTS
     ------
@@ -53,14 +54,16 @@ def gaussian_pdf(xi, bandwidth):
     x_bar = xi
 
     def evaluate(x):
-        """ Evaluate x."""
-        return (np.sqrt(2*np.pi*bandwidth**2)**-1) * np.exp(-((x - x_bar)**2)/(2*bandwidth**2))
+        """Evaluate x."""
+        return (np.sqrt(2 * np.pi * bandwidth**2) ** -1) * np.exp(
+            -((x - x_bar) ** 2) / (2 * bandwidth**2)
+        )
 
     return evaluate
 
 
 def gaussian_cdf(xi, bandwidth):
-    """ Return Gaussian kernel density estimator.
+    """Return Gaussian kernel density estimator.
 
     INPUTS
     ------
@@ -75,7 +78,7 @@ def gaussian_cdf(xi, bandwidth):
     x_bar = xi
 
     def evaluate(x):
-        """ Evaluate x."""
+        """Evaluate x."""
         return -1 / 2 * erf((x_bar - x) / (bandwidth * np.sqrt(2)))
 
     return evaluate
@@ -97,12 +100,12 @@ if __name__ == "__main__":
     n = 100
     for ii in range(n):
         xx = gauss(mu, sigma)
-        yy = gauss(0, sigma/2)
+        yy = gauss(0, sigma / 2)
         vals.append(xx**2 + yy**2)
-    silvermans = (4 * sigma**5 / (3*n))**(1/5)
+    silvermans = (4 * sigma**5 / (3 * n)) ** (1 / 5)
     print("Silvermans: {:.2f}".format(silvermans))
     # vals = [5, 12, 15, 20]
-    xvals = np.arange(min(vals), max(vals), .01)
+    xvals = np.arange(min(vals), max(vals), 0.01)
 
     fig = plt.figure()
 
@@ -151,10 +154,10 @@ if __name__ == "__main__":
     t4 = ax4.set_title(r"Gaussian Kernel")
 
     # display legend in each subplot
-    leg1 = mpatches.Patch(color=None, label='bandwidth=1')
-    leg2 = mpatches.Patch(color=None, label='bandwidth=2')
-    leg3 = mpatches.Patch(color=None, label='bandwidth=3')
-    leg4 = mpatches.Patch(color=None, label='bandwidth=4')
+    leg1 = mpatches.Patch(color=None, label="bandwidth=1")
+    leg2 = mpatches.Patch(color=None, label="bandwidth=2")
+    leg3 = mpatches.Patch(color=None, label="bandwidth=3")
+    leg4 = mpatches.Patch(color=None, label="bandwidth=4")
 
     ax1.legend(handles=[leg1])
     ax2.legend(handles=[leg2])

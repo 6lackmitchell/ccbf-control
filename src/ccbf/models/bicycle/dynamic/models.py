@@ -30,14 +30,18 @@ sym_state = se.symbols(["x", "y", "psi", "vr", "beta"], real=True)
 # Define symbolic system dynamics
 f_symbolic = se.DenseMatrix(
     [
-        sym_state[3] * (se.cos(sym_state[2]) - se.sin(sym_state[2]) * se.tan(sym_state[4])),
-        sym_state[3] * (se.sin(sym_state[2]) + se.cos(sym_state[2]) * se.tan(sym_state[4])),
+        sym_state[3]
+        * (se.cos(sym_state[2]) - se.sin(sym_state[2]) * se.tan(sym_state[4])),
+        sym_state[3]
+        * (se.sin(sym_state[2]) + se.cos(sym_state[2]) * se.tan(sym_state[4])),
         sym_state[3] * se.tan(sym_state[4]) / Lr,
         0.0,
         0.0,
     ]
 )
-g_symbolic = se.DenseMatrix([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 1.0], [1.0, 0.0]])
+g_symbolic = se.DenseMatrix(
+    [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
+)
 
 # Need to be fixed
 ar_max = 1

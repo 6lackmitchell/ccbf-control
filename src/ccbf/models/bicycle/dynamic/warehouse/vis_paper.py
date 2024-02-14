@@ -22,7 +22,9 @@ matplotlib.rcParams.update({"figure.autolayout": True})
 N = 2 * nAgents
 # plt.style.use(['Solarize_Light2'])
 plt.style.use(["ggplot"])
-plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.viridis(np.linspace(0, 1, N)))
+plt.rcParams["axes.prop_cycle"] = plt.cycler(
+    "color", plt.cm.viridis(np.linspace(0, 1, N))
+)
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 colors[0] = colors[1]
 colors.reverse()
@@ -63,7 +65,9 @@ with open(filename, "rb") as f:
         u = np.array([data[a]["u"] for a in data.keys()])
         k = np.array([data[a]["kgains"] if a < 3 else None for a in data.keys()][0:3])
         kdot = np.array([data[a]["kdot"] if a < 3 else None for a in data.keys()][0:3])
-        kdotf = np.array([data[a]["kdotf"] if a < 3 else None for a in data.keys()][0:3])
+        kdotf = np.array(
+            [data[a]["kdotf"] if a < 3 else None for a in data.keys()][0:3]
+        )
         u0 = np.array([data[a]["u0"] for a in data.keys()])
         ii = int(data[0]["ii"] / dt)
         # cbf = np.array([data[a]['cbf'] for a in data.keys()])
@@ -97,8 +101,12 @@ set_edges_black(ax_cont_a)
 set_edges_black(ax_cont_b)
 
 # Angular Control Inputs
-ax_cont_a.plot(t[1:ii], 2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
-ax_cont_a.plot(t[1:ii], -2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k")
+ax_cont_a.plot(
+    t[1:ii], 2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k"
+)
+ax_cont_a.plot(
+    t[1:ii], -2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth + 1, color="k"
+)
 # ax_cont_a.plot(t[1:ii], 2 * np.pi * np.ones(t[1:ii].shape), label=r'$\pm\omega_{max}$', linewidth=lwidth+1, color='k')
 # ax_cont_a.plot(t[1:ii], -2 * np.pi * np.ones(t[1:ii].shape), linewidth=lwidth+1, color='k')
 for aa in range(nAgents - 6):
@@ -133,7 +141,8 @@ for aa in range(nAgents - 6):
     # ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
     #                color=colors[color_idx[aa, 1]], dashes=dash)
 ax_cont_b.set(
-    ylabel="a", ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5]  # ylabel=r'$a_r$',
+    ylabel="a",
+    ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5],  # ylabel=r'$a_r$',
 )
 
 # Plot Settings
@@ -180,7 +189,11 @@ clr = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 clr.reverse()
 for cbf in range(k.shape[2]):
     ax_k.plot(
-        t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf]
+        t[1:ii],
+        k[0, 1:ii, cbf],
+        linewidth=lwidth + 1,
+        color=clr[int(1.5 * cbf)],
+        label=lbl[cbf],
     )
     # ax_k.plot(t[1:ii], k[1, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf])
     # ax_k.plot(t[1:ii], k[2, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf])
@@ -207,7 +220,11 @@ set_edges_black(ax_kdot)
 
 for cbf in range(k.shape[2]):
     ax_kdot.plot(
-        t[1:ii], kdot[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[int(1.5 * cbf)], label=lbl[cbf]
+        t[1:ii],
+        kdot[0, 1:ii, cbf],
+        linewidth=lwidth + 1,
+        color=clr[int(1.5 * cbf)],
+        label=lbl[cbf],
     )
     ax_kdot.plot(
         t[1:ii],
@@ -273,21 +290,41 @@ intercept = 0.0
 x_points_l = np.linspace(-10, -1, d_points)
 x_points_r = np.linspace(1, 10, d_points)
 ax_pos.plot(x_points_l, slope * x_points_l + intercept, linewidth=lwidth + 1, color="k")
-ax_pos.plot(x_points_r, -slope * x_points_r + intercept, linewidth=lwidth + 1, color="k")
+ax_pos.plot(
+    x_points_r, -slope * x_points_r + intercept, linewidth=lwidth + 1, color="k"
+)
 x_points_l = -1 * np.ones((d_points,))
 x_points_r = 1 * np.ones((d_points,))
 ax_pos.plot(x_points_l, np.linspace(-3, -1, d_points), linewidth=lwidth + 1, color="k")
 ax_pos.plot(x_points_l, np.linspace(1, 3, d_points), linewidth=lwidth + 1, color="k")
 ax_pos.plot(x_points_r, np.linspace(-3, -1, d_points), linewidth=lwidth + 1, color="k")
 ax_pos.plot(x_points_r, np.linspace(1, 3, d_points), linewidth=lwidth + 1, color="k")
-ax_pos.plot(np.linspace(-15, -1, d_points), np.ones((d_points,)), linewidth=lwidth + 1, color="k")
-ax_pos.plot(np.linspace(1, 15, d_points), np.ones((d_points,)), linewidth=lwidth + 1, color="k")
-ax_pos.plot(np.linspace(-15, -1, d_points), -np.ones((d_points,)), linewidth=lwidth + 1, color="k")
-ax_pos.plot(np.linspace(1, 15, d_points), -np.ones((d_points,)), linewidth=lwidth + 1, color="k")
+ax_pos.plot(
+    np.linspace(-15, -1, d_points),
+    np.ones((d_points,)),
+    linewidth=lwidth + 1,
+    color="k",
+)
+ax_pos.plot(
+    np.linspace(1, 15, d_points), np.ones((d_points,)), linewidth=lwidth + 1, color="k"
+)
+ax_pos.plot(
+    np.linspace(-15, -1, d_points),
+    -np.ones((d_points,)),
+    linewidth=lwidth + 1,
+    color="k",
+)
+ax_pos.plot(
+    np.linspace(1, 15, d_points), -np.ones((d_points,)), linewidth=lwidth + 1, color="k"
+)
 x_points_l = np.linspace(-10, -1, d_points)
 x_points_r = np.linspace(1, 10, d_points)
-ax_pos.plot(x_points_l, -(slope - 0.25) * x_points_l + 0.25, linewidth=lwidth + 1, color="k")
-ax_pos.plot(x_points_r, (slope - 0.25) * x_points_r + 0.25, linewidth=lwidth + 1, color="k")
+ax_pos.plot(
+    x_points_l, -(slope - 0.25) * x_points_l + 0.25, linewidth=lwidth + 1, color="k"
+)
+ax_pos.plot(
+    x_points_r, (slope - 0.25) * x_points_r + 0.25, linewidth=lwidth + 1, color="k"
+)
 
 # ax_pos.plot(np.linspace(start_p, end_p, d_points), LW + LW / 2 * np.ones((d_points,)), linewidth=lwidth+1, color='w')
 # ax_pos.plot(np.linspace(start_p, 0, d_points), np.linspace(start_p, 0, d_points) * s_th - LW / 2, linewidth=lwidth+1, color='w')
@@ -348,7 +385,6 @@ def animate_ego(jj):
     last_1_sec = 40
     ego_pos = x[0, jj, 0:2]
     for aa in range(0, 3 * nAgents, 3):
-
         idx = int(aa / 3)
         # if not (-10 < x[idx, jj, 0] < 10):
         #     continue
@@ -401,7 +437,11 @@ def animate_ego(jj):
 
 # Create animation
 ani = animation.FuncAnimation(
-    fig=fig_map, func=animate_ego, frames=int(ii / time_scale_factor), interval=10, repeat=False
+    fig=fig_map,
+    func=animate_ego,
+    frames=int(ii / time_scale_factor),
+    interval=10,
+    repeat=False,
 )
 # writer = animation.writers['ffmpeg']
 # ani.save(filename[:-4] + '.mp4', writer=writer(fps=15))

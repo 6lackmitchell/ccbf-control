@@ -46,7 +46,8 @@ elif platform == "win32":
     pass
 
 save_path = (
-    pre_path + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/test.pkl"
+    pre_path
+    + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/test.pkl"
 )
 
 
@@ -108,7 +109,16 @@ def consolidated_cbf_controller(idx: int) -> ConsolidatedCbfController:
 
 # Define CBF Controlled Agents
 cbf_controlled_agents = [
-    Agent(0, z0[0, :], u0, cbf0, time, step_dynamics, consolidated_cbf_controller(0), save_path),
+    Agent(
+        0,
+        z0[0, :],
+        u0,
+        cbf0,
+        time,
+        step_dynamics,
+        consolidated_cbf_controller(0),
+        save_path,
+    ),
     #     Agent(1, z0[1, :], u0, cbf0, time, step_dynamics, ProportionalController(1), save_path),
     #     Agent(2, z0[2, :], u0, cbf0, time, step_dynamics, cbf_controller1(2), save_path),
     #     Agent(3, z0[3, :], u0, cbf0, time, step_dynamics, cbf_controller2(3), save_path),

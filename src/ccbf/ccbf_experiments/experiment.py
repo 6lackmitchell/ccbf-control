@@ -40,21 +40,19 @@ def get_robot_states(robots: List[Robot]) -> npt.NDArray:
     return states
 
 
-
-
 class MinimalPublisher(Node):
-
-    def __init__(self,
-                 robots: List[Robot],
-                 agents: List[Agent]):
-        super().__init__('minimal_publisher')
+    def __init__(self, robots: List[Robot], agents: List[Agent]):
+        super().__init__("minimal_publisher")
         self.robots = robots
         self.agents = agents
-        self.publisher_ = self.create_publisher(String, 'topic', 10)
+        self.publisher_ = self.create_publisher(String, "topic", 10)
         self.timer_period = 0.05  # seconds
 
         # Start Timer Callbacks
-        [self.create_timer(self.timer_period, self.timer_callback_wrapper(rr, robot)) for rr, robot in enumerate(robots)]
+        [
+            self.create_timer(self.timer_period, self.timer_callback_wrapper(rr, robot))
+            for rr, robot in enumerate(robots)
+        ]
 
         # Settings
         nTimesteps = 100000
@@ -69,25 +67,21 @@ class MinimalPublisher(Node):
         self.k = np.zeros((nTimesteps, len(robots), 3))
 
     def save_data(self) -> None:
-        """Saves the logging data. """
+        """Saves the logging data."""
 
         now = datetime.now()
         current_time = now.strftime("%H%M%S")
-        filename = '/root/px4_ros_com_ros2/logging_data/run_20220915_{}.pkl'.format(current_time)
-        data = {'x': self.z,
-                'u': self.u,
-                'h': self.h,
-                'k': self.k,
-                'i': self.i}
+        filename = "/root/px4_ros_com_ros2/logging_data/run_20220915_{}.pkl".format(
+            current_time
+        )
+        data = {"x": self.z, "u": self.u, "h": self.h, "k": self.k, "i": self.i}
 
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             pickle.dump(data, f)
 
         print("SAVED")
 
-    def timer_callback_wrapper(self,
-                               rr: int,
-                               robot: Robot):
+    def timer_callback_wrapper(self, rr: int, robot: Robot):
         """"""
 
         def timer_callback():
@@ -112,7 +106,6 @@ class MinimalPublisher(Node):
                 vel = 0.0
 
             else:
-                
                 print("Omega: {:.2f}!".format(omg))
                 print("Veloc: {:.2f}!".format(vel))
 
@@ -125,15 +118,10 @@ class MinimalPublisher(Node):
                 self.h[self.i, rr] = self.agents[rr].controller.c_cbf
                 self.k[self.i, rr] = self.agents[rr].controller.k_gains
 
-
         return timer_callback
 
 
-def _experiment(tf: float,
-                dt: float,
-                vehicle: str,
-                level: str,
-                situation: str) -> bool:
+def _experiment(tf: float, dt: float, vehicle: str, level: str, situation: str) -> bool:
     """Simulates the system specified by config.py for tf seconds at a frequency of dt.
 
     ARGUMENTS
@@ -148,12 +136,14 @@ def _experiment(tf: float,
 
     """
     # Program-wide specifications
-    builtins.PROBLEM_CONFIG = {'vehicle': vehicle,
-                               'control_level': level,
-                               'situation': situation,
-                               'system_model': 'deterministic'}
+    builtins.PROBLEM_CONFIG = {
+        "vehicle": vehicle,
+        "control_level": level,
+        "situation": situation,
+        "system_model": "deterministic",
+    }
 
-    if vehicle == 'bicycle':
+    if vehicle == "bicycle":
         from bicycle import nAgents, nStates, z0, decentralized_agents as agents
 
     broken = False
@@ -178,24 +168,28 @@ def _experiment(tf: float,
     for robot in robots:
         robot.init()
 
-     # Sleep to connect
+    # Sleep to connect
     print("Connecting...")
     time.sleep(5)
 
     # Arm Robots
     for robot in robots:
-        robot.set_command_mode('velocity')
+        robot.set_command_mode("velocity")
 
     for ii in range(100):
         for rr, robot in enumerate(robots):
-            robot.command_velocity(np.zeros(5,))
+            robot.command_velocity(
+                np.zeros(
+                    5,
+                )
+            )
             time.sleep(0.01)
 
     for rr, robot in enumerate(robots):
         robot.cmd_offboard_mode()
         robot.arm()
         print("Robot{} Armed".format(rover_ids[rr]))
-    
+
     # Set up publishers
     minimal_publisher = MinimalPublisher(robots, agents)
 
@@ -220,8 +214,8 @@ def _experiment(tf: float,
 def experiment():
     end_time = 40.0
     timestep = 0.05
-    veh = 'bicycle'
-    lev = 'dynamic'
-    sit = 'dasclab'
+    veh = "bicycle"
+    lev = "dynamic"
+    sit = "dasclab"
 
     success = _experiment(end_time, timestep, veh, lev, sit)

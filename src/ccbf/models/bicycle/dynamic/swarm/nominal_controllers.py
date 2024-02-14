@@ -56,7 +56,9 @@ class LqrController(Controller):
         A_di = np.array([[0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 0, 0, 0]])
         B_di = np.array([[0, 0], [0, 0], [1, 0], [0, 1]])
 
-        gain = np.min([1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 1.0])
+        gain = np.min(
+            [1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 1.0]
+        )
         Q = gain * np.eye(4)
         R = 5 * np.eye(2)
 
@@ -129,14 +131,19 @@ class LqrController(Controller):
             vyd = v_gain * (yd - ze[1])
 
             q_star = np.array([xd, yd, vxd, vyd])  # desired state
-            zeta = np.array([ze[0], ze[1], f(ze)[0], f(ze)[1]])  # double integrator state
+            zeta = np.array(
+                [ze[0], ze[1], f(ze)[0], f(ze)[1]]
+            )  # double integrator state
             tracking_error = zeta - q_star
 
             A_di = np.array([[0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 0, 0, 0]])
             B_di = np.array([[0, 0], [0, 0], [1, 0], [0, 1]])
 
             gain = np.min(
-                [0.01 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 1.0]
+                [
+                    0.01 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2),
+                    1.0,
+                ]
             )
             gain = 0.001
             Q = gain * np.eye(4)
@@ -161,7 +168,9 @@ class LqrController(Controller):
             )
 
             if ze[3] > 0.05:
-                vec = np.array([mu[0] + f(ze)[1] * f(ze)[2], mu[1] - f(ze)[0] * f(ze)[2]])
+                vec = np.array(
+                    [mu[0] + f(ze)[1] * f(ze)[2], mu[1] - f(ze)[0] * f(ze)[2]]
+                )
                 u = np.linalg.inv(S) @ vec
                 omega = u[0]
                 ar = u[1]

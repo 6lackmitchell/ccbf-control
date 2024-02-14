@@ -4,15 +4,17 @@ from nptyping import NDArray
 
 
 class Cbf:
-    """ Object used to package CBFs and their partial derivatives. """
+    """Object used to package CBFs and their partial derivatives."""
 
-    def __init__(self,
-                 h: Callable,
-                 dhdx: Callable,
-                 d2hdx2: Callable,
-                 alpha: Callable,
-                 h0: Callable = None):
-        """ Initialization. """
+    def __init__(
+        self,
+        h: Callable,
+        dhdx: Callable,
+        d2hdx2: Callable,
+        alpha: Callable,
+        h0: Callable = None,
+    ):
+        """Initialization."""
         self._h0 = h0  # Only used when predictive cbfs want to evaluate over time horizon of zero
         self._h = h
         self._dhdx = dhdx
@@ -40,12 +42,10 @@ class Cbf:
         self.d2hdx2_value = self._d2hdx2(*args)
         return self.d2hdx2_value
 
-    def generate_cbf_condition(self,
-                               h: float,
-                               Lfh: float,
-                               Lgh: NDArray,
-                               adaptive: bool = False) -> (NDArray, float):
-        """ Takes the CBF condition of the form
+    def generate_cbf_condition(
+        self, h: float, Lfh: float, Lgh: NDArray, adaptive: bool = False
+    ) -> (NDArray, float):
+        """Takes the CBF condition of the form
         Lfh + Lgh*u + alpha(h) >= 0
         and converts it into the form
         A*u <= b
@@ -67,13 +67,10 @@ class Cbf:
 
         return A, b
 
-    def generate_stochastic_cbf_condition(self,
-                                          B: float,
-                                          LfB: float,
-                                          LgB: NDArray,
-                                          beta: float,
-                                          adaptive: bool = False) -> (NDArray, float):
-        """ Takes the CBF condition of the form
+    def generate_stochastic_cbf_condition(
+        self, B: float, LfB: float, LgB: NDArray, beta: float, adaptive: bool = False
+    ) -> (NDArray, float):
+        """Takes the CBF condition of the form
         Lfh + Lgh*u + alpha(h) >= 0
         and converts it into the form
         A*u <= b

@@ -4,7 +4,7 @@ from numpy import pi, array
 G = 9.81  # meters / sec^2
 
 # Vehicle Parameters
-R = 1.0   # Safety radius (in m)
+R = 1.0  # Safety radius (in m)
 Lf = 1.0  # Front wheelbase (in m)
 Lr = 1.0  # Rear wheelbase (in m)
 

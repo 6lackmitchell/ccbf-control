@@ -7,7 +7,6 @@ from .controllers.controller import Controller
 
 
 class Agent:
-
     t = 0.0
 
     @property
@@ -85,11 +84,19 @@ class Agent:
         self.safety = np.zeros((self.nTimesteps,))
 
         if hasattr(self.controller, "cbf_vals"):
-            self.cbf_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
+            self.cbf_trajectory = np.zeros(
+                (self.nTimesteps, len(self.controller.cbf_vals))
+            )
             self.consolidated_cbf_trajectory = np.zeros((self.nTimesteps,))
-            self.k_gains_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
-            self.k_dot_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
-            self.k_dot_f_trajectory = np.zeros((self.nTimesteps, len(self.controller.cbf_vals)))
+            self.k_gains_trajectory = np.zeros(
+                (self.nTimesteps, len(self.controller.cbf_vals))
+            )
+            self.k_dot_trajectory = np.zeros(
+                (self.nTimesteps, len(self.controller.cbf_vals))
+            )
+            self.k_dot_f_trajectory = np.zeros(
+                (self.nTimesteps, len(self.controller.cbf_vals))
+            )
             self.czero1_trajectory = np.zeros((self.nTimesteps,))
             self.czero2_trajectory = np.zeros((self.nTimesteps,))
         else:

@@ -210,7 +210,6 @@ if __name__ == "__main__":
         m, n = G.size
 
         def F(x=None, z=None):
-
             if x is None:
                 return 1, matrix(1.0, (n, 1))
 

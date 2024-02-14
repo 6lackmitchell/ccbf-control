@@ -23,8 +23,12 @@ np.random.shuffle(new_order)
 xg = np.array([xx for xx in xi0r[new_order]])
 yg = np.array([yy for yy in yi0r[new_order]])
 
-xi = np.array([xi0[ii] + np.random.uniform(low=-x_dist, high=x_dist) for ii in range(nAgents)])
-yi = np.array([yi0[ii] + np.random.uniform(low=-y_dist, high=y_dist) for ii in range(nAgents)])
+xi = np.array(
+    [xi0[ii] + np.random.uniform(low=-x_dist, high=x_dist) for ii in range(nAgents)]
+)
+yi = np.array(
+    [yi0[ii] + np.random.uniform(low=-y_dist, high=y_dist) for ii in range(nAgents)]
+)
 psii = np.array(
     [
         np.arctan2(yg[ii] - yi[ii], xg[ii] - xi[ii])
@@ -33,7 +37,9 @@ psii = np.array(
     ]
 )
 vi = np.array([0.1 for ii in range(nAgents)])
-z0 = np.array([np.array([xi[aa], yi[aa], psii[aa], vi[aa], 0.0]) for aa in range(nAgents)])
+z0 = np.array(
+    [np.array([xi[aa], yi[aa], psii[aa], vi[aa], 0.0]) for aa in range(nAgents)]
+)
 
 
 u0 = np.array([0.0, 0.0])

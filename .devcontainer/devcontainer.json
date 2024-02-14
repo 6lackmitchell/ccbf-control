@@ -1,26 +1,49 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
 {
-	"name": "Existing Dockerfile",
-	"build": {
-		// Sets the run context to one level up instead of the .devcontainer folder.
-		"context": "..",
-		// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
-		"dockerfile": "../Dockerfile"
+	"name": "ccbf-control Docker container",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "ccbf-control",
+	"workspaceFolder": "/home/ccbf-control",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"esbenp.prettier-vscode",
+				"redhat.vscode-yaml",
+				"aaron-bond.better-comments",
+				"shardulm94.trailing-spaces",
+				"ms-python.black-formatter",
+				"ms-toolsai.jupyter"
+			],
+			"configurations": [
+				{
+					"name": "Python: Current File",
+					"type": "python",
+					"request": "launch",
+					"program": "${file}",
+					"console": "integratedTerminal",
+					"justMyCode": true
+				}
+			],
+			"settings": {
+				"[python]": {
+					"editor.defaultFormatter": "ms-python.black-formatter",
+					"python.formatting.provider": "black",
+					"editor.formatOnSave": true,
+					"editor.codeActionsOnSave": {
+						"source.organizeImports": true
+					},
+					"python.formatting.blackArgs": [
+						"--line-length",
+						"88",
+						"--skip-magic-trailing-comma"
+					]
+				},
+				"nb_black.black_on_save": true,
+				"isort.args": [
+					"--profile",
+					"black"
+				]
+			}
+		}
 	}
-
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Uncomment the next line to run commands after the container is created.
-	// "postCreateCommand": "cat /etc/os-release",
-
-	// Configure tool-specific properties.
-	// "customizations": {},
-
-	// Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "devcontainer"
 }

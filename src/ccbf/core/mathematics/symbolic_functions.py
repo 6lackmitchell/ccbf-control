@@ -1,9 +1,7 @@
 import symengine as se
 
 
-def ramp(x: float,
-         k: float,
-         d: float) -> se.Function:
+def ramp(x: float, k: float, d: float) -> se.Function:
     """Returns a function for evaluating the sigmoid function of the form
     1/2 * (1 + tanh(k*(x - d)))
 

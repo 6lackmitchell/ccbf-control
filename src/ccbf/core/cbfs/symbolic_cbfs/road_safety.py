@@ -53,9 +53,9 @@ dhdx_or_func = symbolic_cbf_wrapper_singleagent(dhdx_or_symbolic, ss)
 d2hdx2_or_func = symbolic_cbf_wrapper_singleagent(d2hdx2_or_symbolic, ss)
 
 # On-Ramp Safety Predictive CBF
-h_por_symbolic = ((ss[0] + vx * tau) * np.tan(th) + LW / (2 * np.cos(th)) - (ss[1] + vy * tau)) * (
-    (ss[1] + vy * tau) - ((ss[0] + vx * tau) * np.tan(th) - LW / (2 * np.cos(th)))
-)
+h_por_symbolic = (
+    (ss[0] + vx * tau) * np.tan(th) + LW / (2 * np.cos(th)) - (ss[1] + vy * tau)
+) * ((ss[1] + vy * tau) - ((ss[0] + vx * tau) * np.tan(th) - LW / (2 * np.cos(th))))
 dhdx_por_symbolic = (se.DenseMatrix([h_por_symbolic]).jacobian(se.DenseMatrix(ss))).T
 d2hdx2_por_symbolic = dhdx_por_symbolic.jacobian(se.DenseMatrix(ss))
 h_por_func = symbolic_cbf_wrapper_singleagent(h_por_symbolic, ss)

@@ -39,7 +39,9 @@ elif platform == "win32":
     # Windows...
     pass
 
-save_path = pre_path + "Documents/git/ccbf-control/data/bicycle/dynamic/warehouse/test.pkl"
+save_path = (
+    pre_path + "Documents/git/ccbf-control/data/bicycle/dynamic/warehouse/test.pkl"
+)
 
 
 # Define controllers
@@ -56,7 +58,16 @@ def consolidated_cbf_controller(idx: int) -> ConsolidatedCbfController:
 
 # Define CBF Controlled Agents
 cbf_controlled_agents = [
-    Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, consolidated_cbf_controller(i), save_path)
+    Agent(
+        i,
+        z0[i, :],
+        u0,
+        cbf0,
+        time,
+        step_dynamics,
+        consolidated_cbf_controller(i),
+        save_path,
+    )
     for i in range(3)
 ]
 human_agents = [

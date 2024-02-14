@@ -1,10 +1,8 @@
 import numpy as np
 
 
-def ramp(x: float,
-         k: float,
-         d: float) -> float:
-    """ Approximation to the unit ramp function.
+def ramp(x: float, k: float, d: float) -> float:
+    """Approximation to the unit ramp function.
 
     INPUTS
     ------
@@ -20,10 +18,8 @@ def ramp(x: float,
     return 0.5 * (1 + np.tanh(k * (x - d)))
 
 
-def dramp(x: float,
-          k: float,
-          d: float) -> float:
-    """ Derivative of approximation to the unit ramp function.
+def dramp(x: float, k: float, d: float) -> float:
+    """Derivative of approximation to the unit ramp function.
 
     INPUTS
     ------
@@ -36,13 +32,11 @@ def dramp(x: float,
     dy = k/2 * (sech(k * (x - d))) ** 2
 
     """
-    return k / (2 * (np.cosh(k * (x - d)))**2)
+    return k / (2 * (np.cosh(k * (x - d))) ** 2)
 
 
-def d2ramp(x: float,
-           k: float,
-           d: float) -> float:
-    """ 2nd Derivative of approximation to the unit ramp function.
+def d2ramp(x: float, k: float, d: float) -> float:
+    """2nd Derivative of approximation to the unit ramp function.
 
     INPUTS
     ------
@@ -56,4 +50,4 @@ def d2ramp(x: float,
 
     """
     arg = k * (d - x)
-    return k**2 * np.tanh(arg) / np.cosh(arg)**2
+    return k**2 * np.tanh(arg) / np.cosh(arg) ** 2

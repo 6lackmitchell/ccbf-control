@@ -3,22 +3,24 @@ from nptyping import NDArray
 from scipy.linalg import block_diag
 from solve_cvxopt import solve_qp_cvxopt
 from .nominal_controllers import intersection_controller_lqr as compute_nominal_control
+
 # from .settings_jerk_control.dynamics_rdrive import f
 # from .settings_jerk_control.physical_params import Lr, R
 # from .settings_jerk_control.control_params import objective_accel_only, objective_accel_and_steering
 from .settings_highway_merging.dynamics_stochastic import f
 from .settings_highway_merging.physical_params import Lr, R
-from .settings_highway_merging.control_params import objective_accel_only, objective_accel_and_steering
+from .settings_highway_merging.control_params import (
+    objective_accel_only,
+    objective_accel_and_steering,
+)
 
 ###############################################################################
 ################################## Functions ##################################
 ###############################################################################
 
 
-def compute_control(t: float,
-                    z: NDArray,
-                    extras: dict) -> (NDArray, NDArray, int, str):
-    """ Solves
+def compute_control(t: float, z: NDArray, extras: dict) -> (NDArray, NDArray, int, str):
+    """Solves
 
     INPUTS
     ------
@@ -42,10 +44,10 @@ def compute_control(t: float,
     subtract_agents = -1
 
     # Unpack extras
-    agent = extras['agent']
+    agent = extras["agent"]
     agent = agent + subtract_agents
     za = z[agent, :]
-    zo = np.vstack([z[1:agent, :], z[agent + 1:, :]])
+    zo = np.vstack([z[1:agent, :], z[agent + 1 :, :]])
     # zo = np.vstack([z[:agent, :], z[agent+1:do_not_consider, :]])
 
     # # Compute nominal control inputs
@@ -56,7 +58,7 @@ def compute_control(t: float,
 
     # Compute nominal control input for ego only -- assume others are zero
     ego = agent
-    u_nom = np.zeros((len(z)+subtract_agents, 2))
+    u_nom = np.zeros((len(z) + subtract_agents, 2))
     omega, ar = compute_nominal_control(t, z[ego], ego)
     u_nom[ego, :] = np.array([omega, ar])
 
@@ -67,7 +69,7 @@ def compute_control(t: float,
     sol = solve_qp_cvxopt(Q, p, A, b, G, h)
 
     # If accel-only QP is infeasible, add steering control as decision variable
-    if not sol['code']:
+    if not sol["code"]:
         # Get matrices and vectors for QP controller
         Q, p, A, b, G, h = get_constraints_accel_and_steering(t, za, zo, u_nom, agent)
 
@@ -75,31 +77,29 @@ def compute_control(t: float,
         sol = solve_qp_cvxopt(Q, p, A, b, G, h)
 
         # Return error if this is also infeasible
-        if not sol['code']:
-            return np.zeros((2,)), u_nom[agent, :], sol['code'], sol['status']
+        if not sol["code"]:
+            return np.zeros((2,)), u_nom[agent, :], sol["code"], sol["status"]
 
         # Format control solution -- accel and steering solution
-        u_act = np.array(sol['x'][2 * agent: 2 * (agent + 1)]).flatten()
+        u_act = np.array(sol["x"][2 * agent : 2 * (agent + 1)]).flatten()
 
     else:
         # Format control solution -- nominal steering, accel solution
-        u_act = np.array([u_nom[agent, 0], sol['x'][agent]])
+        u_act = np.array([u_nom[agent, 0], sol["x"][agent]])
 
     u_act = np.clip(u_act, [-np.pi / 4, -9.81], [np.pi / 4, 9.81])
     u_0 = u_nom[agent, :]
 
-    return u_act, u_0, sol['code'], sol['status']
+    return u_act, u_0, sol["code"], sol["status"]
 
 
 ############################# Safe Control Inputs #############################
 
 
-def get_constraints_accel_only(t: float,
-                               za: NDArray,
-                               zo: NDArray,
-                               u_nom: NDArray,
-                               agent: int) -> (NDArray, NDArray, NDArray, NDArray, NDArray, NDArray):
-    """ Generates and returns inter-agent objective and constraint functions for the single-agent QP controller
+def get_constraints_accel_only(
+    t: float, za: NDArray, zo: NDArray, u_nom: NDArray, agent: int
+) -> (NDArray, NDArray, NDArray, NDArray, NDArray, NDArray):
+    """Generates and returns inter-agent objective and constraint functions for the single-agent QP controller
     of the form:
 
     J = u.T * Q * u + p * u
@@ -134,8 +134,8 @@ def get_constraints_accel_only(t: float,
 
     # Input constraints (accel only)
     au = np.array([1, -1])
-    Au = block_diag(*Na*[au]).T
-    bu = np.array(2*Na*[9.81])
+    Au = block_diag(*Na * [au]).T
+    bu = np.array(2 * Na * [9.81])
 
     # Initialize inequality constraints
     Ai = np.zeros((len(zo), Na))
@@ -157,10 +157,22 @@ def get_constraints_accel_only(t: float,
         dvy = f(za)[1] - f(zz)[1]
 
         # ax and ay differentials (uncontrolled)
-        axa_unc = -za[3] / Lr * np.tan(za[4]) * f(za)[1] - omega_a * za[3] * np.sin(za[2]) / np.cos(za[4])**2
-        aya_unc = za[3] / Lr * np.tan(za[4]) * f(za)[0] + omega_a * za[3] * np.cos(za[2]) / np.cos(za[4])**2
-        axo_unc = -zz[3] / Lr * np.tan(zz[4]) * f(zz)[1] - omega_z * zz[3] * np.sin(zz[2]) / np.cos(zz[4])**2
-        ayo_unc = zz[3] / Lr * np.tan(zz[4]) * f(zz)[0] + omega_z * zz[3] * np.cos(zz[2]) / np.cos(zz[4])**2
+        axa_unc = (
+            -za[3] / Lr * np.tan(za[4]) * f(za)[1]
+            - omega_a * za[3] * np.sin(za[2]) / np.cos(za[4]) ** 2
+        )
+        aya_unc = (
+            za[3] / Lr * np.tan(za[4]) * f(za)[0]
+            + omega_a * za[3] * np.cos(za[2]) / np.cos(za[4]) ** 2
+        )
+        axo_unc = (
+            -zz[3] / Lr * np.tan(zz[4]) * f(zz)[1]
+            - omega_z * zz[3] * np.sin(zz[2]) / np.cos(zz[4]) ** 2
+        )
+        ayo_unc = (
+            zz[3] / Lr * np.tan(zz[4]) * f(zz)[0]
+            + omega_z * zz[3] * np.cos(zz[2]) / np.cos(zz[4]) ** 2
+        )
         dax_unc = axa_unc - axo_unc
         day_unc = aya_unc - ayo_unc
 
@@ -177,7 +189,7 @@ def get_constraints_accel_only(t: float,
         day_con = aya_con - ayo_con
 
         # x scale: designed to enforce larger safety distance in direction of travel
-        x_scale = 0.5  #0.2 -- < 1 for highway scenario
+        x_scale = 0.5  # 0.2 -- < 1 for highway scenario
         dx = x_scale * dx
         dvx = x_scale * dvx
         dax_unc = x_scale * dax_unc
@@ -189,30 +201,53 @@ def get_constraints_accel_only(t: float,
         kh = 1000.0
         epsilon = 1e-3
         tau_star = -(dx * dvx + dy * dvy) / (dvx**2 + dvy**2 + epsilon)
-        tau = tau_star * heavyside_approx(tau_star, kh, 0.0) - (tau_star - T) * heavyside_approx(tau_star, kh, T)
+        tau = tau_star * heavyside_approx(tau_star, kh, 0.0) - (
+            tau_star - T
+        ) * heavyside_approx(tau_star, kh, T)
 
         # Derivatives of tau (controllable and uncontrollable)
-        tau_star_dot_unc = -(dax_unc * (2 * dvx * tau_star + dx) + day_unc * (2 * dvy * tau_star + dy) +
-                             (dvx**2 + dvy**2)) / (dvx**2 + dvy**2 + epsilon)
-        tau_star_dot_con = -(dax_con * (2 * dvx * tau_star + dx) + day_con * (2 * dvy * tau_star + dy)) / \
-                           (dvx**2 + dvy**2 + epsilon)
-        tau_dot_unc = tau_star_dot_unc * (heavyside_approx(tau_star, kh, 0.0) - heavyside_approx(tau_star, kh, T)) + \
-                      tau_star * tau_star_dot_unc * (dheavyside_approx(tau_star, kh, 0.0) -
-                                                     dheavyside_approx(tau_star, kh, T))
-        tau_dot_con = tau_star_dot_con * (heavyside_approx(tau_star, kh, 0.0) - heavyside_approx(tau_star, kh, T)) + \
-                      tau_star * tau_star_dot_con * (dheavyside_approx(tau_star, kh, 0.0) -
-                                                     dheavyside_approx(tau_star, kh, T))
+        tau_star_dot_unc = -(
+            dax_unc * (2 * dvx * tau_star + dx)
+            + day_unc * (2 * dvy * tau_star + dy)
+            + (dvx**2 + dvy**2)
+        ) / (dvx**2 + dvy**2 + epsilon)
+        tau_star_dot_con = -(
+            dax_con * (2 * dvx * tau_star + dx) + day_con * (2 * dvy * tau_star + dy)
+        ) / (dvx**2 + dvy**2 + epsilon)
+        tau_dot_unc = tau_star_dot_unc * (
+            heavyside_approx(tau_star, kh, 0.0) - heavyside_approx(tau_star, kh, T)
+        ) + tau_star * tau_star_dot_unc * (
+            dheavyside_approx(tau_star, kh, 0.0) - dheavyside_approx(tau_star, kh, T)
+        )
+        tau_dot_con = tau_star_dot_con * (
+            heavyside_approx(tau_star, kh, 0.0) - heavyside_approx(tau_star, kh, T)
+        ) + tau_star * tau_star_dot_con * (
+            dheavyside_approx(tau_star, kh, 0.0) - dheavyside_approx(tau_star, kh, T)
+        )
 
         # CBF Definitions
-        h0 = dx**2 + dy**2 - (2*R)**2
-        ht = h0 + tau**2 * (dvx**2 + dvy**2) + 2 * tau * (dx * dvx + dy * dvy) - discretization_error
+        h0 = dx**2 + dy**2 - (2 * R) ** 2
+        ht = (
+            h0
+            + tau**2 * (dvx**2 + dvy**2)
+            + 2 * tau * (dx * dvx + dy * dvy)
+            - discretization_error
+        )
 
         # CBF Derivatives (Lie derivative notation -- Lfh = dh/dx * f(x))
         Lfh0 = 2 * (dx * dvx + dy * dvy)
-        Lfht = Lfh0 + 2 * tau * (dvx**2 + dvy**2 + dx * dax_unc + dy * day_unc) + 2 * tau_dot_unc * \
-               (dx * dvx + dy * dvy + tau * (dvx**2 + dvy**2)) + 2 * tau**2 * (dvx * dax_unc + dvy * day_unc)
-        Lght = 2 * tau * tau_dot_con * (dvx**2 + dvy**2) + 2 * tau**2 * (dvx * dax_con + dvy * day_con) + \
-               2 * tau_dot_con * (dx * dvx + dy * dvy) + 2 * tau * (dx * dax_con + dy * day_con)
+        Lfht = (
+            Lfh0
+            + 2 * tau * (dvx**2 + dvy**2 + dx * dax_unc + dy * day_unc)
+            + 2 * tau_dot_unc * (dx * dvx + dy * dvy + tau * (dvx**2 + dvy**2))
+            + 2 * tau**2 * (dvx * dax_unc + dvy * day_unc)
+        )
+        Lght = (
+            2 * tau * tau_dot_con * (dvx**2 + dvy**2)
+            + 2 * tau**2 * (dvx * dax_con + dvy * day_con)
+            + 2 * tau_dot_con * (dx * dvx + dy * dvy)
+            + 2 * tau * (dx * dax_con + dy * day_con)
+        )
 
         # CBF Condition: Lfht + Lght + l0 * ht >= 0 --> Au <= b
         l0 = 5.0  # Fitting in between
@@ -229,12 +264,10 @@ def get_constraints_accel_only(t: float,
     return Q, p, A, b, None, None
 
 
-def get_constraints_accel_and_steering(t: float,
-                                       za: NDArray,
-                                       zo: NDArray,
-                                       u_nom: NDArray,
-                                       agent: int) -> (NDArray, NDArray, NDArray, NDArray, NDArray, NDArray):
-    """ Generates and returns inter-agent objective and constraint functions for the single-agent QP controller
+def get_constraints_accel_and_steering(
+    t: float, za: NDArray, zo: NDArray, u_nom: NDArray, agent: int
+) -> (NDArray, NDArray, NDArray, NDArray, NDArray, NDArray):
+    """Generates and returns inter-agent objective and constraint functions for the single-agent QP controller
     of the form:
 
     J = u.T * Q * u + p * u
@@ -270,11 +303,11 @@ def get_constraints_accel_and_steering(t: float,
 
     # Input constraints (accel only)
     au = np.array([[1, 0], [-1, 0], [0, 1], [0, -1]])
-    Au = block_diag(*Na*[au])
-    bu = np.array(Na*[np.pi / 4, np.pi / 4, 9.81, 9.81])
+    Au = block_diag(*Na * [au])
+    bu = np.array(Na * [np.pi / 4, np.pi / 4, 9.81, 9.81])
 
     # Initialize inequality constraints
-    Ai = np.zeros((len(zo), Nu*Na))
+    Ai = np.zeros((len(zo), Nu * Na))
     bi = np.zeros((len(zo),))
 
     for ii, zz in enumerate(zo):
@@ -301,19 +334,35 @@ def get_constraints_accel_and_steering(t: float,
         aya_con = np.zeros((Nu * Na,))
         axo_con = np.zeros((Nu * Na,))
         ayo_con = np.zeros((Nu * Na,))
-        axa_con[Nu * agent:Nu * (agent + 1)] = np.array([-za[3] * np.sin(za[2]) / np.cos(za[4])**2,
-                                                         np.cos(za[2]) - np.sin(za[2]) * np.tan(za[4])])
-        aya_con[Nu * agent:Nu * (agent + 1)] = np.array([za[3] * np.cos(za[2]) / np.cos(za[4])**2,
-                                                         np.sin(za[2]) + np.cos(za[2]) * np.tan(za[4])])
-        axo_con[Nu * idx:Nu * (idx + 1)] = np.array([-zz[3] * np.sin(zz[2]) / np.cos(zz[4])**2,
-                                                     np.cos(zz[2]) - np.sin(zz[2]) * np.tan(zz[4])])
-        ayo_con[Nu * idx:Nu * (idx + 1)] = np.array([zz[3] * np.cos(zz[2]) / np.cos(zz[4])**2,
-                                                     np.sin(zz[2]) + np.cos(zz[2]) * np.tan(zz[4])])
+        axa_con[Nu * agent : Nu * (agent + 1)] = np.array(
+            [
+                -za[3] * np.sin(za[2]) / np.cos(za[4]) ** 2,
+                np.cos(za[2]) - np.sin(za[2]) * np.tan(za[4]),
+            ]
+        )
+        aya_con[Nu * agent : Nu * (agent + 1)] = np.array(
+            [
+                za[3] * np.cos(za[2]) / np.cos(za[4]) ** 2,
+                np.sin(za[2]) + np.cos(za[2]) * np.tan(za[4]),
+            ]
+        )
+        axo_con[Nu * idx : Nu * (idx + 1)] = np.array(
+            [
+                -zz[3] * np.sin(zz[2]) / np.cos(zz[4]) ** 2,
+                np.cos(zz[2]) - np.sin(zz[2]) * np.tan(zz[4]),
+            ]
+        )
+        ayo_con[Nu * idx : Nu * (idx + 1)] = np.array(
+            [
+                zz[3] * np.cos(zz[2]) / np.cos(zz[4]) ** 2,
+                np.sin(zz[2]) + np.cos(zz[2]) * np.tan(zz[4]),
+            ]
+        )
         dax_con = axa_con - axo_con
         day_con = aya_con - ayo_con
 
         # x scale: designed to enforce larger safety distance in direction of travel
-        x_scale = .5  # -- < 1 for highway scenario
+        x_scale = 0.5  # -- < 1 for highway scenario
         dx = x_scale * dx
         dvx = x_scale * dvx
         dax_unc = x_scale * dax_unc
@@ -324,30 +373,53 @@ def get_constraints_accel_and_steering(t: float,
         kh = 1000.0
         epsilon = 1e-3
         tau_star = -(dx * dvx + dy * dvy) / (dvx**2 + dvy**2 + epsilon)
-        tau = tau_star * heavyside_approx(tau_star, kh, 0.0) - (tau_star - T) * heavyside_approx(tau_star, kh, T)
+        tau = tau_star * heavyside_approx(tau_star, kh, 0.0) - (
+            tau_star - T
+        ) * heavyside_approx(tau_star, kh, T)
 
         # Derivatives of tau (controllable and uncontrollable)
-        tau_star_dot_unc = -(dax_unc * (2 * dvx * tau_star + dx) + day_unc * (2 * dvy * tau_star + dy) +
-                             (dvx**2 + dvy**2)) / (dvx**2 + dvy**2 + epsilon)
-        tau_star_dot_con = -(dax_con * (2 * dvx * tau_star + dx) + day_con * (2 * dvy * tau_star + dy)) / \
-                           (dvx**2 + dvy**2 + epsilon)
-        tau_dot_unc = tau_star_dot_unc * (heavyside_approx(tau_star, kh, 0.0) - heavyside_approx(tau_star, kh, T)) + \
-                      tau_star * tau_star_dot_unc * (dheavyside_approx(tau_star, kh, 0.0) -
-                                                     dheavyside_approx(tau_star, kh, T))
-        tau_dot_con = tau_star_dot_con * (heavyside_approx(tau_star, kh, 0.0) - heavyside_approx(tau_star, kh, T)) + \
-                      tau_star * tau_star_dot_con * (dheavyside_approx(tau_star, kh, 0.0) -
-                                                     dheavyside_approx(tau_star, kh, T))
+        tau_star_dot_unc = -(
+            dax_unc * (2 * dvx * tau_star + dx)
+            + day_unc * (2 * dvy * tau_star + dy)
+            + (dvx**2 + dvy**2)
+        ) / (dvx**2 + dvy**2 + epsilon)
+        tau_star_dot_con = -(
+            dax_con * (2 * dvx * tau_star + dx) + day_con * (2 * dvy * tau_star + dy)
+        ) / (dvx**2 + dvy**2 + epsilon)
+        tau_dot_unc = tau_star_dot_unc * (
+            heavyside_approx(tau_star, kh, 0.0) - heavyside_approx(tau_star, kh, T)
+        ) + tau_star * tau_star_dot_unc * (
+            dheavyside_approx(tau_star, kh, 0.0) - dheavyside_approx(tau_star, kh, T)
+        )
+        tau_dot_con = tau_star_dot_con * (
+            heavyside_approx(tau_star, kh, 0.0) - heavyside_approx(tau_star, kh, T)
+        ) + tau_star * tau_star_dot_con * (
+            dheavyside_approx(tau_star, kh, 0.0) - dheavyside_approx(tau_star, kh, T)
+        )
 
         # CBF Definitions
-        h0 = dx**2 + dy**2 - (2*R)**2
-        ht = h0 + tau**2 * (dvx**2 + dvy**2) + 2 * tau * (dx * dvx + dy * dvy) - discretization_error
+        h0 = dx**2 + dy**2 - (2 * R) ** 2
+        ht = (
+            h0
+            + tau**2 * (dvx**2 + dvy**2)
+            + 2 * tau * (dx * dvx + dy * dvy)
+            - discretization_error
+        )
 
         # CBF Derivatives (Lie derivative notation -- Lfh = dh/dx * f(x))
         Lfh0 = 2 * (dx * dvx + dy * dvy)
-        Lfht = Lfh0 + 2 * tau * (dvx**2 + dvy**2 + dx * dax_unc + dy * day_unc) + 2 * tau_dot_unc * \
-               (dx * dvx + dy * dvy + tau * (dvx**2 + dvy**2)) + 2 * tau**2 * (dvx * dax_unc + dvy * day_unc)
-        Lght = 2 * tau * tau_dot_con * (dvx**2 + dvy**2) + 2 * tau**2 * (dvx * dax_con + dvy * day_con) + \
-               2 * tau_dot_con * (dx * dvx + dy * dvy) + 2 * tau * (dx * dax_con + dy * day_con)
+        Lfht = (
+            Lfh0
+            + 2 * tau * (dvx**2 + dvy**2 + dx * dax_unc + dy * day_unc)
+            + 2 * tau_dot_unc * (dx * dvx + dy * dvy + tau * (dvx**2 + dvy**2))
+            + 2 * tau**2 * (dvx * dax_unc + dvy * day_unc)
+        )
+        Lght = (
+            2 * tau * tau_dot_con * (dvx**2 + dvy**2)
+            + 2 * tau**2 * (dvx * dax_con + dvy * day_con)
+            + 2 * tau_dot_con * (dx * dvx + dy * dvy)
+            + 2 * tau * (dx * dax_con + dy * day_con)
+        )
 
         # CBF Condition: Lfht + Lght + l0 * ht >= 0 --> Au <= b
         l0 = 10.0
@@ -365,15 +437,13 @@ def get_constraints_accel_and_steering(t: float,
 
 def saturate_solution(sol):
     saturated_sol = np.zeros((len(sol),))
-    for ii,s in enumerate(sol):
-        saturated_sol[ii] = np.min([np.max([s.x,s.lb]),s.ub])
+    for ii, s in enumerate(sol):
+        saturated_sol[ii] = np.min([np.max([s.x, s.lb]), s.ub])
     return saturated_sol
 
 
-def heavyside_approx(x: float,
-                     k: float,
-                     d: float) -> float:
-    """ Approximation to the unit heavyside function.
+def heavyside_approx(x: float, k: float, d: float) -> float:
+    """Approximation to the unit heavyside function.
 
     INPUTS
     ------
@@ -389,10 +459,8 @@ def heavyside_approx(x: float,
     return 0.5 * (1 + np.tanh(k * (x - d)))
 
 
-def dheavyside_approx(x: float,
-                      k: float,
-                      d: float) -> float:
-    """ Derivative of approximation to the unit heavyside function.
+def dheavyside_approx(x: float, k: float, d: float) -> float:
+    """Derivative of approximation to the unit heavyside function.
 
     INPUTS
     ------
@@ -405,4 +473,4 @@ def dheavyside_approx(x: float,
     dy = k/2 * (sech(k * (x - d))) ** 2
 
     """
-    return k / (2 * (np.cosh(k * (x - d)))**2)
+    return k / (2 * (np.cosh(k * (x - d))) ** 2)

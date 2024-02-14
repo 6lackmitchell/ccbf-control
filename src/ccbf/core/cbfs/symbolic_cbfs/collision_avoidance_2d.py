@@ -58,7 +58,9 @@ tau_sym = se.Symbol("tau", real=True)
 # tau* for computing tau
 epsilon = 1e-3
 tau_star_symbolic = -(dx * dvx + dy * dvy) / (dvx**2 + dvy**2 + epsilon)
-dtaustardx_symbolic = (se.DenseMatrix([tau_star_symbolic]).jacobian(se.DenseMatrix(ss + sso))).T
+dtaustardx_symbolic = (
+    se.DenseMatrix([tau_star_symbolic]).jacobian(se.DenseMatrix(ss + sso))
+).T
 d2taustardx2_symbolic = dtaustardx_symbolic.jacobian(se.DenseMatrix(ss + sso))
 tau_star = symbolic_cbf_wrapper_multiagent(tau_star_symbolic, ss, sso)
 dtaustardx = symbolic_cbf_wrapper_multiagent(dtaustardx_symbolic, ss, sso)
@@ -68,32 +70,48 @@ d2taustardx2 = symbolic_cbf_wrapper_multiagent(d2taustardx2_symbolic, ss, sso)
 Tmax = 10.0
 kh = 1000.0
 tau_star_sym = se.Symbol("tau_star", real=True)
-tau_symbolic = tau_star_sym * ramp(tau_star_sym, kh, 0.0) - (tau_star_sym - Tmax) * ramp(
-    tau_star_sym, kh, Tmax
-)
+tau_symbolic = tau_star_sym * ramp(tau_star_sym, kh, 0.0) - (
+    tau_star_sym - Tmax
+) * ramp(tau_star_sym, kh, Tmax)
 dtaudtaustar_symbolic = se.diff(tau_symbolic, tau_star_sym)
 d2taudtaustar2_symbolic = se.diff(dtaudtaustar_symbolic, tau_star_sym)
 tau = symbolic_cbf_wrapper_singleagent(tau_symbolic, [tau_star_sym])
 dtaudtaustar = symbolic_cbf_wrapper_singleagent(dtaudtaustar_symbolic, [tau_star_sym])
-d2taudtaustar2 = symbolic_cbf_wrapper_singleagent(d2taudtaustar2_symbolic, [tau_star_sym])
+d2taudtaustar2 = symbolic_cbf_wrapper_singleagent(
+    d2taudtaustar2_symbolic, [tau_star_sym]
+)
 
 # Predictive Collision Avoidance CBF
-h_predictive_ca_symbolic = (dx + tau_sym * dvx) ** 2 + (dy + tau_sym * dvy) ** 2 - (2 * R) ** 2
+h_predictive_ca_symbolic = (
+    (dx + tau_sym * dvx) ** 2 + (dy + tau_sym * dvy) ** 2 - (2 * R) ** 2
+)
 dhdx_predictive_ca_symbolic = (
     se.DenseMatrix([h_predictive_ca_symbolic]).jacobian(se.DenseMatrix(ss + sso))
 ).T
 dhdtau_predictive_ca_symbolic = se.diff(h_predictive_ca_symbolic, tau_sym)
-d2hdx2_predictive_ca_symbolic = dhdx_predictive_ca_symbolic.jacobian(se.DenseMatrix(ss + sso))
+d2hdx2_predictive_ca_symbolic = dhdx_predictive_ca_symbolic.jacobian(
+    se.DenseMatrix(ss + sso)
+)
 d2hdtau2_predictive_ca_symbolic = se.diff(dhdtau_predictive_ca_symbolic, tau_sym)
 d2hdtaudx_predictive_ca_symbolic = (
     se.DenseMatrix([dhdtau_predictive_ca_symbolic]).jacobian(se.DenseMatrix(ss + sso))
 ).T
 h_predictive_ca = symbolic_cbf_wrapper_multiagent(h_predictive_ca_symbolic, ss, sso)
-dhdx_predictive_ca = symbolic_cbf_wrapper_multiagent(dhdx_predictive_ca_symbolic, ss, sso)
-dhdtau_predictive_ca = symbolic_cbf_wrapper_multiagent(dhdtau_predictive_ca_symbolic, ss, sso)
-d2hdx2_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdx2_predictive_ca_symbolic, ss, sso)
-d2hdtaudx_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdx2_predictive_ca_symbolic, ss, sso)
-d2hdtau2_predictive_ca = symbolic_cbf_wrapper_multiagent(d2hdtau2_predictive_ca_symbolic, ss, sso)
+dhdx_predictive_ca = symbolic_cbf_wrapper_multiagent(
+    dhdx_predictive_ca_symbolic, ss, sso
+)
+dhdtau_predictive_ca = symbolic_cbf_wrapper_multiagent(
+    dhdtau_predictive_ca_symbolic, ss, sso
+)
+d2hdx2_predictive_ca = symbolic_cbf_wrapper_multiagent(
+    d2hdx2_predictive_ca_symbolic, ss, sso
+)
+d2hdtaudx_predictive_ca = symbolic_cbf_wrapper_multiagent(
+    d2hdx2_predictive_ca_symbolic, ss, sso
+)
+d2hdtau2_predictive_ca = symbolic_cbf_wrapper_multiagent(
+    d2hdtau2_predictive_ca_symbolic, ss, sso
+)
 
 # Relaxed Predictive Collision Avoidance
 relaxation = 0.25  # for warehouse simulation (worked)

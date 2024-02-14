@@ -2,7 +2,6 @@ from nptyping import NDArray
 
 
 class Controller:
-
     ego_id = None
     nu = None
     u = None
@@ -15,10 +14,7 @@ class Controller:
     def __init__(self):
         self.safety = True
 
-    def compute_control(self,
-                        t: float,
-                        z: NDArray,
-                        cascade: bool = True) -> (int, str):
+    def compute_control(self, t: float, z: NDArray, cascade: bool = True) -> (int, str):
         """Computes the control input for the vehicle in question.
 
         INPUTS
@@ -27,4 +23,3 @@ class Controller:
         z: full state vector
         """
         return self._compute_control(t, z)
-

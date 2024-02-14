@@ -11,7 +11,6 @@ q2 = 10 * np.max([q0, q1])
 
 
 def objective_accel_and_steering(u_nom, x=None):
-
     if len(u_nom) % 2 == 0:
         Q = np.diag(
             int(len(u_nom) / 2)
@@ -19,7 +18,9 @@ def objective_accel_and_steering(u_nom, x=None):
         )
     else:
         Q = np.diag(
-            int(len(u_nom) / 2) * [np.max([1, 100 * (2 - x[0])]), np.max([1, 100 * x[1]])] + [q2]
+            int(len(u_nom) / 2)
+            * [np.max([1, 100 * (2 - x[0])]), np.max([1, 100 * x[1]])]
+            + [q2]
         )
 
     # if len(u_nom) % 2 == 0:

@@ -55,7 +55,16 @@ def consolidated_cbf_controller(idx: int) -> ConsolidatedCbfController:
 
 # Define CBF Controlled Agents
 cbf_controlled_agents = [
-    Agent(i, z0[i, :], u0, cbf0, time, step_dynamics, consolidated_cbf_controller(i), save_path)
+    Agent(
+        i,
+        z0[i, :],
+        u0,
+        cbf0,
+        time,
+        step_dynamics,
+        consolidated_cbf_controller(i),
+        save_path,
+    )
     for i in range(nAgents)
 ]
 

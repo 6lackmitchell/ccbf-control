@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  ccbf-control:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    volumes:
+      - ../:/home/ccbf-control
+    stdin_open: true
+    tty: true

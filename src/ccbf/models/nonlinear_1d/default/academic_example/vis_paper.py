@@ -28,7 +28,10 @@ elif platform == "win32":
     pass
 
 # Specify files
-filepath = pre_path + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/paper/"
+filepath = (
+    pre_path
+    + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/paper/"
+)
 fname1 = filepath + "alpha_0p1.pkl"
 fname2 = filepath + "alpha_0p5.pkl"
 fname3 = filepath + "alpha_1.pkl"
@@ -190,7 +193,9 @@ names = [
 # Plot Settings
 nAgents = 5
 plt.style.use(["ggplot"])
-plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.plasma(np.linspace(0, 1, nAgents)))
+plt.rcParams["axes.prop_cycle"] = plt.cycler(
+    "color", plt.cm.plasma(np.linspace(0, 1, nAgents))
+)
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 # colors[0] = colors[1]
 colors[-1] = np.array([0.0, 0.98, 0.2, 1])
@@ -220,7 +225,11 @@ ii_u = ii
 
 # Angular Control Inputs
 ax_cont.plot(
-    t[1:ii_u], 1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k", label=r"$\bar{u}$"
+    t[1:ii_u],
+    1 * np.ones(t[1:ii_u].shape),
+    linewidth=lwidth + 1,
+    color="k",
+    label=r"$\bar{u}$",
 )
 ax_cont.plot(t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, color="k")
 for aa in [0]:
@@ -283,9 +292,16 @@ lbl = [
     [r"$w_1: \alpha = 5.0$", r"$w_2: \alpha = 5.0$"],
 ]
 for aa in [2]:
-    ax_k.plot(t[1:ii], k[aa, 1:ii, 0], linewidth=lwidth, color=colors[aa], label=lbl[aa][0])
     ax_k.plot(
-        t[1:ii], k[aa, 1:ii, 1], linewidth=lwidth, color=colors[aa], label=lbl[aa][1], dashes=dash
+        t[1:ii], k[aa, 1:ii, 0], linewidth=lwidth, color=colors[aa], label=lbl[aa][0]
+    )
+    ax_k.plot(
+        t[1:ii],
+        k[aa, 1:ii, 1],
+        linewidth=lwidth,
+        color=colors[aa],
+        label=lbl[aa][1],
+        dashes=dash,
     )
 ax_k.set(ylabel=r"$w$", xlim=[-0.1, 10.1])
 ax_k.set_xticklabels([])
@@ -316,7 +332,9 @@ lbl = [
     [r"$\dot{w}_1: \alpha = 5.0$", r"$\dot{w}_2: \alpha = 5.0$"],
 ]
 for aa in [2]:
-    ax_wdot.plot(t[1:ii], kdot[aa, 1:ii, 0], linewidth=lwidth, color=colors[aa], label=lbl[aa][0])
+    ax_wdot.plot(
+        t[1:ii], kdot[aa, 1:ii, 0], linewidth=lwidth, color=colors[aa], label=lbl[aa][0]
+    )
     ax_wdot.plot(
         t[1:ii],
         kdot[aa, 1:ii, 1],
@@ -421,7 +439,9 @@ ax_inset.spines["top"].set_color("#000000")
 ax_inset.spines["right"].set_color("#000000")
 ax_inset.spines["left"].set_color("#000000")
 
-ax_inset.plot(t[1:ii], np.zeros((ii - 1,)), linewidth=lwidth, color="k", label="Boundary")
+ax_inset.plot(
+    t[1:ii], np.zeros((ii - 1,)), linewidth=lwidth, color="k", label="Boundary"
+)
 ax_inset.plot(t[1:ii], B1, linewidth=lwidth, color=colors[0], label=names[0])
 ax_inset.plot(t[1:ii], B2, linewidth=lwidth, color=colors[1], label=names[1])
 ax_inset.plot(t[1:ii], B3, linewidth=lwidth, color=colors[2], label=names[2])
@@ -435,7 +455,9 @@ for item in ax_inset.get_yticklabels():
     item.set_fontsize(15)
 mark_inset(ax_cz, ax_inset, loc1=1, loc2=2, fc="none", ec="0.2", lw=1.5)
 
-ax_cz.set(ylabel=r"$B(t, w(t), x(t))$", xlabel=r"$t$ (sec)", ylim=[-3, 10], xlim=[-0.5, 13.2])
+ax_cz.set(
+    ylabel=r"$B(t, w(t), x(t))$", xlabel=r"$t$ (sec)", ylim=[-3, 10], xlim=[-0.5, 13.2]
+)
 
 # Plot Settings
 for item in (

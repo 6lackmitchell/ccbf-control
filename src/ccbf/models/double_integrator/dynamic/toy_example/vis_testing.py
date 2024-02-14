@@ -20,7 +20,9 @@ matplotlib.rcParams.update({"figure.autolayout": True})
 N = 10 * nAgents
 # plt.style.use(['Solarize_Light2'])
 plt.style.use(["ggplot"])
-plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.viridis(np.linspace(0, 1, N)))
+plt.rcParams["axes.prop_cycle"] = plt.cycler(
+    "color", plt.cm.viridis(np.linspace(0, 1, N))
+)
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 colors[0] = colors[1]
 colors.reverse()
@@ -35,7 +37,9 @@ elif platform == "win32":
     # Windows...
     pass
 
-filepath = pre_path + "Documents/git/ccbf-control/data/double_integrator/dynamic/toy_example/"
+filepath = (
+    pre_path + "Documents/git/ccbf-control/data/double_integrator/dynamic/toy_example/"
+)
 
 # ### Define Recording Variables ###
 t = np.linspace(dt, tf, int(tf / dt))
@@ -133,7 +137,8 @@ for aa in range(nAgents):
     # ax_cont_b.plot(t[:ii], u0[aa, :ii, 1], label='a_{}^0'.format(aa), linewidth=lwidth,
     #                color=colors[color_idx[aa, 1]], dashes=dash)
 ax_cont_b.set(
-    ylabel="ay", ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5]  # ylabel=r'$a_r$',
+    ylabel="ay",
+    ylim=[np.min(u[:ii, :, 1]) - 0.5, np.max(u[:ii, :, 1]) + 0.5],  # ylabel=r'$a_r$',
 )
 
 # Plot Settings
@@ -176,7 +181,9 @@ lbl = [
 clr = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 clr.reverse()
 for cbf in range(k.shape[2]):
-    ax_k.plot(t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[cbf], label=lbl[cbf])
+    ax_k.plot(
+        t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth + 1, color=clr[cbf], label=lbl[cbf]
+    )
 ax_k.set(ylabel="k", title="Adaptation Gains")
 
 # Plot Settings
@@ -406,7 +413,6 @@ def animate_ego(jj):
     last_1_sec = 40
     ego_pos = x[0, jj, 0:2]
     for aa in range(0, 3 * nAgents, 3):
-
         idx = int(aa / 3)
         # if not (-10 < x[idx, jj, 0] < 10):
         #     continue
@@ -421,7 +427,11 @@ def animate_ego(jj):
 
 # Create animation
 ani = animation.FuncAnimation(
-    fig=fig_map, func=animate_ego, frames=int(ii / time_scale_factor), interval=10, repeat=False
+    fig=fig_map,
+    func=animate_ego,
+    frames=int(ii / time_scale_factor),
+    interval=10,
+    repeat=False,
 )
 writer = animation.writers["ffmpeg"]
 ani.save(filename[:-4] + ".mp4", writer=writer(fps=15))

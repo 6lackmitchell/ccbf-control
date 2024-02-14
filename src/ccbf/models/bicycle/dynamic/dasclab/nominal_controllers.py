@@ -8,16 +8,12 @@ from bicycle.dynamic.dasclab.initial_conditions import *
 
 
 class LqrController(Controller):
-
-    def __init__(self,
-                 ego_id: int):
+    def __init__(self, ego_id: int):
         super().__init__()
         self.ego_id = ego_id
         self.complete = False
 
-    def _compute_control(self,
-                         t: float,
-                         z: NDArray) -> (int, str):
+    def _compute_control(self, t: float, z: NDArray) -> (int, str):
         """Computes the nominal input for a vehicle in the intersection situation.
 
         INPUTS
@@ -52,16 +48,12 @@ class LqrController(Controller):
             tracking_error = np.array([0, 0, f(ze)[0], f(ze)[1]])
             self.complete = True
 
-        A_di = np.array([[0, 0, 1, 0],
-                         [0, 0, 0, 1],
-                         [0, 0, 0, 0],
-                         [0, 0, 0, 0]])
-        B_di = np.array([[0, 0],
-                         [0, 0],
-                         [1, 0],
-                         [0, 1]])
+        A_di = np.array([[0, 0, 1, 0], [0, 0, 0, 1], [0, 0, 0, 0], [0, 0, 0, 0]])
+        B_di = np.array([[0, 0], [0, 0], [1, 0], [0, 1]])
 
-        gain = 4 * np.min([1.0 / (0.01 + (tracking_error[0])**2 + (tracking_error[1])**2), 10.0])
+        gain = 4 * np.min(
+            [1.0 / (0.01 + (tracking_error[0]) ** 2 + (tracking_error[1]) ** 2), 10.0]
+        )
         # print(gain)
         # gain = 1
         # gain = 0.001
@@ -73,8 +65,18 @@ class LqrController(Controller):
         mu = -K @ tracking_error
 
         # Create transformation matrix
-        S = np.array([[-ze[3] * np.sin(ze[2]) / np.cos(ze[4]) ** 2, np.cos(ze[2]) - np.sin(ze[2]) * np.tan(ze[4])],
-                      [ze[3] * np.cos(ze[2]) / np.cos(ze[4]) ** 2, np.sin(ze[2]) + np.cos(ze[2]) * np.tan(ze[4])]])
+        S = np.array(
+            [
+                [
+                    -ze[3] * np.sin(ze[2]) / np.cos(ze[4]) ** 2,
+                    np.cos(ze[2]) - np.sin(ze[2]) * np.tan(ze[4]),
+                ],
+                [
+                    ze[3] * np.cos(ze[2]) / np.cos(ze[4]) ** 2,
+                    np.sin(ze[2]) + np.cos(ze[2]) * np.tan(ze[4]),
+                ],
+            ]
+        )
 
         if ze[3] > 0.001:
             vec = np.array([mu[0] + f(ze)[1] * f(ze)[2], mu[1] - f(ze)[0] * f(ze)[2]])
@@ -93,7 +95,6 @@ class LqrController(Controller):
         else:
             omega = 0.0
 
-
         self.u = np.array([omega, ar])
 
         if self.ego_id == 1:
@@ -105,16 +106,12 @@ class LqrController(Controller):
 
 
 class ZeroController(Controller):
-
-    def __init__(self,
-                 ego_id: int):
+    def __init__(self, ego_id: int):
         super().__init__()
         self.ego_id = ego_id
         self.complete = False
 
-    def _compute_control(self,
-                         t: float,
-                         z: NDArray) -> (int, str):
+    def _compute_control(self, t: float, z: NDArray) -> (int, str):
         """Computes the nominal input for a vehicle in the intersection situation.
 
         INPUTS
@@ -141,20 +138,21 @@ class ZeroController(Controller):
             elif t < 25:
                 a = -1 / 3 * ze[3]
             else:
-                a = 1/3 * (1 - ze[3])
+                a = 1 / 3 * (1 - ze[3])
         elif self.ego_id == 8:
             if ze[0] < -7:
                 a = 0.0
             elif t < 25:
                 a = -1 / 3 * ze[3]
             else:
-                a = 1/3 * (1 - ze[3])
+                a = 1 / 3 * (1 - ze[3])
         else:
             a = 0.0
 
         self.u = np.array([omega, a])
 
         return self.u, 1, "Optimal"
+
 
 # class ZeroController(Controller):
 #

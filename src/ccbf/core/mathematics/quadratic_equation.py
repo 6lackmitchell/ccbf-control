@@ -3,9 +3,7 @@ import numpy as np
 from typing import Tuple
 
 
-def solve_quadratic(a: float,
-                    b: float,
-                    c: float) -> Tuple[float, float]:
+def solve_quadratic(a: float, b: float, c: float) -> Tuple[float, float]:
     """Returns the real solutions to quadratic equation of the form
 
     a * x ** 2 + b * x + c == 0

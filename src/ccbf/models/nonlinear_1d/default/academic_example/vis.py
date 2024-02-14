@@ -26,8 +26,13 @@ elif platform == "win32":
     pass
 
 # Specify files
-filepath = pre_path + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/paper/"
-filepath = pre_path + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/"
+filepath = (
+    pre_path
+    + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/paper/"
+)
+filepath = (
+    pre_path + "Documents/git/ccbf-control/data/nonlinear_1d/default/academic_example/"
+)
 fname = filepath + "test.pkl"
 # fname_hocbf = filepath + "hocbf.pkl"
 # fname_ecbf = filepath + "ecbf.pkl"
@@ -55,7 +60,9 @@ names = [r"$u$", r"$u_0$", "HO-CBF-2", "HO-CBF-3", "E-CBF-1", "E-CBF-2", "E-CBF-
 # Plot Settings
 nAgents = 4
 plt.style.use(["ggplot"])
-plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.plasma(np.linspace(0, 1, nAgents)))
+plt.rcParams["axes.prop_cycle"] = plt.cycler(
+    "color", plt.cm.plasma(np.linspace(0, 1, nAgents))
+)
 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 # colors[0] = colors[1]
 colors[-1] = np.array([0.0, 0.98, 0.2, 1])
@@ -95,9 +102,16 @@ ax_cont.plot(t[1:ii_u], -1 * np.ones(t[1:ii_u].shape), linewidth=lwidth + 1, col
 #         color=colors[aa],
 #     )
 ax_cont.plot(
-    t[:ii_u], u[0, :ii_u, 0], label=names[0], linewidth=lwidth, color=colors[0], dashes=dash
+    t[:ii_u],
+    u[0, :ii_u, 0],
+    label=names[0],
+    linewidth=lwidth,
+    color=colors[0],
+    dashes=dash,
 )
-ax_cont.plot(t[:ii_u], u0[0, :ii_u, 0], label=names[1], linewidth=lwidth, color=colors[1])
+ax_cont.plot(
+    t[:ii_u], u0[0, :ii_u, 0], label=names[1], linewidth=lwidth, color=colors[1]
+)
 ax_cont.set(
     xlabel=r"$t$",
     ylabel=r"$u$",
@@ -138,7 +152,9 @@ lbl = [
 clr = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 clr.reverse()
 for cbf in range(k.shape[2]):
-    ax_k.plot(t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth, color=clr[cbf], label=lbl[cbf])
+    ax_k.plot(
+        t[1:ii], k[0, 1:ii, cbf], linewidth=lwidth, color=clr[cbf], label=lbl[cbf]
+    )
 ax_k.set(ylabel=r"$w$", title="C-CBF Weights")
 
 # Plot Settings
@@ -291,7 +307,12 @@ set_edges_black(ax_state)
 #         x[aaa, :ii, 0], x[aaa, :ii, 1], label=names[aaa], color=colors[aaa], linewidth=lwidth
 #     )
 ax_state.plot(
-    t[1:ii], x[0, 1:ii, 0], label=names[0], color=colors[0], linewidth=lwidth, dashes=dash
+    t[1:ii],
+    x[0, 1:ii, 0],
+    label=names[0],
+    color=colors[0],
+    linewidth=lwidth,
+    dashes=dash,
 )
 # ax_state.plot(xi[0], yi[0], "o", markersize=10, label=r"$z_0$", color="r")
 ax_state.plot(t[1:ii], xg[0] * np.ones((len(t[1:ii]),)), label="Goal", color="g")

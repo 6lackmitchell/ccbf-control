@@ -23,7 +23,9 @@ gain = 5.0
 
 # Speed CBF Symbolic
 h_speed_symbolic = gain * (speed_limit - ss[2]) * (ss[2] + speed_limit)
-dhdx_speed_symbolic = (se.DenseMatrix([h_speed_symbolic]).jacobian(se.DenseMatrix(ss))).T
+dhdx_speed_symbolic = (
+    se.DenseMatrix([h_speed_symbolic]).jacobian(se.DenseMatrix(ss))
+).T
 d2hdx2_speed_symbolic = dhdx_speed_symbolic.jacobian(se.DenseMatrix(ss))
 h_speed_func = symbolic_cbf_wrapper_singleagent(h_speed_symbolic, ss)
 dhdx_speed_func = symbolic_cbf_wrapper_singleagent(dhdx_speed_symbolic, ss)

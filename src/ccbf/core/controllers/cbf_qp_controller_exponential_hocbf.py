@@ -37,7 +37,6 @@ def linear_class_k(k):
 
 
 class CbfQpController(Controller):
-
     _stochastic = False
     _generate_cbf_condition = None
     _dt = None
@@ -125,7 +124,9 @@ class CbfQpController(Controller):
         z_copy_nom = z.copy()
         z_copy_nom[self.ego_id] = z[ego]
         u_nom = np.zeros((len(z), 2))
-        u_nom[ego, :], code_nom, status_nom = self.nominal_controller.compute_control(t, z_copy_nom)
+        u_nom[ego, :], code_nom, status_nom = self.nominal_controller.compute_control(
+            t, z_copy_nom
+        )
         u_nom[ego, :] = u_nom[ego, :] + integrated_error[ego]
         self.u_nom = u_nom[ego, :]
 
@@ -163,7 +164,13 @@ class CbfQpController(Controller):
         return self.u, code, status
 
     def formulate_qp(
-        self, t: float, ze: NDArray, zr: NDArray, u_nom: NDArray, ego: int, cascade: bool = False
+        self,
+        t: float,
+        ze: NDArray,
+        zr: NDArray,
+        u_nom: NDArray,
+        ego: int,
+        cascade: bool = False,
     ) -> (NDArray, NDArray, NDArray, NDArray, NDArray, NDArray, float):
         """Configures the Quadratic Program parameters (Q, p for objective function, A, b for inequality constraints,
         G, h for equality constraints).
@@ -181,7 +188,9 @@ class CbfQpController(Controller):
             alpha_nom = 0.1
             Q, p = self.objective(np.append(u_nom.flatten(), alpha_nom), ze[:2])
             Au = block_diag(*(na + self.n_dec_vars) * [self.au])[:-2, :-1]
-            bu = np.append(np.array(na * [self.bu]).flatten(), self.n_dec_vars * [100, 0])
+            bu = np.append(
+                np.array(na * [self.bu]).flatten(), self.n_dec_vars * [100, 0]
+            )
         else:
             Q, p = self.objective(u_nom.flatten(), ze[:2])
             Au = block_diag(*(na) * [self.au])
@@ -210,7 +219,10 @@ class CbfQpController(Controller):
                 LgLfh = 2 * np.array([dx, dy])
 
                 # Exponential CBF Condition
-                H = l1[self.ego_id - 2] * hdot + l1[self.ego_id - 2] * l0[self.ego_id - 2] * h
+                H = (
+                    l1[self.ego_id - 2] * hdot
+                    + l1[self.ego_id - 2] * l0[self.ego_id - 2] * h
+                )
                 LfH = Lf2h
                 LgH = LgLfh
 
@@ -239,7 +251,10 @@ class CbfQpController(Controller):
                     LgLfh = -2 * np.array([dx, dy])
 
                 # Exponential CBF Condition
-                H = l1[self.ego_id - 2] * hdot + l1[self.ego_id - 2] * l0[self.ego_id - 2] * h
+                H = (
+                    l1[self.ego_id - 2] * hdot
+                    + l1[self.ego_id - 2] * l0[self.ego_id - 2] * h
+                )
                 LfH = Lf2h
                 LgH = LgLfh
 
@@ -260,7 +275,13 @@ class CbfQpController(Controller):
         return Q, p, A, b, None, None
 
     def generate_cbf_condition(
-        self, cbf: Cbf, h: float, Lfh: float, Lgh: NDArray, idx: int, adaptive: bool = False
+        self,
+        cbf: Cbf,
+        h: float,
+        Lfh: float,
+        Lgh: NDArray,
+        idx: int,
+        adaptive: bool = False,
     ) -> (NDArray, float):
         """Calls the child _generate_cbf_condition method."""
         if self._generate_cbf_condition is not None:
@@ -270,11 +291,15 @@ class CbfQpController(Controller):
 
     def assign_control(self, solution: dict, ego: int) -> None:
         """Assigns the control solution to the appropriate agent."""
-        u = np.array(solution["x"][self.n_controls * ego : self.n_controls * (ego + 1)]).flatten()
+        u = np.array(
+            solution["x"][self.n_controls * ego : self.n_controls * (ego + 1)]
+        ).flatten()
         self.u = np.clip(u, -self.u_max, self.u_max)
         # Assign other agents' controls if this is a centralized node
         if hasattr(self, "centralized_agents"):
             for agent in self.centralized_agents:
                 agent.u = np.array(
-                    solution["x"][agent.nu * agent.id : self.n_controls * (agent.id + 1)]
+                    solution["x"][
+                        agent.nu * agent.id : self.n_controls * (agent.id + 1)
+                    ]
                 ).flatten()

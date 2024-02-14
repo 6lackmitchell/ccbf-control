@@ -26,7 +26,9 @@ gain = 10.0
 
 # Circular Region CBF Symbolic
 h_radial_symbolic = gain * (R**2 - (ss[0] - Cxy[0]) ** 2 - (ss[1] - Cxy[1]) ** 2)
-dhdx_radial_symbolic = (se.DenseMatrix([h_radial_symbolic]).jacobian(se.DenseMatrix(ss))).T
+dhdx_radial_symbolic = (
+    se.DenseMatrix([h_radial_symbolic]).jacobian(se.DenseMatrix(ss))
+).T
 d2hdx2_radial_symbolic = dhdx_radial_symbolic.jacobian(se.DenseMatrix(ss))
 f_radial_symbolic = f(np.zeros((len(ss),)), True)
 dfdx_radial_symbolic = f_radial_symbolic.jacobian(se.DenseMatrix(ss))
@@ -41,7 +43,9 @@ def h_radial(ego):
 
 
 def dhdx_radial(ego):
-    ret = f(ego).T @ d2hdx2_radial_func(ego) + dhdx_radial_func(ego).T @ dfdx_radial_func(ego)
+    ret = f(ego).T @ d2hdx2_radial_func(ego) + dhdx_radial_func(
+        ego
+    ).T @ dfdx_radial_func(ego)
 
     return np.squeeze(np.array(ret).astype(np.float64))
 
